@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Viewfinder</class>
+ <widget class="QMainWindow" name="Viewfinder">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>900</width>
+    <height>674</height>
+   </rect>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>900</width>
+    <height>674</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QWidget" name="gridLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>-1</x>
+      <y>-1</y>
+      <width>901</width>
+      <height>661</height>
+     </rect>
+    </property>
+    <layout class="QGridLayout" name="Preview"/>
+   </widget>
+   <widget class="QWidget" name="verticalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>790</x>
+      <y>0</y>
+      <width>111</width>
+      <height>651</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="Button_row">
+     <item>
+      <spacer name="verticalSpacer_5">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="Capture_button">
+       <property name="text">
+        <string>Capture</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="exposure_label">
+       <property name="text">
+        <string>Exposure (e-6s)</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="exposure_choice"/>
+     </item>
+     <item>
+      <widget class="QLabel" name="ISO_label">
+       <property name="text">
+        <string>ISO</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="ISO_choice"/>
+     </item>
+     <item>
+      <spacer name="verticalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="Zoom_button">
+       <property name="text">
+        <string>Zoom</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="ZoomLabel">
+       <property name="text">
+        <string>TextLabel</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="verticalSpacer">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="Menu_Button">
+       <property name="text">
+        <string>Menu</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="verticalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="Exit">
+       <property name="text">
+        <string>Exit</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="verticalSpacer_4">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

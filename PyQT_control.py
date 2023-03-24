@@ -1,0 +1,338 @@
+
+from UI_Viewfinder import Ui_Viewfinder
+from PyQt5 import QtWidgets, QtCore, QtGui
+import sys, subprocess
+from picamera2 import Picamera2
+from picamera2.previews.qt import QGlPicamera2
+import numpy as np
+import time 
+import os
+import datetime as dt
+import logging
+
+ZoomLevels = (1)
+
+
+"""
+
+TODOs: 
+- Make sidebar QBoxLayout rather than widget
+- SideBar background inconsisten color --> Make transparent
+- centralWidget background --> make black
+- Make buttons larger
+- Add white balance sliders
+- Figure out average imaging time 
+
+
+qt5-tools designer
+"""
+
+
+
+# Setting CMA to 1024 doesnt work 512 does apparently CMA is required to come from the bottom 1GB of ram, which is shared with kernel gpu 
+
+
+# Note all setting changes after camera start take a little to be enables (1-5s)
+# For 64MP all sensor modes have a different crop limit
+
+# Docs on NoiseReductionMode wrong (min:0 max:4 -> int) on site 3 options -> str : Assume 0 is no noise reduction
+# WHat does Noise Reduction do?
+logging.basicConfig(filename='/home/felix/Camera/logs/{}.log'.format(dt.datetime.now().strftime('%Y%m%d')), filemode='w', level=logging.DEBUG)
+Picamera2.set_logging(Picamera2.DEBUG)
+# Examples: https://github.com/raspberrypi/picamera2/tree/main/examples
+# Fake Long exposure: https://github.com/raspberrypi/picamera2/blob/main/examples/stack_raw.py
+
+class Main(object):
+    def __init__(self) -> None:
+        self.viewfinder = Viewfinder()
+       
+        self.res=get_res()
+        self.viewfinder.show()
+
+class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
+    
+    menu_item_count = 17
+    custom_controls = {'AeEnable':False,'AfMode':0}
+    zoom_index = 1 
+    pixel_array = (9152, 6944) # TODO: Make method to retrieve
+
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+        # Global formating control
+        #self.Button_row.setStyleSheet('QWidget {background-color: none;}')
+        #self.Button_row.setStyleSheet("background-color:transparent;")
+        #self.Button_row.setAttribute(QtCore.Qt.WA_TranslucentBackground, True)
+
+        #Set Button 4/5 on the right and at the top extending 1/5 to the right and all the way down, and make transparent background 
+        
+        # This completely hides the widget with children FIXME:
+        #self.verticalLayoutWidget.setWindowFlags(QtCore.Qt.FramelessWindowHint)
+        #self.verticalLayoutWidget.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        #self.verticalLayoutWidget.show()
+    
+        self.Zoom_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
+        self.ZoomLabel.setStyleSheet('QLabel {background-color: #455a64; color: #00c853;font: bold 30px;}')
+        self.Menu_Button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
+        self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
+        self.Exit.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
+        self.exposure_choice.setStyleSheet('QComboBox {background-color: #455a64; color: #00c853;font: bold 30px;}')
+        self.ISO_choice.setStyleSheet('QComboBox {background-color: #455a64; color: #00c853;font: bold 30px;}')
+
+        self.ISO_label.setStyleSheet('QLabel {background-color: #455a64; color: #00c853;font: bold 30px;}')
+        self.exposure_label.setStyleSheet('QLabel {background-color: #455a64; color: #00c853;font: bold 30px;}')
+        self.ZoomLabel.setStyleSheet('QLabel {background-color: #455a64; color: #00c853;font: bold 30px;}')
+
+
+        # Height
+        self.Zoom_button.setFixedHeight(50)
+        self.ZoomLabel.setFixedHeight(50)
+        self.Menu_Button.setFixedHeight(50)
+        self.Capture_button.setFixedHeight(50)
+        self.Exit.setFixedHeight(50)
+        self.exposure_choice.setFixedHeight(50)
+        self.ISO_choice.setFixedHeight(50)
+
+
+        # Fix up some of the UI parameters I couldnt figure out in QtDesigner 
+        self.res = get_res()
+        self.setFixedSize(*self.res)
+        self.showFullScreen()
+
+        # QWidget:
+        self.Button_row.setGeometry(QtCore.QRect(self.res[0]*8.5/10, 0, self.res[0]*1.5/10, self.res[1]))
+        #QVBoxLayout:
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(self.res[0]*8.5/10, 0, self.res[0]*1.5/10, self.res[1]))
+
+        self.ZoomLabel.setText(str(self.pixel_array))
+
+        # Resize main Layout widget
+        self.gridLayoutWidget.setGeometry(QtCore.QRect(-1, -1, self.res[0], self.res[1]))      
+
+        # Interface functions
+        self.Exit.clicked.connect(self.exit)
+        self.Zoom_button.clicked.connect(self.zoom)
+        self.Capture_button.clicked.connect(self.on_capture_clicked)
+
+        logging.info('Create Camera object')
+        self.camera = Picamera2()
+
+        # Set comboBox items camera_controls returns (min,max, current)
+        self.ISO = self.camera.camera_controls['AnalogueGain']
+        self.Exp = self.camera.camera_controls['ExposureTime']
+        ISO = self.ISO
+        Exp = self.Exp
+        for i in np.linspace(ISO[0]-1,ISO[1],self.menu_item_count): self.ISO_choice.addItem(str(i))
+        for i in np.logspace(start=(Exp[0]),stop=int(np.log2(Exp[1])),num=self.menu_item_count,base=2): self.exposure_choice.addItem(str(i))
+        # FIXME: ISO an EXP none on load:
+        self.custom_controls['AnalogueGain']=1
+        self.custom_controls['ExposureTime']=1
+
+        # ComboBox index Change
+        self.ISO_choice.currentIndexChanged.connect(self.change_ISO)
+        self.exposure_choice.currentIndexChanged.connect(self.change_exp)
+        # Set Up camera
+        logging.info('Setting up preview')
+        self.set_preview(new_cam=False)
+
+        # Start Camera
+        self.camera.start()
+        logging.info('Camera Started')
+
+
+    #           Dropdowns
+    def change_ISO(self,index):
+        self.camera.set_controls({'AnalogueGain':int(float(self.ISO_choice.itemText(index)))})
+        logging.info('ISO -> ', float(self.ISO_choice.itemText(index)))
+        if float(self.ISO_choice.itemText(index)) <= int(float(self.ISO[1])):
+            self.custom_controls['AnalogueGain']=int(float(self.ISO_choice.itemText(index)))
+        else:
+            logging.warning('Selected ISO Value to large')
+
+
+    def change_exp(self,index):
+        self.camera.set_controls({'ExposureTime':int(float(self.exposure_choice.itemText(index)))})
+        logging.info('Exp -> ',int(float(self.exposure_choice.itemText(index))))
+        if int(float(self.exposure_choice.itemText(index))) <= int(float(self.Exp[1])): #I dont know why but the change exp button gets triggered on startup with a value slightly larger than this
+            self.custom_controls['ExposureTime']=int(float(self.exposure_choice.itemText(index)))
+        else:
+            logging.warning('Selected Exposure to large')
+        
+    
+    #           Buttons
+    @QtCore.pyqtSlot()
+    def zoom(self):
+        '''https://github.com/raspberrypi/picamera2/blob/main/examples/zoom.py'''
+        zooms = (1,0.5,0.25,0.1)
+        # This iterates through different sensor modes all of variables sizes
+        self.Zoom_button.setEnabled(False)
+
+        new_size = [int(i*zooms[self.zoom_index]) for i in self.pixel_array]
+        self.zoom_index += 1
+        if self.zoom_index == len(zooms): self.zoom_index =0
+        offset = [int((r - s) // 2) for r, s in zip(self.pixel_array, new_size)]
+        self.camera.set_controls({"ScalerCrop": (*offset, *new_size)})
+        self.ZoomLabel.setText(str(new_size))
+        self.Zoom_button.setEnabled(True)
+        logging.debug('Changed zoom')
+
+
+    # Capture related
+    @QtCore.pyqtSlot()
+    def on_capture_clicked(self):
+        """"""
+        logging.info('Starting Capture {}'.format(dt.datetime.now().strftime('%m/%d/%Y-%H:%M:%S')))
+        self.Capture_button.setEnabled(False)
+        self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
+
+        self.kill_camera()
+        logging.info('Killed and unreferenced Camera')
+        time.sleep(1)
+        os.chdir('/home/felix/Images')
+        self.process = QtCore.QProcess()
+        self.process.finished.connect(self.capture_done_cmd_line)
+        self.process.setProcessChannelMode(QtCore.QProcess.MergedChannels)
+        logging.info('CMD: libcamera-still --hdr=0 -v -o {} --raw --autofocus-on-capture=0 --autofocus-mode=manual --denoise=off --gain={} --nopreview --rawfull --shutter={} --flush=1 --ev=0 --timeout 100000 --immediate'.format(dt.datetime.now().strftime("%Y%m%d-%H%M%S"), self.custom_controls['AnalogueGain'],self.custom_controls['ExposureTime']))
+        logging.info('Capture started, time: {}'.format(dt.datetime.now()))
+        self.process.start('libcamera-still --hdr=0 -v -o {} --raw --autofocus-on-capture=0 --autofocus-mode=manual --denoise=off --gain={} --nopreview --rawfull --shutter={} --flush=1 --ev=0 --timeout 100000 --immediate'.format(dt.datetime.now().strftime("%Y%m%d-%H%M%S"), self.custom_controls['AnalogueGain'],self.custom_controls['ExposureTime']))
+        
+
+
+    @QtCore.pyqtSlot()
+    def one_shot_solution(self):
+        """all of this was capture clicked allows one image to be taken, and switch back to preview buffer allocation fails on second image"""
+        logging.info('Starting Capture'.format(dt.datetime.now().strftime('%m/%d/%Y-%H:%M:%S')))
+        self.Capture_button.setEnabled(False)
+        self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
+
+        self.kill_camera()
+        logging.info('Killed and unreferenced Camera')
+        time.sleep(1)
+        logging.info('Creating Camera object')
+        self.camera = Picamera2()
+        time.sleep(1)
+        cfg = self.camera.create_still_configuration(queue=False)
+        #cfg=self.camera.create_preview_configuration(main={"size": self.res},raw=self.camera.sensor_modes[-1]) 
+        #logging.info(self.camera.camera_controls)
+        logging.info('Configuring camera')
+        self.camera.configure(cfg)
+        logging.info('Set controls')
+        self.camera.set_controls(self.custom_controls)
+        # Set camera behavior for capture done
+        #self.camera.done_signal.connect(self.capture_done)  
+        logging.info('Start Camera')
+        self.camera.start()
+        time.sleep(1)
+        logging.info('Set qpicamera to allow signal')
+
+        self.qpcamera = QGlPicamera2(self.camera, width=800, height=600, keep_ar=False)
+        self.qpcamera.done_signal.connect(self.capture_done)
+        # libcamera-still --hdr=0 -v --datetime --raw --autofocus-on-capture=0 --autofocus-mode=manual --denoise=off --gain=10 --nopreview --rawfull --shutter=1000000 --flush=1 --ev=0 --timeout 100000 --immediate
+        self.camera.capture_file('/home/felix/Images/{}.png'.format(dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')), 
+                                        signal_function=self.qpcamera.signal_done,
+                                        wait = True)
+        logging.info('Capture async')
+
+
+
+    @QtCore.pyqtSlot()
+    def capture_done(self,job):
+        logging.info('Waiting {}'.format(dt.datetime.now()))
+        self.camera.wait(job)
+        logging.info('captured {}'.format(dt.datetime.now()))
+        logging.info('restarting camera')
+        self.qpcamera.cleanup()
+        del self.qpcamera
+        self.camera.stop()
+        self.camera.close()
+        del self.camera
+        time.sleep(1)
+        logging.info('Configuring')
+        self.set_preview()
+        self.camera.start()
+        logging.info('Enabling button')
+        self.Capture_button.setEnabled(True)
+        self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
+        logging.info('ready')
+
+    @QtCore.pyqtSlot()
+    def capture_done_cmd_line(self):
+        logging.info('CMD line done')
+        logging.info('Output:\n{}'.format(self.process.readAllStandardOutput().data().decode()))
+        self.set_preview()
+        self.camera.start()
+        logging.info('Enabling button')
+        self.Capture_button.setEnabled(True)
+        self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
+        logging.info('ready')
+
+    @QtCore.pyqtSlot()
+    def exit(self):
+        sys.exit(0)
+
+    def set_preview(self,new_cam = True):
+        """Initiate camera preview redirected to Preview widget"""
+        # TODO: Check recommended for performance
+        if new_cam : self.camera = Picamera2()
+        # cfg
+        # Disable que to keep memory free,
+        self.camera.configure(self.camera.create_preview_configuration(queue=False ,main={"size":self.res})) 
+        self.camera.set_controls(self.custom_controls)
+        # GUI
+        self.qpcamera = QGlPicamera2(self.camera,width=self.res[0], height=self.res[1],keep_ar=False)# 
+        self.Preview.addWidget(self.qpcamera, 0,0,1,1)
+
+        return None
+    
+    def kill_camera(self):
+        """Here we remove all references to the camera"""
+        #Found in code
+        self.qpcamera.cleanup()
+        self.Preview.removeWidget(self.qpcamera)
+        del self.qpcamera
+        self.camera.stop()
+        self.camera.close()
+        del self.camera
+
+        return None
+
+    def set_imaging(self):
+        self.camera = Picamera2()
+        cfg = self.camera.create_still_configuration(queue=False)
+        logging.info('Configuring camera')
+        self.camera.configure(cfg)
+        logging.info('Set controls')
+        self.camera.set_controls(self.custom_controls)
+        return None
+
+
+def get_res():
+    """Returns screen self.resolution"""
+    res = subprocess.run('xrandr', capture_output=True, check=True)
+    cond = False
+    res = str(res.stdout).split('\\n')
+    for i in res:
+        if cond : 
+            res =i.split('   ')[1].strip(' ')
+            res = res.split('x')
+            res = (int(res[0]),int(res[1]))
+            #Assume viewing in landscape
+            if res[0]<res[1]:
+                res = (res[1],res[0])
+            return res
+        if 'connected' in i:
+            cond = True
+    # Default if cant be found
+    return (720,480)
+
+
+
+if __name__=='__main__':
+
+    app = QtWidgets.QApplication(sys.argv)
+    main = Main()
+    sys.exit(app.exec_())
+
+
+
+
