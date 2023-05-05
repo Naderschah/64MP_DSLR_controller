@@ -92,13 +92,6 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="Ae_button">
-       <property name="text">
-        <string>Ae</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <spacer name="verticalSpacer_2">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
