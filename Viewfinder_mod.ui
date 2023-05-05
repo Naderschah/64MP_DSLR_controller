@@ -82,6 +82,16 @@
       <widget class="QComboBox" name="ISO_choice"/>
      </item>
      <item>
+      <layout class="QVBoxLayout" name="verticalLayout"/>
+     </item>
+     <item>
+      <widget class="QPushButton" name="IR_button">
+       <property name="text">
+        <string>IR</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="verticalSpacer_2">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
