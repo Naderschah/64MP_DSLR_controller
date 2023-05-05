@@ -251,16 +251,16 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         logging.info('Capture async')
 
     @QtCore.pyqtSlot()
-    def capture_done(self,job):
+    def capture_done(self,*args):
         logging.info('Waiting {}'.format(dt.datetime.now()))
-        res = self.camera.wait(job)
+        res = self.camera.wait(args)
         logging.info('captured {}'.format(dt.datetime.now()))
         #logging.info('restarting camera')
         #self.qpcamera.cleanup()
         #del self.qpcamera
         #self.camera.stop()
         #self.camera.close()
-        #del self.camera
+        #del self.camera:q
         #time.sleep(1)
         #logging.info('Configuring')
         #self.set_preview()
