@@ -133,7 +133,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.Exit.clicked.connect(self.exit)
         self.Zoom_button.clicked.connect(self.zoom)
         self.IR_button.clicked.connect(self.IR)
-        self.Capture_button.clicked.connect(self.one_shot_solution)
+        self.Capture_button.clicked.connect(self.on_capture_clicked)
 
 
     #           Dropdowns
