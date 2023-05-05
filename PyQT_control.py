@@ -51,7 +51,6 @@ class Main(object):
         self.viewfinder.show()
 
 class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
-    
     menu_item_count = 17
     custom_controls = {}
     zoom_index = 1 
@@ -67,8 +66,8 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         os.system('gpio -g mode 4 out')
 
         logging.info('Create Camera object')
-        tuning = Picamera2.load_tuning_file(os.path.abspath("./imx477_tuning_file_bare.json"))
-        self.camera = Picamera2(tuning=tuning)
+        self.tuning = Picamera2.load_tuning_file(os.path.abspath("./imx477_tuning_file_bare.json"))
+        self.camera = Picamera2(tuning=self.tuning)
 
         # Set comboBox items camera_controls returns (min,max, current)
         self.ISO = self.camera.camera_controls['AnalogueGain']
@@ -91,6 +90,8 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         # Start Camera
         self.camera.start()
         logging.info('Camera Started')
+        # Set Autoexposure
+        self.Autoexpose()
 
     def style_sheet_stuff(self):
         self.Zoom_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
@@ -134,7 +135,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.Zoom_button.clicked.connect(self.zoom)
         self.IR_button.clicked.connect(self.IR)
         self.Capture_button.clicked.connect(self.on_capture_clicked)
-
+        self.Ae_button.clicked.connect(self.Autoexpose)
 
     #           Dropdowns
     def change_ISO(self,index):
@@ -173,6 +174,15 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     def IR(self):
         """Toggles Infrared"""
         os.system('gpio -g toggle 4')
+
+    def Autoexpose(self):
+        # Works as trigger
+        control = {'AeEnable': True}
+        # Get Algorithm
+        algo = Picamera2.find_tuning_algo(self.tuning, "rpi.agc")
+        algo["exposure_modes"]["normal"] = {"shutter": [100, 66666], "gain": [1.0, 1.0]}
+        self.camera.set_controls(control)
+        time.sleep(2)
 
     # Capture related
     @QtCore.pyqtSlot()

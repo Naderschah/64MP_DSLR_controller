@@ -53,6 +53,9 @@ class Ui_Viewfinder(object):
         self.IR_button = QtWidgets.QPushButton(self.verticalLayoutWidget)
         self.IR_button.setObjectName("IR_button")
         self.Button_row.addWidget(self.IR_button)
+        self.Ae_button = QtWidgets.QPushButton(self.verticalLayoutWidget)
+        self.Ae_button.setObjectName("Ae_button")
+        self.Button_row.addWidget(self.Ae_button)
         spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.Button_row.addItem(spacerItem1)
         self.Zoom_button = QtWidgets.QPushButton(self.verticalLayoutWidget)
@@ -88,7 +91,18 @@ class Ui_Viewfinder(object):
         self.exposure_label.setText(_translate("Viewfinder", "Exposure (e-6s)"))
         self.ISO_label.setText(_translate("Viewfinder", "ISO"))
         self.IR_button.setText(_translate("Viewfinder", "IR"))
+        self.Ae_button.setText(_translate("Viewfinder", "Ae"))
         self.Zoom_button.setText(_translate("Viewfinder", "Zoom"))
         self.ZoomLabel.setText(_translate("Viewfinder", "TextLabel"))
         self.Menu_Button.setText(_translate("Viewfinder", "Menu"))
         self.Exit.setText(_translate("Viewfinder", "Exit"))
+
+
+if __name__ == "__main__":
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    Viewfinder = QtWidgets.QMainWindow()
+    ui = Ui_Viewfinder()
+    ui.setupUi(Viewfinder)
+    Viewfinder.show()
+    sys.exit(app.exec_())
