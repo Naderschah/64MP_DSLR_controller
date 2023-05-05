@@ -253,7 +253,9 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     @QtCore.pyqtSlot()
     def capture_done(self,*args):
         logging.info('Waiting {}'.format(dt.datetime.now()))
-        res = self.camera.wait(args)
+        if len(args) > 0:
+            res = self.camera.wait(*args)
+        else: logging.warning('Job completed before capture done called')
         logging.info('captured {}'.format(dt.datetime.now()))
         #logging.info('restarting camera')
         #self.qpcamera.cleanup()
