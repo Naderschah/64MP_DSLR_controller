@@ -9,6 +9,7 @@ import time
 import os
 import datetime as dt
 import logging
+from pathlib import Path
 
 ZoomLevels = (1)
 
@@ -37,7 +38,7 @@ qt5-tools designer
 
 # Docs on NoiseReductionMode wrong (min:0 max:4 -> int) on site 3 options -> str : Assume 0 is no noise reduction
 # WHat does Noise Reduction do?
-logging.basicConfig(filename='/home/felix/Camera/logs/{}.log'.format(dt.datetime.now().strftime('%Y%m%d')), filemode='w', level=logging.DEBUG)
+logging.basicConfig(filename=str(Path.home())+'/Camera/logs/{}.log'.format(dt.datetime.now().strftime('%Y%m%d')), filemode='w', level=logging.DEBUG)
 Picamera2.set_logging(Picamera2.DEBUG)
 # Examples: https://github.com/raspberrypi/picamera2/tree/main/examples
 # Fake Long exposure: https://github.com/raspberrypi/picamera2/blob/main/examples/stack_raw.py
@@ -52,7 +53,7 @@ class Main(object):
 class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     
     menu_item_count = 17
-    custom_controls = {'AeEnable':False,'AfMode':0}
+    custom_controls = {}
     zoom_index = 1 
     pixel_array = (9152, 6944) # TODO: Make method to retrieve
 
@@ -78,6 +79,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.Exit.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
         self.exposure_choice.setStyleSheet('QComboBox {background-color: #455a64; color: #00c853;font: bold 30px;}')
         self.ISO_choice.setStyleSheet('QComboBox {background-color: #455a64; color: #00c853;font: bold 30px;}')
+        self.IR_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
 
         self.ISO_label.setStyleSheet('QLabel {background-color: #455a64; color: #00c853;font: bold 30px;}')
         self.exposure_label.setStyleSheet('QLabel {background-color: #455a64; color: #00c853;font: bold 30px;}')
@@ -93,6 +95,8 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.exposure_choice.setFixedHeight(50)
         self.ISO_choice.setFixedHeight(50)
 
+        # Allow toggle of gpio 4
+        os.system('gpio -g mode 4 out')
 
         # Fix up some of the UI parameters I couldnt figure out in QtDesigner 
         self.res = get_res()
@@ -112,10 +116,12 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         # Interface functions
         self.Exit.clicked.connect(self.exit)
         self.Zoom_button.clicked.connect(self.zoom)
+        self.IR_button.clicked.connect(self.IR)
         self.Capture_button.clicked.connect(self.on_capture_clicked)
 
         logging.info('Create Camera object')
-        self.camera = Picamera2()
+        tuning = Picamera2.load_tuning_file(os.path.abspath("./imx477_tuning_file_bare.json"))
+        self.camera = Picamera2(tuning=tuning)
 
         # Set comboBox items camera_controls returns (min,max, current)
         self.ISO = self.camera.camera_controls['AnalogueGain']
@@ -138,6 +144,10 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         # Start Camera
         self.camera.start()
         logging.info('Camera Started')
+
+    def IR(self):
+        """Toggles Infrared"""
+        os.system('gpio -g toggle 4')
 
 
     #           Dropdowns
@@ -240,14 +250,14 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         logging.info('Waiting {}'.format(dt.datetime.now()))
         self.camera.wait(job)
         logging.info('captured {}'.format(dt.datetime.now()))
-        logging.info('restarting camera')
-        self.qpcamera.cleanup()
-        del self.qpcamera
-        self.camera.stop()
-        self.camera.close()
-        del self.camera
-        time.sleep(1)
-        logging.info('Configuring')
+        #logging.info('restarting camera')
+        #self.qpcamera.cleanup()
+        #del self.qpcamera
+        #self.camera.stop()
+        #self.camera.close()
+        #del self.camera
+        #time.sleep(1)
+        #logging.info('Configuring')
         self.set_preview()
         self.camera.start()
         logging.info('Enabling button')
@@ -270,7 +280,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     def exit(self):
         sys.exit(0)
 
-    def set_preview(self,new_cam = True):
+    def set_preview(self,new_cam = False):
         """Initiate camera preview redirected to Preview widget"""
         # TODO: Check recommended for performance
         if new_cam : self.camera = Picamera2()
