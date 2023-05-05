@@ -120,9 +120,9 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.showFullScreen()
 
         # QWidget:
-        self.Button_row.setGeometry(QtCore.QRect(self.res[0]*8.5/10, 0, self.res[0]*1.5/10, self.res[1]))
+        self.Button_row.setGeometry(QtCore.QRect(int(self.res[0]*8.5/10), 0, int(self.res[0]*1.5/10), self.res[1]))
         #QVBoxLayout:
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(self.res[0]*8.5/10, 0, self.res[0]*1.5/10, self.res[1]))
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(int(self.res[0]*8.5/10), 0, int(self.res[0]*8.5/10), self.res[1]))
 
         self.ZoomLabel.setText(str(self.pixel_array))
 
@@ -136,11 +136,6 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.Capture_button.clicked.connect(self.on_capture_clicked)
 
 
-    def IR(self):
-        """Toggles Infrared"""
-        os.system('gpio -g toggle 4')
-
-
     #           Dropdowns
     def change_ISO(self,index):
         self.camera.set_controls({'AnalogueGain':int(float(self.ISO_choice.itemText(index)))})
@@ -150,7 +145,6 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         else:
             logging.warning('Selected ISO Value to large')
 
-
     def change_exp(self,index):
         self.camera.set_controls({'ExposureTime':int(float(self.exposure_choice.itemText(index)))})
         logging.info('Exp -> ',int(float(self.exposure_choice.itemText(index))))
@@ -159,7 +153,6 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         else:
             logging.warning('Selected Exposure to large')
         
-    
     #           Buttons
     @QtCore.pyqtSlot()
     def zoom(self):
@@ -177,6 +170,9 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.Zoom_button.setEnabled(True)
         logging.debug('Changed zoom')
 
+    def IR(self):
+        """Toggles Infrared"""
+        os.system('gpio -g toggle 4')
 
     # Capture related
     @QtCore.pyqtSlot()
@@ -187,6 +183,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
 
         #self.kill_camera()
+        self.camera.stop()
         logging.info('Killed and unreferenced Camera')
         time.sleep(1)
         os.chdir('/home/felix/Images')
@@ -197,8 +194,6 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         logging.info('Capture started, time: {}'.format(dt.datetime.now()))
         self.process.start('libcamera-still --hdr=0 -v -o {} --raw --autofocus-on-capture=0 --autofocus-mode=manual --denoise=off --gain={} --nopreview --rawfull --shutter={} --flush=1 --ev=0 --timeout 100000 --immediate'.format(dt.datetime.now().strftime("%Y%m%d-%H%M%S"), self.custom_controls['AnalogueGain'],self.custom_controls['ExposureTime']))
         
-
-
     @QtCore.pyqtSlot()
     def one_shot_solution(self):
         """all of this was capture clicked allows one image to be taken, and switch back to preview buffer allocation fails on second image"""
@@ -206,12 +201,13 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.Capture_button.setEnabled(False)
         self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
 
-        self.kill_camera()
-        logging.info('Killed and unreferenced Camera')
-        time.sleep(1)
-        logging.info('Creating Camera object')
-        self.camera = Picamera2()
-        time.sleep(1)
+        #self.kill_camera()
+        self.camera.stop()
+        logging.info('Stopped Camera')
+        #time.sleep(1)
+        #logging.info('Creating Camera object')
+        #self.camera = Picamera2()
+        #time.sleep(1)
         cfg = self.camera.create_still_configuration(queue=False)
         #cfg=self.camera.create_preview_configuration(main={"size": self.res},raw=self.camera.sensor_modes[-1]) 
         #logging.info(self.camera.camera_controls)
@@ -226,15 +222,13 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         time.sleep(1)
         logging.info('Set qpicamera to allow signal')
 
-        self.qpcamera = QGlPicamera2(self.camera, width=800, height=600, keep_ar=False)
-        self.qpcamera.done_signal.connect(self.capture_done)
+        #self.qpcamera = QGlPicamera2(self.camera, width=800, height=600, keep_ar=False)
+        #self.qpcamera.done_signal.connect(self.capture_done)
         # libcamera-still --hdr=0 -v --datetime --raw --autofocus-on-capture=0 --autofocus-mode=manual --denoise=off --gain=10 --nopreview --rawfull --shutter=1000000 --flush=1 --ev=0 --timeout 100000 --immediate
         self.camera.capture_file('/home/felix/Images/{}.png'.format(dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')), 
                                         signal_function=self.qpcamera.signal_done,
                                         wait = True)
         logging.info('Capture async')
-
-
 
     @QtCore.pyqtSlot()
     def capture_done(self,job):
@@ -282,7 +276,8 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.camera.set_controls(self.custom_controls)
         # GUI
         self.qpcamera = QGlPicamera2(self.camera,width=self.res[0], height=self.res[1],keep_ar=False)# 
-        #self.Preview.addWidget(self.qpcamera, 0,0,1,1)
+        self.qpcamera.done_signal.connect(self.capture_done)
+        self.Preview.addWidget(self.qpcamera, 0,0,1,1)
 
         return None
     
