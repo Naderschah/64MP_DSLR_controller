@@ -85,6 +85,13 @@
       <layout class="QVBoxLayout" name="verticalLayout"/>
      </item>
      <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>IR</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="IR_button">
        <property name="text">
         <string>IR</string>
@@ -103,6 +110,13 @@
         </size>
        </property>
       </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Zoom</string>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QPushButton" name="Zoom_button">
@@ -130,13 +144,6 @@
         </size>
        </property>
       </spacer>
-     </item>
-     <item>
-      <widget class="QPushButton" name="Menu_Button">
-       <property name="text">
-        <string>Menu</string>
-       </property>
-      </widget>
      </item>
      <item>
       <spacer name="verticalSpacer_3">
