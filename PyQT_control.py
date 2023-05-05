@@ -201,16 +201,18 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.Capture_button.setEnabled(False)
         #self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
         #self.kill_camera()
-        logging.info('Configuring camera')
-        self.camera.stop()
-        cfg = self.camera.create_still_configuration(queue=False)
-        self.camera.configure(cfg)
-        self.camera.set_controls(self.custom_controls)
-        #time.sleep(1)
-        self.camera.start()
-        self.camera.capture_file('/home/felix/Images/{}.png'.format(dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')), 
-                                        signal_function=self.qpcamera.signal_done,)
-                                        #wait = True)
+        #logging.info('Configuring camera')
+        #self.camera.stop()
+        cfg = self.camera.create_still_configuration()
+        #self.camera.configure(cfg)
+        #self.camera.set_controls(self.custom_controls)
+        ##time.sleep(1)
+        #self.camera.start()
+        #self.camera.capture_file('/home/felix/Images/{}.png'.format(dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')), 
+        #                                signal_function=self.qpcamera.signal_done,)
+        #                                #wait = True)
+        self.camera.switch_mode_and_capture_file(cfg, str(Path.home())+'/Images/{}.png'.format(dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')),
+                                                 signal_function=self.qpcamera.signal_done)
 
     @QtCore.pyqtSlot()
     def one_shot_solution(self):
