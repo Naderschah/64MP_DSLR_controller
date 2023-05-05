@@ -176,7 +176,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
 
     # Capture related
     @QtCore.pyqtSlot()
-    def on_capture_clicked(self):
+    def on_capture_clicked_old(self):
         """"""
         logging.info('Starting Capture {}'.format(dt.datetime.now().strftime('%m/%d/%Y-%H:%M:%S')))
         self.Capture_button.setEnabled(False)
@@ -193,7 +193,21 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         logging.info('CMD: libcamera-still --hdr=0 -v -o {} --raw --autofocus-on-capture=0 --autofocus-mode=manual --denoise=off --gain={} --nopreview --rawfull --shutter={} --flush=1 --ev=0 --timeout 100000 --immediate'.format(dt.datetime.now().strftime("%Y%m%d-%H%M%S"), self.custom_controls['AnalogueGain'],self.custom_controls['ExposureTime']))
         logging.info('Capture started, time: {}'.format(dt.datetime.now()))
         self.process.start('libcamera-still --hdr=0 -v -o {} --raw --autofocus-on-capture=0 --autofocus-mode=manual --denoise=off --gain={} --nopreview --rawfull --shutter={} --flush=1 --ev=0 --timeout 100000 --immediate'.format(dt.datetime.now().strftime("%Y%m%d-%H%M%S"), self.custom_controls['AnalogueGain'],self.custom_controls['ExposureTime']))
-        
+    
+    @QtCore.pyqtSlot()
+    def on_capture_clicked(self):
+        """"""
+        logging.info('Starting Capture {}'.format(dt.datetime.now().strftime('%m/%d/%Y-%H:%M:%S')))
+        self.Capture_button.setEnabled(False)
+        #self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
+        #self.kill_camera()
+        self.camera.stop()
+        logging.info('Stopped Camera')
+        #time.sleep(1)
+        self.camera.capture_file('/home/felix/Images/{}.png'.format(dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')), 
+                                        signal_function=self.qpcamera.signal_done,)
+                                        #wait = True)
+
     @QtCore.pyqtSlot()
     def one_shot_solution(self):
         """all of this was capture clicked allows one image to be taken, and switch back to preview buffer allocation fails on second image"""
@@ -233,7 +247,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     @QtCore.pyqtSlot()
     def capture_done(self,job):
         logging.info('Waiting {}'.format(dt.datetime.now()))
-        self.camera.wait(job)
+        res = self.camera.wait(job)
         logging.info('captured {}'.format(dt.datetime.now()))
         #logging.info('restarting camera')
         #self.qpcamera.cleanup()
@@ -243,11 +257,11 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         #del self.camera
         #time.sleep(1)
         #logging.info('Configuring')
-        self.set_preview()
-        self.camera.start()
+        #self.set_preview()
+        #self.camera.start()
         logging.info('Enabling button')
         self.Capture_button.setEnabled(True)
-        self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
+        #self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
         logging.info('ready')
 
     @QtCore.pyqtSlot()
