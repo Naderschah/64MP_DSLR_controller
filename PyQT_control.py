@@ -116,10 +116,9 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.Zoom_button.clicked.connect(self.zoom)
         self.IR_button.clicked.connect(self.IR)
         self.Capture_button.clicked.connect(self.on_capture_clicked)
-        
+
         self.Zoom_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
         self.ZoomLabel.setStyleSheet('QLabel {background-color: #455a64; color: #00c853;font: bold 30px;}')
-        self.Menu_Button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
         self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
         self.Exit.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
         self.exposure_choice.setStyleSheet('QComboBox {background-color: #455a64; color: #00c853;font: bold 30px;}')
@@ -132,7 +131,6 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         # Height
         self.Zoom_button.setFixedHeight(50)
         self.ZoomLabel.setFixedHeight(50)
-        self.Menu_Button.setFixedHeight(50)
         self.Capture_button.setFixedHeight(50)
         self.Exit.setFixedHeight(50)
         self.exposure_choice.setFixedHeight(50)
