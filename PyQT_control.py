@@ -313,14 +313,6 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
 
         return None
 
-    def set_imaging(self):
-        self.camera = Picamera2()
-        cfg = self.camera.create_still_configuration(queue=False)
-        logging.info('Configuring camera')
-        self.camera.configure(cfg)
-        logging.info('Set controls')
-        self.camera.set_controls(self.custom_controls)
-        return None
 
 
 def get_res():
