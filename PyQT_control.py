@@ -60,18 +60,39 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        # Global formating control
-        #self.Button_row.setStyleSheet('QWidget {background-color: none;}')
-        #self.Button_row.setStyleSheet("background-color:transparent;")
-        #self.Button_row.setAttribute(QtCore.Qt.WA_TranslucentBackground, True)
-
-        #Set Button 4/5 on the right and at the top extending 1/5 to the right and all the way down, and make transparent background 
-        
-        # This completely hides the widget with children FIXME:
-        #self.verticalLayoutWidget.setWindowFlags(QtCore.Qt.FramelessWindowHint)
-        #self.verticalLayoutWidget.setAttribute(QtCore.Qt.WA_TranslucentBackground)
-        #self.verticalLayoutWidget.show()
     
+        self.style_sheet_stuff()
+        
+        # Allow toggle of gpio 4 - IR
+        os.system('gpio -g mode 4 out')
+
+        logging.info('Create Camera object')
+        tuning = Picamera2.load_tuning_file(os.path.abspath("./imx477_tuning_file_bare.json"))
+        self.camera = Picamera2(tuning=tuning)
+
+        # Set comboBox items camera_controls returns (min,max, current)
+        self.ISO = self.camera.camera_controls['AnalogueGain']
+        self.Exp = self.camera.camera_controls['ExposureTime']
+        ISO = self.ISO
+        Exp = self.Exp
+        for i in np.linspace(ISO[0]-1,ISO[1],self.menu_item_count): self.ISO_choice.addItem(str(i))
+        for i in np.logspace(start=(Exp[0]),stop=int(np.log2(Exp[1])),num=self.menu_item_count,base=2): self.exposure_choice.addItem(str(i))
+        # FIXME: ISO an EXP none on load:
+        self.custom_controls['AnalogueGain']=1
+        self.custom_controls['ExposureTime']=1
+
+        # ComboBox index Change
+        self.ISO_choice.currentIndexChanged.connect(self.change_ISO)
+        self.exposure_choice.currentIndexChanged.connect(self.change_exp)
+        # Set Up camera
+        logging.info('Setting up preview')
+        self.set_preview()
+
+        # Start Camera
+        self.camera.start()
+        logging.info('Camera Started')
+
+    def style_sheet_stuff(self):
         self.Zoom_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
         self.ZoomLabel.setStyleSheet('QLabel {background-color: #455a64; color: #00c853;font: bold 30px;}')
         self.Menu_Button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
@@ -84,8 +105,6 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.ISO_label.setStyleSheet('QLabel {background-color: #455a64; color: #00c853;font: bold 30px;}')
         self.exposure_label.setStyleSheet('QLabel {background-color: #455a64; color: #00c853;font: bold 30px;}')
         self.ZoomLabel.setStyleSheet('QLabel {background-color: #455a64; color: #00c853;font: bold 30px;}')
-
-
         # Height
         self.Zoom_button.setFixedHeight(50)
         self.ZoomLabel.setFixedHeight(50)
@@ -94,9 +113,6 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.Exit.setFixedHeight(50)
         self.exposure_choice.setFixedHeight(50)
         self.ISO_choice.setFixedHeight(50)
-
-        # Allow toggle of gpio 4
-        os.system('gpio -g mode 4 out')
 
         # Fix up some of the UI parameters I couldnt figure out in QtDesigner 
         self.res = get_res()
@@ -119,31 +135,6 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.IR_button.clicked.connect(self.IR)
         self.Capture_button.clicked.connect(self.on_capture_clicked)
 
-        logging.info('Create Camera object')
-        tuning = Picamera2.load_tuning_file(os.path.abspath("./imx477_tuning_file_bare.json"))
-        self.camera = Picamera2(tuning=tuning)
-
-        # Set comboBox items camera_controls returns (min,max, current)
-        self.ISO = self.camera.camera_controls['AnalogueGain']
-        self.Exp = self.camera.camera_controls['ExposureTime']
-        ISO = self.ISO
-        Exp = self.Exp
-        for i in np.linspace(ISO[0]-1,ISO[1],self.menu_item_count): self.ISO_choice.addItem(str(i))
-        for i in np.logspace(start=(Exp[0]),stop=int(np.log2(Exp[1])),num=self.menu_item_count,base=2): self.exposure_choice.addItem(str(i))
-        # FIXME: ISO an EXP none on load:
-        self.custom_controls['AnalogueGain']=1
-        self.custom_controls['ExposureTime']=1
-
-        # ComboBox index Change
-        self.ISO_choice.currentIndexChanged.connect(self.change_ISO)
-        self.exposure_choice.currentIndexChanged.connect(self.change_exp)
-        # Set Up camera
-        logging.info('Setting up preview')
-        self.set_preview(new_cam=False)
-
-        # Start Camera
-        self.camera.start()
-        logging.info('Camera Started')
 
     def IR(self):
         """Toggles Infrared"""
@@ -195,7 +186,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.Capture_button.setEnabled(False)
         self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
 
-        self.kill_camera()
+        #self.kill_camera()
         logging.info('Killed and unreferenced Camera')
         time.sleep(1)
         os.chdir('/home/felix/Images')
@@ -269,6 +260,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     def capture_done_cmd_line(self):
         logging.info('CMD line done')
         logging.info('Output:\n{}'.format(self.process.readAllStandardOutput().data().decode()))
+        self.camera.stop()
         self.set_preview()
         self.camera.start()
         logging.info('Enabling button')
@@ -290,7 +282,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.camera.set_controls(self.custom_controls)
         # GUI
         self.qpcamera = QGlPicamera2(self.camera,width=self.res[0], height=self.res[1],keep_ar=False)# 
-        self.Preview.addWidget(self.qpcamera, 0,0,1,1)
+        #self.Preview.addWidget(self.qpcamera, 0,0,1,1)
 
         return None
     
