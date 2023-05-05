@@ -139,15 +139,15 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     #           Dropdowns
     def change_ISO(self,index):
         self.camera.set_controls({'AnalogueGain':int(float(self.ISO_choice.itemText(index)))})
-        logging.info('ISO -> ', float(self.ISO_choice.itemText(index)))
-        if float(self.ISO_choice.itemText(index)) <= int(float(self.ISO[1])):
+        logging.info('ISO -> '+str(self.ISO_choice.itemText(index)))
+        if int(float(self.ISO_choice.itemText(index))) <= int(float(self.ISO[1])):
             self.custom_controls['AnalogueGain']=int(float(self.ISO_choice.itemText(index)))
         else:
             logging.warning('Selected ISO Value to large')
 
     def change_exp(self,index):
         self.camera.set_controls({'ExposureTime':int(float(self.exposure_choice.itemText(index)))})
-        logging.info('Exp -> ',int(float(self.exposure_choice.itemText(index))))
+        logging.info('Exp -> '+str(float(self.exposure_choice.itemText(index))))
         if int(float(self.exposure_choice.itemText(index))) <= int(float(self.Exp[1])): #I dont know why but the change exp button gets triggered on startup with a value slightly larger than this
             self.custom_controls['ExposureTime']=int(float(self.exposure_choice.itemText(index)))
         else:
