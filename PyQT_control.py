@@ -96,6 +96,27 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         logging.info('Camera Started')
 
     def style_sheet_stuff(self):
+        # Fix up some of the UI parameters I couldnt figure out in QtDesigner 
+        self.res = get_res()
+        self.setFixedSize(*self.res)
+        self.showFullScreen()
+
+        # QWidget:
+        self.Button_row.setGeometry(QtCore.QRect(int(self.res[0]*8.5/10), 0, int(self.res[0]*1.5/10), self.res[1]))
+        #QVBoxLayout:
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(int(self.res[0]*8.5/10), 0, int(self.res[0]*8.5/10), self.res[1]))
+
+        self.ZoomLabel.setText(str(self.pixel_array))
+
+        # Resize main Layout widget
+        self.gridLayoutWidget.setGeometry(QtCore.QRect(-1, -1, self.res[0], self.res[1]))      
+
+        # Interface functions
+        self.Exit.clicked.connect(self.exit)
+        self.Zoom_button.clicked.connect(self.zoom)
+        self.IR_button.clicked.connect(self.IR)
+        self.Capture_button.clicked.connect(self.on_capture_clicked)
+        
         self.Zoom_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
         self.ZoomLabel.setStyleSheet('QLabel {background-color: #455a64; color: #00c853;font: bold 30px;}')
         self.Menu_Button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
@@ -117,26 +138,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.exposure_choice.setFixedHeight(50)
         self.ISO_choice.setFixedHeight(50)
 
-        # Fix up some of the UI parameters I couldnt figure out in QtDesigner 
-        self.res = get_res()
-        self.setFixedSize(*self.res)
-        self.showFullScreen()
-
-        # QWidget:
-        self.Button_row.setGeometry(QtCore.QRect(int(self.res[0]*8.5/10), 0, int(self.res[0]*1.5/10), self.res[1]))
-        #QVBoxLayout:
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(int(self.res[0]*8.5/10), 0, int(self.res[0]*8.5/10), self.res[1]))
-
-        self.ZoomLabel.setText(str(self.pixel_array))
-
-        # Resize main Layout widget
-        self.gridLayoutWidget.setGeometry(QtCore.QRect(-1, -1, self.res[0], self.res[1]))      
-
-        # Interface functions
-        self.Exit.clicked.connect(self.exit)
-        self.Zoom_button.clicked.connect(self.zoom)
-        self.IR_button.clicked.connect(self.IR)
-        self.Capture_button.clicked.connect(self.on_capture_clicked)
+        
 
     #           Dropdowns
     def change_ISO(self,index):
