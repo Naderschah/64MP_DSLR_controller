@@ -70,7 +70,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         os.system('gpio -g mode 4 out')
 
         logging.info('Create Camera object')
-        self.tuning = Picamera2.load_tuning_file(os.path.abspath("./imx477_tuning_file_bare.json"))
+        self.tuning = Picamera2.load_tuning_file(os.path.abspath(str(Path.home())+"/Camera/imx477_tuning_file_bare.json"))
         self.camera = Picamera2(tuning=self.tuning)
 
         # Set comboBox items camera_controls returns (min,max, current)
