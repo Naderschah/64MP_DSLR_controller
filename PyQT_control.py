@@ -10,6 +10,7 @@ import os
 import datetime as dt
 import logging
 from pathlib import Path
+from libcamera import controls
 
 ZoomLevels = (1)
 
@@ -52,7 +53,10 @@ class Main(object):
 
 class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     menu_item_count = 17
-    custom_controls = {}
+    custom_controls = { "AeEnable": False,  # Auto Exposure Value
+                        "AwbEnable":False,  # Auto White Balance
+                        "ExposureValue":0, # No exposure Val compensation --> Shouldnt be required as AeEnable:False
+                        "NoiseReductionMode": controls.draft.NoiseReductionModeEnum.Off}
     zoom_index = 1 
     pixel_array = (9152, 6944) # TODO: Make method to retrieve
 
@@ -166,6 +170,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.camera.set_controls({"ScalerCrop": (*offset, *new_size)})
         self.ZoomLabel.setText(str(new_size))
         self.Zoom_button.setEnabled(True)
+        self.Zoom_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
         logging.debug('Changed zoom')
 
     def IR(self):
@@ -198,7 +203,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         """"""
         logging.info('Starting Capture {}'.format(dt.datetime.now().strftime('%m/%d/%Y-%H:%M:%S')))
         self.Capture_button.setEnabled(False)
-        #self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
+        self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
         #self.kill_camera()
         #logging.info('Configuring camera')
         #self.camera.stop()
@@ -268,7 +273,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         #self.camera.start()
         logging.info('Enabling button')
         self.Capture_button.setEnabled(True)
-        #self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
+        self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
         logging.info('ready')
 
     @QtCore.pyqtSlot()
