@@ -185,7 +185,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         
         cfg = self.camera.create_still_configuration()
         # Hope dng works
-        self.camera.switch_mode_and_capture_file(cfg, str(Path.home())+'/Images/{}.dng'.format(dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')),
+        self.camera.switch_mode_and_capture_file(cfg, str(Path.home())+'/Images/{}.png'.format(dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')),
                                                  signal_function=self.qpcamera.signal_done)
 
     @QtCore.pyqtSlot()
