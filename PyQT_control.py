@@ -58,7 +58,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
                         "ExposureValue":0, # No exposure Val compensation --> Shouldnt be required as AeEnable:False
                         "NoiseReductionMode": controls.draft.NoiseReductionModeEnum.Off}
     zoom_index = 1 
-    pixel_array = (9152, 6944) # TODO: Make method to retrieve
+    pixel_array = (4056, 3040) # TODO: Make method to retrieve
 
     def __init__(self):
         super().__init__()
@@ -136,8 +136,6 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.exposure_choice.setFixedHeight(50)
         self.ISO_choice.setFixedHeight(50)
 
-        
-
     #           Dropdowns
     def change_ISO(self,index):
         self.camera.set_controls({'AnalogueGain':int(float(self.ISO_choice.itemText(index)))})
@@ -177,26 +175,6 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         """Toggles Infrared"""
         os.system('gpio -g toggle 4')
 
-
-    # Capture related
-    @QtCore.pyqtSlot()
-    def on_capture_clicked_old(self):
-        """"""
-        logging.info('Starting Capture {}'.format(dt.datetime.now().strftime('%m/%d/%Y-%H:%M:%S')))
-        self.Capture_button.setEnabled(False)
-        self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
-
-        #self.kill_camera()
-        self.camera.stop()
-        logging.info('Killed and unreferenced Camera')
-        time.sleep(1)
-        os.chdir('/home/felix/Images')
-        self.process = QtCore.QProcess()
-        self.process.finished.connect(self.capture_done_cmd_line)
-        self.process.setProcessChannelMode(QtCore.QProcess.MergedChannels)
-        logging.info('CMD: libcamera-still --hdr=0 -v -o {} --raw --autofocus-on-capture=0 --autofocus-mode=manual --denoise=off --gain={} --nopreview --rawfull --shutter={} --flush=1 --ev=0 --timeout 100000 --immediate'.format(dt.datetime.now().strftime("%Y%m%d-%H%M%S"), self.custom_controls['AnalogueGain'],self.custom_controls['ExposureTime']))
-        logging.info('Capture started, time: {}'.format(dt.datetime.now()))
-        self.process.start('libcamera-still --hdr=0 -v -o {} --raw --autofocus-on-capture=0 --autofocus-mode=manual --denoise=off --gain={} --nopreview --rawfull --shutter={} --flush=1 --ev=0 --timeout 100000 --immediate'.format(dt.datetime.now().strftime("%Y%m%d-%H%M%S"), self.custom_controls['AnalogueGain'],self.custom_controls['ExposureTime']))
     
     @QtCore.pyqtSlot()
     def on_capture_clicked(self):
@@ -204,23 +182,73 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         logging.info('Starting Capture {}'.format(dt.datetime.now().strftime('%m/%d/%Y-%H:%M:%S')))
         self.Capture_button.setEnabled(False)
         self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
-        #self.kill_camera()
-        #logging.info('Configuring camera')
-        #self.camera.stop()
+        
         cfg = self.camera.create_still_configuration()
-        #self.camera.configure(cfg)
-        #self.camera.set_controls(self.custom_controls)
-        ##time.sleep(1)
-        #self.camera.start()
-        #self.camera.capture_file('/home/felix/Images/{}.png'.format(dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')), 
-        #                                signal_function=self.qpcamera.signal_done,)
-        #                                #wait = True)
-        self.camera.switch_mode_and_capture_file(cfg, str(Path.home())+'/Images/{}.png'.format(dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')),
+        # Hope dng works
+        self.camera.switch_mode_and_capture_file(cfg, str(Path.home())+'/Images/{}.dng'.format(dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')),
                                                  signal_function=self.qpcamera.signal_done)
 
     @QtCore.pyqtSlot()
+    def capture_done(self,*args):
+        logging.info('Waiting {}'.format(dt.datetime.now()))
+        if len(args) > 0:
+            res = self.camera.wait(*args)
+        else: logging.warning('Job completed before capture done called')
+        logging.info('captured {}'.format(dt.datetime.now()))
+        self.Capture_button.setEnabled(True)
+        self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
+        logging.info('ready')
+
+    @QtCore.pyqtSlot()
+    def exit(self):
+        sys.exit(0)
+
+    def set_preview(self,new_cam = False):
+        """Initiate camera preview redirected to Preview widget"""
+        # TODO: Check recommended for performance
+        if new_cam : self.camera = Picamera2()
+        # cfg
+        # Disable que to keep memory free,
+        self.camera.configure(self.camera.create_preview_configuration(queue=False ,main={"size":self.res})) 
+        self.camera.set_controls(self.custom_controls)
+        # GUI
+        self.qpcamera = QGlPicamera2(self.camera,width=self.res[0], height=self.res[1],keep_ar=False)# 
+        self.qpcamera.done_signal.connect(self.capture_done)
+        self.Preview.addWidget(self.qpcamera, 0,0,1,1)
+
+        return None
+
+    #               Here comes all the old code that may still be useful later
+    def kill_camera(self):
+        """ Old
+        Here we remove all references to the camera"""
+        #Found in code
+        self.qpcamera.cleanup()
+        self.Preview.removeWidget(self.qpcamera)
+        del self.qpcamera
+        self.camera.stop()
+        self.camera.close()
+        del self.camera
+
+        return None
+    
+    @QtCore.pyqtSlot()
+    def capture_done_cmd_line(self):
+        """OLD"""
+        logging.info('CMD line done')
+        logging.info('Output:\n{}'.format(self.process.readAllStandardOutput().data().decode()))
+        self.camera.stop()
+        self.set_preview()
+        self.camera.start()
+        logging.info('Enabling button')
+        self.Capture_button.setEnabled(True)
+        self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
+        logging.info('ready')
+
+    @QtCore.pyqtSlot()
     def one_shot_solution(self):
-        """all of this was capture clicked allows one image to be taken, and switch back to preview buffer allocation fails on second image"""
+        """ OLD
+        all of this was capture clicked allows one image to be taken, and switch back to preview buffer allocation fails on second image"""
         logging.info('Starting Capture'.format(dt.datetime.now().strftime('%m/%d/%Y-%H:%M:%S')))
         self.Capture_button.setEnabled(False)
         self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
@@ -254,71 +282,26 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
                                         wait = True)
         logging.info('Capture async')
 
+    # Capture related
     @QtCore.pyqtSlot()
-    def capture_done(self,*args):
-        logging.info('Waiting {}'.format(dt.datetime.now()))
-        if len(args) > 0:
-            res = self.camera.wait(*args)
-        else: logging.warning('Job completed before capture done called')
-        logging.info('captured {}'.format(dt.datetime.now()))
-        #logging.info('restarting camera')
-        #self.qpcamera.cleanup()
-        #del self.qpcamera
-        #self.camera.stop()
-        #self.camera.close()
-        #del self.camera:q
-        #time.sleep(1)
-        #logging.info('Configuring')
-        #self.set_preview()
-        #self.camera.start()
-        logging.info('Enabling button')
-        self.Capture_button.setEnabled(True)
-        self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
-        logging.info('ready')
+    def on_capture_clicked_old(self):
+        """Old for 64MP"""
+        logging.info('Starting Capture {}'.format(dt.datetime.now().strftime('%m/%d/%Y-%H:%M:%S')))
+        self.Capture_button.setEnabled(False)
+        self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
 
-    @QtCore.pyqtSlot()
-    def capture_done_cmd_line(self):
-        logging.info('CMD line done')
-        logging.info('Output:\n{}'.format(self.process.readAllStandardOutput().data().decode()))
+        #self.kill_camera()
         self.camera.stop()
-        self.set_preview()
-        self.camera.start()
-        logging.info('Enabling button')
-        self.Capture_button.setEnabled(True)
-        self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
-        logging.info('ready')
-
-    @QtCore.pyqtSlot()
-    def exit(self):
-        sys.exit(0)
-
-    def set_preview(self,new_cam = False):
-        """Initiate camera preview redirected to Preview widget"""
-        # TODO: Check recommended for performance
-        if new_cam : self.camera = Picamera2()
-        # cfg
-        # Disable que to keep memory free,
-        self.camera.configure(self.camera.create_preview_configuration(queue=False ,main={"size":self.res})) 
-        self.camera.set_controls(self.custom_controls)
-        # GUI
-        self.qpcamera = QGlPicamera2(self.camera,width=self.res[0], height=self.res[1],keep_ar=False)# 
-        self.qpcamera.done_signal.connect(self.capture_done)
-        self.Preview.addWidget(self.qpcamera, 0,0,1,1)
-
-        return None
+        logging.info('Killed and unreferenced Camera')
+        time.sleep(1)
+        os.chdir('/home/felix/Images')
+        self.process = QtCore.QProcess()
+        self.process.finished.connect(self.capture_done_cmd_line)
+        self.process.setProcessChannelMode(QtCore.QProcess.MergedChannels)
+        logging.info('CMD: libcamera-still --hdr=0 -v -o {} --raw --autofocus-on-capture=0 --autofocus-mode=manual --denoise=off --gain={} --nopreview --rawfull --shutter={} --flush=1 --ev=0 --timeout 100000 --immediate'.format(dt.datetime.now().strftime("%Y%m%d-%H%M%S"), self.custom_controls['AnalogueGain'],self.custom_controls['ExposureTime']))
+        logging.info('Capture started, time: {}'.format(dt.datetime.now()))
+        self.process.start('libcamera-still --hdr=0 -v -o {} --raw --autofocus-on-capture=0 --autofocus-mode=manual --denoise=off --gain={} --nopreview --rawfull --shutter={} --flush=1 --ev=0 --timeout 100000 --immediate'.format(dt.datetime.now().strftime("%Y%m%d-%H%M%S"), self.custom_controls['AnalogueGain'],self.custom_controls['ExposureTime']))
     
-    def kill_camera(self):
-        """Here we remove all references to the camera"""
-        #Found in code
-        self.qpcamera.cleanup()
-        self.Preview.removeWidget(self.qpcamera)
-        del self.qpcamera
-        self.camera.stop()
-        self.camera.close()
-        del self.camera
-
-        return None
-
 
 
 def get_res():
