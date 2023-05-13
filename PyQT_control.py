@@ -80,7 +80,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         ISO = self.ISO
         Exp = self.Exp
         for i in np.linspace(ISO[0]-1,ISO[1],self.menu_item_count): self.ISO_choice.addItem(str(i))
-        for i in np.logspace(start=(Exp[0]),stop=self.menu_item_count_exp,num=self.menu_item_count_exp,base=2): self.exposure_choice.addItem(str(i))
+        for i in np.logspace(start=int(np.log2(Exp[0]))+1,stop=self.menu_item_count_exp,num=self.menu_item_count_exp-(int(np.log2(Exp[0]))+1),base=2): self.exposure_choice.addItem(str(i))
         # FIXME: ISO an EXP none on load:
         self.custom_controls['AnalogueGain']=1
         self.custom_controls['ExposureTime']=1
