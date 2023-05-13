@@ -218,6 +218,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
             else:
                 self.custom_controls['ExposureTime'] = exp_aim
             print(exp_aim, iso_aim)
+            sys.exit(0)
             self.custom_controls['AnalogueGain'] = iso_aim
 
             self.camera.stop()
@@ -277,7 +278,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
             self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
             logging.info('ready')
             # Add Exif Data in new thread as it takes a while
-            thread.start_new_thread(os.system('exiftool -Exposure={} -ISO={} -Lens={} -overwrite_original {}'.format(self.custom_controls['ExposureTime'],
+            threading.start_new_thread(os.system('exiftool -Exposure={} -ISO={} -Lens={} -overwrite_original {}'.format(self.custom_controls['ExposureTime'],
                                                                          self.custom_controls['AnalogueGain'],'"EO Ultra Compact Objective"',
                                                                          str(Path.home())+'/Images/{}.png'.format(self.fname))))
         
@@ -288,7 +289,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
             else: logging.warning('Job completed before capture done called')
             logging.info('captured {} HDR {}'.format(dt.datetime.now(), self.HDR_counter))
             # Add Exif Data in new thread as it takes a while
-            thread.start_new_thread(os.system('exiftool -Exposure={} -ISO={} -Lens={} -overwrite_original {}'.format(self.mod_controls['ExposureTime'],
+            threading.start_new_thread(os.system('exiftool -Exposure={} -ISO={} -Lens={} -overwrite_original {}'.format(self.mod_controls['ExposureTime'],
                                                                          self.mod_controls['AnalogueGain'],'"EO Ultra Compact Objective"',
                                                                          str(Path.home())+'/Images/{}_{}.png'.format(self.fname, self.HDR_counter-1))))
             if self.HDR_counter == 3:
