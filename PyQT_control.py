@@ -198,11 +198,11 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
             current_exp = float(self.exposure_choice.currentText())
             current_iso = float(self.ISO_choice.currentText())
             # Aim
-            iso_aim = 1
+            iso_aim = 5
             if self.HDR_check.isChecked():
                 exp_aim = current_exp * self.hdr_rel_exp[2] * 2**(current_iso - 1)
             else:
-                exp_aim = current_exp * 2**(current_iso - 1)
+                exp_aim = current_exp * 2**(current_iso - iso_aim)
             # Check if aim within feasable range
             while True:
                 if exp_aim < self.camera.camera_controls['ExposureTime'][1]:
