@@ -210,7 +210,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         HDR_counter = self.HDR_counter
         self.HDR_counter += 1
         # dict with num: rel exp time
-        hdr_rel_exp = {0:0.7, 1:1, 2:1.3}
+        hdr_rel_exp = {0:0.5, 1:1, 2:1.5}
         cfg = self.camera.create_still_configuration()
         # Set exp for HDR shot (get current multiply by rel exp time)
         self.custom_controls['ExposureTime']=int(float(self.exposure_choice.currentText())*hdr_rel_exp[HDR_counter])
