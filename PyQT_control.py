@@ -242,6 +242,12 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     def do_hdr(self):
         # if counter reached 3
         if self.HDR_counter == 0:
+            # Set exp and iso back to original 
+            current_exp = float(self.exposure_choice.currentText())
+            current_iso = float(self.ISO_choice.currentText())
+            self.custom_controls['ExposureTime'] = int(current_exp)
+            self.custom_controls['AnalogueGain'] = int(current_iso)
+            self.camera.set_controls(self.mod_controls)
             self.Capture_button.setEnabled(False)
             self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
         logging.info('Starting HDR Capture {}'.format(dt.datetime.now().strftime('%m/%d/%Y-%H:%M:%S')))
