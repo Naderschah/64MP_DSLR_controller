@@ -11,7 +11,7 @@ import datetime as dt
 import logging
 from pathlib import Path
 from libcamera import controls
-import thread
+import threading
 
 ZoomLevels = (1)
 
