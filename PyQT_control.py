@@ -295,7 +295,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
             # Add Exif Data in new thread as it takes a while
             threading.Thread(target=os.system, args=('exiftool -Exposure={} -ISO={} -Lens={} -overwrite_original {}'.format(self.mod_controls['ExposureTime'],
                                                                          self.mod_controls['AnalogueGain'],'"EO Ultra Compact Objective"',
-                                                                         str(Path.home())+'/Images/{}_{}.png'.format(self.fname, self.HDR_counter-1))))
+                                                                         str(Path.home())+'/Images/{}_{}.png'.format(self.fname, self.HDR_counter-1)))).start()
             if self.HDR_counter == 3:
                 logging.info('Completed HDR image')
                 self.Capture_button.setEnabled(True)
