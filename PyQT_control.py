@@ -252,7 +252,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         
         cfg = self.camera.create_still_configuration()
         # Set exp for HDR shot 
-        self.mod_controls = self.custom_controls
+        self.mod_controls = self.custom_controls.copy()
         self.mod_controls['ExposureTime']=int(self.custom_controls['ExposureTime']*self.hdr_rel_exp[HDR_counter])
         # TODO: What is quicker waiting for frames to have settings applied or restart cam
         self.camera.stop()
