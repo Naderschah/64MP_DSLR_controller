@@ -195,8 +195,8 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         # Minimize ISO if possible
         if float(self.ISO_choice.currentText())>1 and not self.been_minimized:
             # Current
-            current_exp = self.exposure_choice.currentText()
-            current_iso = self.ISO_choice.currentText()
+            current_exp = float(self.exposure_choice.currentText())
+            current_iso = float(self.ISO_choice.currentText())
             # Aim
             iso_aim = 1
             if self.HDR_check.isChecked():
