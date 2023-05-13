@@ -285,7 +285,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
             cmd = 'exiftool -Exposure={} -ISO={} -Lens={} -overwrite_original {}'.format(self.custom_controls['ExposureTime'],
                                                                          self.custom_controls['AnalogueGain'],'"EO Ultra Compact Objective"',
                                                                          str(Path.home())+'/Images/{}.png'.format(self.fname))
-            threading.Thread(target=os.system, args=(cmd)).start()
+            threading.Thread(target=subprocess.run, args=(cmd)).start()
         
         else: # HDR imaging chain
             logging.info('Waiting {}'.format(dt.datetime.now()))
@@ -297,7 +297,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
             cmd = 'exiftool -Exposure={} -ISO={} -Lens={} -overwrite_original {}'.format(self.mod_controls['ExposureTime'],
                                                                          self.mod_controls['AnalogueGain'],'"EO Ultra Compact Objective"',
                                                                          str(Path.home())+'/Images/{}_{}.png'.format(self.fname, self.HDR_counter-1))
-            threading.Thread(target=os.system, args=(cmd)).start()
+            threading.Thread(target=subprocess.run, args=(cmd)).start()
             if self.HDR_counter == 3:
                 logging.info('Completed HDR image')
                 self.Capture_button.setEnabled(True)
