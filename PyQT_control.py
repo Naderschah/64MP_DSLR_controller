@@ -192,36 +192,37 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     @QtCore.pyqtSlot()
     def on_capture_clicked(self):
         """"""
+        # FIXME: Measure how analogue gian affects brightness as it is not actually ISO -> after make some table and choose halving intervals 
         # Minimize ISO if possible
-        if float(self.ISO_choice.currentText())>1 and not self.been_minimized:
-            # Current
-            current_exp = float(self.exposure_choice.currentText())
-            current_iso = float(self.ISO_choice.currentText())
-            # Aim
-            iso_aim = 5
-            if self.HDR_check.isChecked():
-                exp_aim = current_exp * self.hdr_rel_exp[2] * 2**(current_iso - 1)
-            else:
-                exp_aim = current_exp * 2**(current_iso - iso_aim)
-            # Check if aim within feasable range
-            while True:
-                if exp_aim < self.camera.camera_controls['ExposureTime'][1]:
-                    break
-                else:
-                    # Increment ISO aim
-                    iso_aim += 1
-                    # Decrement exp aim
-                    exp_aim /= 2
-            if self.HDR_check.isChecked():
-                self.custom_controls['ExposureTime'] = int(exp_aim/1.5)
-            else:
-                self.custom_controls['ExposureTime'] = int(exp_aim)
-            self.custom_controls['AnalogueGain'] = int(iso_aim)
+        #if float(self.ISO_choice.currentText())>1 and not self.been_minimized:
+        #    # Current
+        #    current_exp = float(self.exposure_choice.currentText())
+        #    current_iso = float(self.ISO_choice.currentText())
+        #    # Aim
+        #    iso_aim = 5
+        #    if self.HDR_check.isChecked():
+        #        exp_aim = current_exp * self.hdr_rel_exp[2] * 2**(current_iso - 1)
+        #    else:
+        #        exp_aim = current_exp * 2**(current_iso - iso_aim)
+        #    # Check if aim within feasable range
+        #    while True:
+        #        if exp_aim < self.camera.camera_controls['ExposureTime'][1]:
+        #            break
+        #        else:
+        #            # Increment ISO aim
+        #            iso_aim += 1
+        #            # Decrement exp aim
+        #            exp_aim /= 2
+        #    if self.HDR_check.isChecked():
+        #        self.custom_controls['ExposureTime'] = int(exp_aim/1.5)
+        #    else:
+        #        self.custom_controls['ExposureTime'] = int(exp_aim)
+        #    self.custom_controls['AnalogueGain'] = int(iso_aim)
 
-            self.camera.stop()
-            self.camera.set_controls(self.custom_controls)
-            self.camera.start()
-            self.been_minimized = True
+        #    self.camera.stop()
+        #    self.camera.set_controls(self.custom_controls)
+        #    self.camera.start()
+        #    self.been_minimized = True
 
         if not self.HDR_check.isChecked():
             logging.info('Starting Capture {}'.format(dt.datetime.now().strftime('%m/%d/%Y-%H:%M:%S')))
@@ -247,7 +248,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
             current_iso = float(self.ISO_choice.currentText())
             self.custom_controls['ExposureTime'] = int(current_exp)
             self.custom_controls['AnalogueGain'] = int(current_iso)
-            self.camera.set_controls(self.mod_controls)
+            self.camera.set_controls(self.custom_controls)
             self.Capture_button.setEnabled(False)
             self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
         logging.info('Starting HDR Capture {}'.format(dt.datetime.now().strftime('%m/%d/%Y-%H:%M:%S')))
