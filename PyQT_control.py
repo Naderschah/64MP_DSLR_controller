@@ -230,7 +230,8 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         
             cfg = self.camera.create_still_configuration()
             # Hope dng works
-            self.camera.switch_mode_and_capture_file(cfg, str(Path.home())+'/Images/{}.png'.format(dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')),
+            self.fname = dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')
+            self.camera.switch_mode_and_capture_file(cfg, str(Path.home())+'/Images/{}.png'.format(self.fname),
                                                  signal_function=self.qpcamera.signal_done)
         else:
             # Take HDR image
@@ -250,16 +251,17 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         # dict with num: rel exp time
         
         cfg = self.camera.create_still_configuration()
-        # Set exp for HDR shot (get current multiply by rel exp time)
-        self.custom_controls['ExposureTime']=int(float(self.exposure_choice.currentText())*self.hdr_rel_exp[HDR_counter])
+        # Set exp for HDR shot 
+        self.mod_controls = self.custom_controls
+        self.mod_controls['ExposureTime']=int(self.custom_controls['ExposureTime']*self.hdr_rel_exp[HDR_counter])
         # TODO: What is quicker waiting for frames to have settings applied or restart cam
         self.camera.stop()
-        self.camera.set_controls(self.custom_controls)
+        self.camera.set_controls(self.mod_controls)
         self.camera.start()
         # Take image
         self.camera.switch_mode_and_capture_file(cfg, str(Path.home())+'/Images/{}_{}.png'.format(self.fname, HDR_counter),
                                                 signal_function=self.qpcamera.signal_done)
-
+        
 
     @QtCore.pyqtSlot()
     def capture_done(self,*args):
@@ -272,6 +274,10 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
             self.Capture_button.setEnabled(True)
             self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
             logging.info('ready')
+            # Add Exif Data
+            os.system('exiftool -Exposure={} -ISO={} -Lens={} {}'.format(self.custom_controls['ExposureTime'],
+                                                                         self.custom_controls['AnalogueGain'],'EO Ultra Compact Objective',
+                                                                         str(Path.home())+'/Images/{}.png'.format(self.fname)))
         
         else: # HDR imaging chain
             logging.info('Waiting {}'.format(dt.datetime.now()))
@@ -279,7 +285,10 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
                 res = self.camera.wait(*args)
             else: logging.warning('Job completed before capture done called')
             logging.info('captured {} HDR {}'.format(dt.datetime.now(), self.HDR_counter))
-
+            # Add Exif Data
+            os.system('exiftool -Exposure={} -ISO={} -Lens={} {}'.format(self.mod_controls['ExposureTime'],
+                                                                         self.mod_controls['AnalogueGain'],'EO Ultra Compact Objective',
+                                                                         str(Path.home())+'/Images/{}_{}.png'.format(self.fname,self.HDR_counter)))
             if self.HDR_counter == 3:
                 logging.info('Completed HDR image')
                 self.Capture_button.setEnabled(True)
