@@ -55,7 +55,6 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     menu_item_count = 17
     menu_item_count_exp = 29
     HDR_counter = 0
-    HDR = False
     custom_controls = { "AeEnable": False,  # Auto Exposure Value
                         "AwbEnable":False,  # Auto White Balance
                         "ExposureValue":0, # No exposure Val compensation --> Shouldnt be required as AeEnable:False
@@ -226,7 +225,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
 
     @QtCore.pyqtSlot()
     def capture_done(self,*args):
-        if not self.HDR: # none HDR imaging chain
+        if not self.HDR_check.isChecked(): # none HDR imaging chain
             logging.info('Waiting {}'.format(dt.datetime.now()))
             if len(args) > 0:
                 res = self.camera.wait(*args)
