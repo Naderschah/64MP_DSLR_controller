@@ -192,7 +192,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     def on_capture_clicked(self):
         """"""
         # Minimize ISO if possible
-        if int(self.ISO_choice.currentText())>1 and self.been_minimized:
+        if float(self.ISO_choice.currentText())>1 and self.been_minimized:
             # Current
             current_exp = self.exposure_choice.currentText()
             current_iso = self.ISO_choice.currentText()
