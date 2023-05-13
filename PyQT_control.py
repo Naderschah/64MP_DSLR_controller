@@ -219,7 +219,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.camera.set_controls(self.custom_controls)
         self.camera.start()
         # Take image
-        self.camera.switch_mode_and_capture_file(cfg, str(Path.home())+'/Images/{}.png'.format(self.fname, HDR_counter),
+        self.camera.switch_mode_and_capture_file(cfg, str(Path.home())+'/Images/{}_{}.png'.format(self.fname, HDR_counter),
                                                 signal_function=self.qpcamera.signal_done)
 
 
@@ -246,6 +246,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
                 logging.info('Completed HDR image')
                 self.Capture_button.setEnabled(True)
                 self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
+                self.HDR_counter = 0
                 return
             else:
                 self.do_hdr()
