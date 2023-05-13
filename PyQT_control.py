@@ -213,10 +213,10 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
                     # Decrement exp aim
                     exp_aim /= 2
             if self.HDR_check.isChecked():
-                self.custom_controls['ExposureTime'] = exp_aim/1.5
+                self.custom_controls['ExposureTime'] = int(exp_aim/1.5)
             else:
-                self.custom_controls['ExposureTime'] = exp_aim
-            self.custom_controls['AnalogueGain'] = iso_aim
+                self.custom_controls['ExposureTime'] = int(exp_aim)
+            self.custom_controls['AnalogueGain'] = int(iso_aim)
 
             self.camera.stop()
             self.camera.set_controls(self.custom_controls)
