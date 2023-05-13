@@ -193,7 +193,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     def on_capture_clicked(self):
         """"""
         # Minimize ISO if possible
-        if float(self.ISO_choice.currentText())>1 and self.been_minimized:
+        if float(self.ISO_choice.currentText())>1 and not self.been_minimized:
             # Current
             current_exp = self.exposure_choice.currentText()
             current_iso = self.ISO_choice.currentText()
@@ -204,7 +204,6 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
             else:
                 exp_aim = current_exp * 2**(current_iso - 1)
             # Check if aim within feasable range
-            print(exp_aim, iso_aim)
             while True:
                 if exp_aim < self.camera.camera_controls['ExposureTime'][1]:
                     break
@@ -217,8 +216,6 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
                 self.custom_controls['ExposureTime'] = exp_aim/1.5
             else:
                 self.custom_controls['ExposureTime'] = exp_aim
-            print(exp_aim, iso_aim)
-            sys.exit(0)
             self.custom_controls['AnalogueGain'] = iso_aim
 
             self.camera.stop()
