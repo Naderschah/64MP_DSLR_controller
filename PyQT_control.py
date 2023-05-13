@@ -52,9 +52,15 @@ class Main(object):
         self.viewfinder.show()
 
 class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
+    # Menu item properties
     menu_item_count = 17
     menu_item_count_exp = 29
+    # Iso minimization properties
+    been_minimized = False
+    # HDR properties
+    hdr_rel_exp = {0:0.5, 1:1, 2:1.5}
     HDR_counter = 0
+    # Control properties
     custom_controls = { "AeEnable": False,  # Auto Exposure Value
                         "AwbEnable":False,  # Auto White Balance
                         "ExposureValue":0, # No exposure Val compensation --> Shouldnt be required as AeEnable:False
@@ -185,6 +191,38 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     @QtCore.pyqtSlot()
     def on_capture_clicked(self):
         """"""
+        # Minimize ISO if possible
+        if int(self.ISO_choice.currentText())>1 and self.been_minimized:
+            # Current
+            current_exp = self.exposure_choice.currentText()
+            current_iso = self.ISO_choice.currentText()
+            # Aim
+            iso_aim = 1
+            if self.HDR_check.isChecked():
+                exp_aim = current_exp * self.hdr_rel_exp[2] * 2**(current_iso - 1)
+            else:
+                exp_aim = current_exp * 2**(current_iso - 1)
+            # Check if aim within feasable range
+            while True:
+                if exp_aim < self.camera.camera_controls['ExposureTime'][1]:
+                    break
+                else:
+                    # Increment ISO aim
+                    iso_aim += 1
+                    # Decrement exp aim
+                    exp_aim /= 2
+            if self.HDR_check.isChecked():
+                self.custom_controls['ExposureTime'] = exp_aim/1.5
+            else:
+                self.custom_controls['ExposureTime'] = exp_aim
+
+            self.custom_controls['AnalogueGain'] = iso_aim
+
+            self.camera.stop()
+            self.camera.set_controls(self.custom_controls)
+            self.camera.start()
+            self.been_minimized = True
+
         if not self.HDR_check.isChecked():
             logging.info('Starting Capture {}'.format(dt.datetime.now().strftime('%m/%d/%Y-%H:%M:%S')))
             self.Capture_button.setEnabled(False)
@@ -210,10 +248,10 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         HDR_counter = self.HDR_counter
         self.HDR_counter += 1
         # dict with num: rel exp time
-        hdr_rel_exp = {0:0.5, 1:1, 2:1.5}
+        
         cfg = self.camera.create_still_configuration()
         # Set exp for HDR shot (get current multiply by rel exp time)
-        self.custom_controls['ExposureTime']=int(float(self.exposure_choice.currentText())*hdr_rel_exp[HDR_counter])
+        self.custom_controls['ExposureTime']=int(float(self.exposure_choice.currentText())*self.hdr_rel_exp[HDR_counter])
         # TODO: What is quicker waiting for frames to have settings applied or restart cam
         self.camera.stop()
         self.camera.set_controls(self.custom_controls)
@@ -250,6 +288,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
                 return
             else:
                 self.do_hdr()
+        self.been_minimized = False
 
     @QtCore.pyqtSlot()
     def exit(self):
