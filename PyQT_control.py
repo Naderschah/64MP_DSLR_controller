@@ -53,7 +53,7 @@ class Main(object):
 
 class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     menu_item_count = 17
-    menu_item_count_exp = None
+    menu_item_count_exp = 29
     custom_controls = { "AeEnable": False,  # Auto Exposure Value
                         "AwbEnable":False,  # Auto White Balance
                         "ExposureValue":0, # No exposure Val compensation --> Shouldnt be required as AeEnable:False
