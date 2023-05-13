@@ -185,7 +185,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     @QtCore.pyqtSlot()
     def on_capture_clicked(self):
         """"""
-        if not HDR:
+        if not self.HDR_check.isChecked():
             logging.info('Starting Capture {}'.format(dt.datetime.now().strftime('%m/%d/%Y-%H:%M:%S')))
             self.Capture_button.setEnabled(False)
             self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
