@@ -54,6 +54,8 @@ class Main(object):
 class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     menu_item_count = 17
     menu_item_count_exp = 29
+    HDR_counter = 0
+    HDR = False
     custom_controls = { "AeEnable": False,  # Auto Exposure Value
                         "AwbEnable":False,  # Auto White Balance
                         "ExposureValue":0, # No exposure Val compensation --> Shouldnt be required as AeEnable:False
@@ -127,6 +129,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.exposure_choice.setStyleSheet('QComboBox {background-color: #455a64; color: #00c853;font: bold 30px;}')
         self.ISO_choice.setStyleSheet('QComboBox {background-color: #455a64; color: #00c853;font: bold 30px;}')
         self.IR_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
+        self.HDR_check.setStyleSheet('QCheckBox {background-color: #455a64; color: #00c853;font: bold 30px;}')
 
         self.ISO_label.setStyleSheet('QLabel {background-color: #455a64; color: #00c853;font: bold 30px;}')
         self.exposure_label.setStyleSheet('QLabel {background-color: #455a64; color: #00c853;font: bold 30px;}')
@@ -138,6 +141,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.Exit.setFixedHeight(50)
         self.exposure_choice.setFixedHeight(50)
         self.ISO_choice.setFixedHeight(50)
+        self.HDR_check.setFixedHeight(50)
 
     #           Dropdowns
     def change_ISO(self,index):
@@ -182,25 +186,70 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     @QtCore.pyqtSlot()
     def on_capture_clicked(self):
         """"""
-        logging.info('Starting Capture {}'.format(dt.datetime.now().strftime('%m/%d/%Y-%H:%M:%S')))
-        self.Capture_button.setEnabled(False)
-        self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
+        if not HDR:
+            logging.info('Starting Capture {}'.format(dt.datetime.now().strftime('%m/%d/%Y-%H:%M:%S')))
+            self.Capture_button.setEnabled(False)
+            self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
         
-        cfg = self.camera.create_still_configuration()
-        # Hope dng works
-        self.camera.switch_mode_and_capture_file(cfg, str(Path.home())+'/Images/{}.png'.format(dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')),
+            cfg = self.camera.create_still_configuration()
+            # Hope dng works
+            self.camera.switch_mode_and_capture_file(cfg, str(Path.home())+'/Images/{}.png'.format(dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')),
                                                  signal_function=self.qpcamera.signal_done)
+        else:
+            # Take HDR image
+            # Set one file name and then do _ hdr img nr
+            self.fname = dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')
+            self.do_hdr()
+
+    def do_hdr(self):
+        # if counter reached 3
+        if self.HDR_counter == 0:
+            self.Capture_button.setEnabled(False)
+            self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
+        logging.info('Starting HDR Capture {}'.format(dt.datetime.now().strftime('%m/%d/%Y-%H:%M:%S')))
+        # Increment HDR counter and keep copy of old for file naming
+        HDR_counter = self.HDR_counter
+        self.HDR_counter += 1
+        # dict with num: rel exp time
+        hdr_rel_exp = {0:0.7, 1:1, 2:1.3}
+        cfg = self.camera.create_still_configuration()
+        # Set exp for HDR shot (get current multiply by rel exp time)
+        self.custom_controls['ExposureTime']=int(float(self.exposure_choice.currentText())*hdr_rel_exp[self.HDR_counter])
+        # TODO: What is quicker waiting for frames to have settings applied or restart cam
+        self.camera.stop()
+        self.camera.set_controls(self.custom_controls)
+        self.camera.start()
+        # Take image
+        self.camera.switch_mode_and_capture_file(cfg, str(Path.home())+'/Images/{}.png'.format(self.fname, HDR_counter),
+                                                signal_function=self.qpcamera.signal_done)
+
 
     @QtCore.pyqtSlot()
     def capture_done(self,*args):
-        logging.info('Waiting {}'.format(dt.datetime.now()))
-        if len(args) > 0:
-            res = self.camera.wait(*args)
-        else: logging.warning('Job completed before capture done called')
-        logging.info('captured {}'.format(dt.datetime.now()))
-        self.Capture_button.setEnabled(True)
-        self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
-        logging.info('ready')
+        if not self.HDR: # none HDR imaging chain
+            logging.info('Waiting {}'.format(dt.datetime.now()))
+            if len(args) > 0:
+                res = self.camera.wait(*args)
+            else: logging.warning('Job completed before capture done called')
+            logging.info('captured {}'.format(dt.datetime.now()))
+            self.Capture_button.setEnabled(True)
+            self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
+            logging.info('ready')
+        
+        else: # HDR imaging chain
+            logging.info('Waiting {}'.format(dt.datetime.now()))
+            if len(args) > 0:
+                res = self.camera.wait(*args)
+            else: logging.warning('Job completed before capture done called')
+            logging.info('captured {} HDR {}'.format(dt.datetime.now(), self.HDR_counter))
+
+            if self.HDR_counter == 3:
+                logging.info('Completed HDR image')
+                self.Capture_button.setEnabled(True)
+                self.Capture_button.setStyleSheet('QPushButton {background-color: #455a64; color: #00c853;font: bold 30px;}')
+                return
+            else:
+                self.do_hdr()
 
     @QtCore.pyqtSlot()
     def exit(self):
