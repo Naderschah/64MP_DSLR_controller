@@ -12,6 +12,7 @@ import logging
 from pathlib import Path
 from libcamera import controls
 import threading
+import RPi.GPIO as GPIO
 
 ZoomLevels = (1)
 
@@ -333,6 +334,157 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.Preview.addWidget(self.qpcamera, 0,0,1,1)
 
         return None
+
+
+class Grid_Handler:
+    """Class to keep track of the imaging grid"""
+    # The displacement is measured in ms so the grid is step size dependent
+    # TODO: Make step to mm conversion
+    # Keep track of bounds
+    gridbounds = [0,0,0]
+    # Position in grid
+    pos = [0,0,0]
+    last_pos = [0,0,0]
+    def __init__(self,motor_x,motor_y=None,motor_z=None) -> None:
+        # Implement File handler here
+        # Implement end stop control
+        # Implement depth map recording 
+        # Possibly implement automatic rsync from raspi to pc but dont know if that will work well
+        # ----- Could just set rsync to run every 5 minutes when raspberry images
+        
+        # Motors
+        self.x = motor_x
+        if motor_y is not None:
+            self.y = motor_y
+        else:
+            self.y = None
+        if motor_z is not None:
+            self.z = motor_z
+        else:
+            self.z = None
+        self.motors = [self.x, self.y, self.z]
+
+
+        pass
+
+    def make_endstop(self, end, axis):
+        """
+        end : current position and distance from 0 point TODO: Establish if this is meant to be front or back
+        axis : int describing axes x:0, y:1, z:2 
+        """
+        self.gridbounds[axis] = end
+        return
+
+    def move_dist(self,disp):
+        """
+        coord: [x,...] list with coords to go to
+                - Length doesnt matter will only do for provided axes (based on list index)
+        """
+        # Check that all within bounds
+        for i in range(len(disp)):
+            if not self.gridbounds[i] >= self.pos[i]+disp[i]:
+                raise Exception('Coordinate out of Grid!')
+        # If check passed do
+        # First set direction
+        for i in range(len(disp)):
+            # cond 1 : disp in FIXME direction, and FIXME
+            if disp[i] < 0 and self.motors[i].dir: self.motors[i].toggle_dir()
+            elif disp[i] >  0 and self.motors[i].dir: self.motors[i].toggle_dir()
+        # Do movement
+        for i in range(len(disp)):
+            # Do disp steps times
+            for i in range(disp[i]): self.motors[i].step()
+        # Save last state and new state
+        self.last_pos = self.pos
+        # Iterate in case not all coords are given in the move
+        for i in range(len(disp)):
+            self.pos[i] = self.pos[i]+disp[i]
+
+    def move_to_coord(self,coord):
+        """
+        coord: [x,...] list with coords to go to
+        """
+        # Get coord difference
+        disp = self.pos - coord
+        self.move_dist(disp)
+        return
+
+
+
+
+class Motor_Control: # TODO: CHekc how 12 V motor control works -> for fan
+    """
+    Motor Controler for Sparkfun Big Easy Driver - single motor control
+    Initiate a second instance for both motors 
+    """
+    # True == On , False == Off
+    enabled = False
+    # False = default dir = pin low; True = other dir = pin high 
+    dir = False
+    def __init__(self, gpio_pins={'enable':17, 'ms1':27, 'ms2':22, 'ms3':10, 'dir':9, 'step':11} , 
+                 dx=1/16):
+        """
+        gpio_pins : dict of pin name to gpio location
+         keys required -> ms1 ms2 ms3 enable step dir
+        dx : Step size
+        """
+        # Set output mode --> All pins are output
+        for key in gpio_pins:
+            GPIO.setup(key, GPIO.OUT)
+        self.gpio_pins = gpio_pins
+        self.set_step_mode(dx)
+        # Set step low (dont know if it is by default --> Probably tho)
+        GPIO.setup(self.gpio_pins['step'], GPIO.LOW)
+        self.trigger_on_off()
+        return
+
+    def set_step_mode(self, step_size):
+        """Set stepping mode"""
+        step_dir = {1:[0,0,0], 1/2:[1,0,0], 1/4:[0,1,0], 1/8:[1,1,0], 1/16:[1,1,1]}
+        pinout = step_dir[step_size]
+        pinout = [GPIO.HIGH if i==1 else GPIO.LOW for i in pinout]
+        GPIO.setup(self.gpio_pins['ms1'], pinout[0])
+        GPIO.setup(self.gpio_pins['ms2'], pinout[1])
+        GPIO.setup(self.gpio_pins['ms3'], pinout[2])
+        self.step_size = step_size
+
+    def toggle_dir(self):
+        """Change state of dir pin"""
+        if self.dir:
+            GPIO.setup(self.gpio_pins['dir'], GPIO.LOW)
+            self.dir = False
+        else:
+            GPIO.setup(self.gpio_pins['dir'], GPIO.HIGH)
+            self.dir = True
+        return
+
+    def trigger_on_off(self):
+        """Change state of enable pin"""
+        if self.enabled:
+            GPIO.setup(self.gpio_pins['enable'], GPIO.LOW)
+            self.enabled = False
+        else:
+            GPIO.setup(self.gpio_pins['enable'], GPIO.HIGH)
+            self.enabled = True
+        return
+    
+    def step(self):
+        """Step is triggered by pulling gpio low to high"""
+        # Cause step
+        GPIO.setup(self.gpio_pins['step'], GPIO.HIGH)
+        # Bakc to orig
+        GPIO.setup(self.gpio_pins['step'], GPIO.LOW)
+
+
+    def close(self):
+        # First disable
+        GPIO.setup(self.gpio_pins['enable'], GPIO.LOW)
+        # Set all back to low
+        for key in self.gpio_pins:
+            GPIO.setup(key, GPIO.LOW)
+        return
+
+
 
 
 def get_res():
