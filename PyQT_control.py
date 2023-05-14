@@ -428,9 +428,11 @@ class Motor_Control: # TODO: CHekc how 12 V motor control works -> for fan
          keys required -> ms1 ms2 ms3 enable step dir
         dx : Step size
         """
+        # Set mode to follow BCM not layout numbering
+        GPIO.setmode(GPIO.BCM)
         # Set output mode --> All pins are output
         for key in gpio_pins:
-            GPIO.setup(key, GPIO.OUT)
+            GPIO.setup(gpio_pins[key], GPIO.OUT)
         self.gpio_pins = gpio_pins
         self.set_step_mode(dx)
         # Set step low (dont know if it is by default --> Probably tho)
@@ -481,7 +483,7 @@ class Motor_Control: # TODO: CHekc how 12 V motor control works -> for fan
         GPIO.setup(self.gpio_pins['enable'], GPIO.LOW)
         # Set all back to low
         for key in self.gpio_pins:
-            GPIO.setup(key, GPIO.LOW)
+            GPIO.setup(self.gpio_pins[key], GPIO.LOW)
         return
 
 
