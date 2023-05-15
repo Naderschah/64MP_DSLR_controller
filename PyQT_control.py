@@ -339,7 +339,8 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.Preview.addWidget(self.qpcamera, 0,0,1,1)
 
         return None
-# TODO : Build GUI controller 
+    
+
 class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     img_config = {'HDR': False, 'IR':False, 'motor_x':False,'motor_y':False, 'motor_z':False, 'IR_and_normal':False,'step_size':1,}
     img_dir = None
@@ -365,7 +366,10 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.gpio_pins = gpio_pins
         else:
             logging.info('Using default gpio pins')
-        
+    
+    def basic_conf_and_style(self):
+        self.checkbox_x.setCheckState(True)
+        return
 
     def assign_button_function(self):
         # Buttons
@@ -383,6 +387,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         self.combobox_gain.currentIndexChanged.connect(self.change_gain)
 
         self.combobox_step.currentIndexChanged.connect(self.change_step)
+
+        return
 
 
     # Change dropdown 
@@ -522,7 +528,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
     def set_layout(self):
         # Set widget width, couldnt find in designer
         for widget in self.verticalLayout.children():
-            widget.setFixedWidth(50)
+            widget.setFixedWidth(20)
 
         # Add dropdown items
         # Populate motors
