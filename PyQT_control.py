@@ -366,6 +366,10 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.gpio_pins = gpio_pins
         else:
             logging.info('Using default gpio pins')
+
+        self.setFixedHeight()
+
+        return
     
     def basic_conf_and_style(self):
         self.checkbox_x.setCheckState(True)
