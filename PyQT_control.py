@@ -53,10 +53,10 @@ Picamera2.set_logging(Picamera2.DEBUG)
 
 class Main(object):
     def __init__(self) -> None:
-        self.viewfinder = Viewfinder()
+        self.configure = Configurator()
        
         self.res=get_res()
-        self.viewfinder.show()
+        self.configure.show()
 
 class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
     # Menu item properties
