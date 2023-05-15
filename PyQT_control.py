@@ -18,7 +18,7 @@ from libcamera import controls
 import threading
 import RPi.GPIO as GPIO
 from functools import partial
-
+from PyQt4.QtGui import QApplication
 ZoomLevels = (1)
 
 
@@ -494,6 +494,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
     own_step = 1
     def __init__(self, parent,gridcontroler = None):
         super().__init__()
+        QApplication.setQuitOnLastWindowClosed(False)
         # pass reference to parent window
         self.parent = parent
         self.grid = gridcontroler
