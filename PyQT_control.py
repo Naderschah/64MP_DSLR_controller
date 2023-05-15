@@ -355,12 +355,16 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                         "NoiseReductionMode": controls.draft.NoiseReductionModeEnum.Off,
                         'Exposure':2,
                         'AnalogueGain':1}
-    def __init__(self,gpio_pins) -> None:
+    def __init__(self,gpio_pins=None) -> None:
         super().__init__()
         self.setupUi(self)
 
         self.assign_button_function()
         # TODO : Populate dropdowns
+        if gpio_pins is not None:
+            self.gpio_pins = gpio_pins
+        else:
+            logging.info('Using default gpio pins')
         
 
     def assign_button_function(self):
@@ -412,7 +416,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     def start_imaging(self):
         """Starts automatic imaging chain"""
         # Set mode for pin 4 (IR) if it hasnt been set yet
-        os.system('gpio -g mode 4 out')
+        os.system('gpio -g mode {} out'.format(self.gpio_pins['IR']))
         if self.grid is None: # Add message notify-send didnt work prob wont with qt in fullscreen
             return
         raise Exception("Not Implemented")
@@ -445,8 +449,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         """
         state --> Bool : True IR filter on, False IR filter off
         """
-        if state: os.system('gpio -g write 4 1')
-        else: os.system('gpio -g write 4 0')
+        if state: os.system('gpio -g write {} 1'.format(self.gpio_pins['IR']))
+        else: os.system('gpio -g write {} 0'.format(self.gpio_pins['IR']))
         return
  
     @QtCore.pyqtSlot()
