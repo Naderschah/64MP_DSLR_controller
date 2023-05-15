@@ -674,11 +674,14 @@ class Grid_Handler:
             # Check that bounds were set - if this is pre setting bounds this is ignored
             if self.gridbounds[i] != 0 and self.zero_made:
                 if not self.gridbounds[i] >= self.pos[i]+disp[i]:
-                    raise Exception('Coordinate out of Grid!')
+                    notification('Coordinate out of Grid')
+                    return
                 elif self.pos[i]+disp[i] <0:
-                    raise Exception('Coordinate out of Grid!')
+                    notification('Coordinate out of Grid')
+                    return
         # If check passed do
         # First set direction
+        notification(disp)
         for i in range(len(disp)):
             # cond 1 : disp in FIXME direction, and FIXME
             # If disp negative -> movement away from camera so gpio dir = high
@@ -801,6 +804,11 @@ class Motor_Control:
         for key in self.gpio_pins:
             GPIO.setup(self.gpio_pins[key], GPIO.LOW)
         return
+
+
+def notification(msg):
+    os.system('notify-send "{}"'.format(msg))
+
 
 
 
