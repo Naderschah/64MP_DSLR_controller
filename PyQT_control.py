@@ -513,7 +513,10 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         # end and zero points
         self.set_zero.clicked.connect(self.set_zeropoint)
         self.set_max.clicked.connect(self.set_maximum)
+        # Step size
+        self.combobox_step_size.currentIndexChanged.connect(self.set_stepsize)
         #exit
+        self.pushbutton_exit.clicked.connect(exit)
     
 
     def set_layout(self):
@@ -532,7 +535,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         #Populate step size
         self.combobox_step_size.addItem(1)
         for i in np.linspace(2,50,25):
-            self.combobox_step_size.addItem(i)
+            self.combobox_step_size.addItem(str(i))
 
         return
     
@@ -546,6 +549,10 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         self.camera.start()
         return
 
+    @QtCore.pyqtSlot()
+    def set_stepsize(self, index):
+        self.own_step = int(self.combobox_step_size.itemText(index))
+        return
 
     @QtCore.pyqtSlot()
     def move(self,steps=1):
