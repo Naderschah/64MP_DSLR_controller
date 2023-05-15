@@ -607,8 +607,8 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
     def exit(self):
         # Remove camera reference
         self.gridLayout.removeWidget(self.qpcamera)
-        self.camera.stop()
-        del self.camera
+        self.camera.close()
+        del self.camera, self.qpcamera
         self.parent.endstop_window.hide()
         return
 
