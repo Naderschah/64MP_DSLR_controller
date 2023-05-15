@@ -405,7 +405,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         self.grid = Grid_Handler(motor_x=self.x, motor_y=None, motor_z = None)
 
         # TODO: Make window with motor control to define end stops
-        self.endstop_window = 
+        self.endstop_window = Endstop_Window()
         self.endstop_window.show()
     
     @QtCore.pyqtSlot()
