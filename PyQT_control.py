@@ -609,7 +609,8 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         self.gridLayout.removeWidget(self.qpcamera)
         self.camera.close()
         del self.camera, self.qpcamera
-        self.parent.endstop_window.hide()
+        self.parent.endstop_window.close()
+        self.parent.show()
         return
 
 
