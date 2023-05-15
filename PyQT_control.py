@@ -687,15 +687,12 @@ class Grid_Handler:
             # if -disp and True do
             if disp[i] < 0 and self.motors[i].dir: 
                 self.motors[i].toggle_dir()
-                notification('Changed Dir')
             elif disp[i] > 0 and not self.motors[i].dir: 
                 self.motors[i].toggle_dir()
-                notification('Changed Dir')
         # Do movement
         for i in range(len(disp)):
             # Do disp steps times
-            notification('Displacing')
-            for j in range(disp[i]): self.motors[i].step()
+            for j in range(abs(disp[i])): self.motors[i].step()
         # Save last state and new state
         self.last_pos = self.pos
         # Iterate in case not all coords are given in the move
@@ -703,7 +700,6 @@ class Grid_Handler:
             self.pos[i] = self.pos[i]+disp[i]
         for i in range(len(disp)):
             self.tot_move[i] = self.tot_move[i]+disp[i]
-        notification('Updated pos')
         
 
     def move_to_coord(self,coord):
