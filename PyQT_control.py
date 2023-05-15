@@ -613,6 +613,7 @@ class Grid_Handler:
         
         # Motors
         self.x = motor_x
+        self.x.enable()
         if motor_y is not None:
             self.y = motor_y
         else:
@@ -735,7 +736,7 @@ class Motor_Control:
         self.set_step_mode(dx)
         # Set step low (dont know if it is by default --> Probably tho)
         GPIO.setup(self.gpio_pins['step'], GPIO.LOW)
-        self.trigger_on_off()
+        self.enable()
         return
 
     def set_step_mode(self, step_size):
@@ -758,14 +759,18 @@ class Motor_Control:
             self.dir = True
         return
 
-    def trigger_on_off(self):
-        """Change state of enable pin"""
-        if self.enabled:
-            GPIO.setup(self.gpio_pins['enable'], GPIO.LOW)
-            self.enabled = False
-        else:
-            GPIO.setup(self.gpio_pins['enable'], GPIO.HIGH)
-            self.enabled = True
+    def disable(self):
+        """disable"""
+        GPIO.setup(self.gpio_pins['enable'], GPIO.LOW)
+        self.enabled = False
+            
+        return
+    
+    def enable(self):
+        """Enable"""
+        GPIO.setup(self.gpio_pins['enable'], GPIO.HIGH)
+        self.enabled = True
+
         return
     
     def step(self):
