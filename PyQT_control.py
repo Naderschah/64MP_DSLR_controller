@@ -690,7 +690,7 @@ class Grid_Handler:
         # Do movement
         for i in range(len(disp)):
             # Do disp steps times
-            for i in range(len(disp[i])): self.motors[i].step()
+            for j in range(disp[i]): self.motors[i].step()
         # Save last state and new state
         self.last_pos = self.pos
         # Iterate in case not all coords are given in the move
