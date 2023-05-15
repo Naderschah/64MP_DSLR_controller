@@ -481,7 +481,6 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     @QtCore.pyqtSlot()
     def exit(self):
         self.grid.disable_all()
-        # TODO: Add shutdown of motors
         sys.exit(0)
 
 
@@ -493,9 +492,10 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
     So motors must be populated in order x y z r otherwise assignment will not work correctly
     """
     own_step = 1
-    def __init__(self, gridcontroler = None):
+    def __init__(self, parent,gridcontroler = None):
         super().__init__()
-
+        # pass reference to parent window
+        self.parent = parent
         self.grid = gridcontroler
 
         self.setupUi(self)
@@ -608,7 +608,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         # Remove camera reference
         self.camera.close()
         del self.camera
-        self.hide()
+        self.parent.endstop_window.close()
         return
 
 
@@ -687,12 +687,9 @@ class Grid_Handler:
         dir 0 causes movement towards the camera
         """
         # Check that all within bounds
-        for i in range(len(disp)):
+        for i in range(len(disp)): # TODO: Gridbounds dont work, print doesnt seem to work either
             # Check that bounds were set - if this is pre setting bounds this is ignored
             if self.gridbounds[i] != 0 and self.zero_made:
-                print(self.pos[i]+disp[i])
-                print(self.pos[i],disp[i])
-                print(self.gridbounds)
                 if self.gridbounds[i] >= self.pos[i]+disp[i]:
                     notification('Coordinate out of Grid')
                     return
