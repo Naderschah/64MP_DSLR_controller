@@ -33,6 +33,12 @@ TODOs:
 - Figure out average imaging time 
 
 
+Change comments in motor control about direction, current implementation correct, somewhere in reasoning i messed up
+
+
+
+
+
 qt5-tools designer
 """
 
@@ -412,7 +418,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     def make_endstops(self):
         # Initiate Engines 
         if self.checkbox_x.isChecked():
-            self.x = Motor_Control(gpio_pins=self.gpio_pins['x'],dx=1/8)
+            self.x = Motor_Control(gpio_pins=self.gpio_pins['x'],dx=1/2)
         if self.checkbox_y.isChecked():
             raise Exception('Not Implemented')
         if self.checkbox_z.isChecked():
@@ -503,6 +509,8 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         os.system('gpio -g mode 4 out')
         # Disables IR filter
         os.system('gpio -g write 4 0')
+
+        return
 
 
     def assign_button_function(self):
@@ -596,7 +604,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         # Remove camera reference
         self.camera.close()
         del self.camera
-        self.close()
+        self.hide()
         return
 
 
