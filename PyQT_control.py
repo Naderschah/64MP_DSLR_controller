@@ -367,7 +367,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         else:
             logging.info('Using default gpio pins')
 
-        self.setFixedHeight()
+        self.basic_conf_and_style()
 
         return
     
