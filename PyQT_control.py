@@ -549,7 +549,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
             self.combobox_motor.addItem('z')
         #Populate step size
         self.combobox_step_size.addItem(str(1))
-        for i in np.linspace(2,50,25):
+        for i in np.linspace(4,100,25):
             self.combobox_step_size.addItem(str(i))
 
         return
@@ -690,9 +690,9 @@ class Grid_Handler:
             # cond 1 : disp in FIXME direction, and FIXME
             # If disp negative -> movement away from camera so gpio dir = high
             # if -disp and True do
-            if disp[i] < 0 and self.motors[i].dir: 
+            if disp[i] < 0 and not self.motors[i].dir: 
                 self.motors[i].toggle_dir()
-            elif disp[i] > 0 and not self.motors[i].dir: 
+            elif disp[i] > 0 and self.motors[i].dir: 
                 self.motors[i].toggle_dir()
         # Do movement
         for i in range(len(disp)):
@@ -739,7 +739,7 @@ class Motor_Control:
     enabled = False
     # False = default dir = pin low movement towards camera; True = other dir = pin high  movement away from camera
     dir = False
-    delay = 0.1
+    delay = 0.05
     def __init__(self, gpio_pins={'enable':17, 'ms1':27, 'ms2':22, 'ms3':10, 'dir':9, 'step':11} , 
                  dx=1/16):
         """
