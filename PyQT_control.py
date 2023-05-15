@@ -608,7 +608,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         # Remove camera reference
         self.camera.close()
         del self.camera
-        self.parent.endstop_window.close()
+        self.parent.endstop_window.hide()
         return
 
 
