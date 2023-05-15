@@ -417,7 +417,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     def make_endstops(self):
         # Initiate Engines 
         if self.checkbox_x.isChecked():
-            self.x = Motor_Control(gpio_pins=self.gpio_pins['x'],dx=1/2)
+            self.x = Motor_Control(gpio_pins=self.gpio_pins['x'],dx=1)
         if self.checkbox_y.isChecked():
             raise Exception('Not Implemented')
         if self.checkbox_z.isChecked():
