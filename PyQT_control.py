@@ -18,7 +18,7 @@ from libcamera import controls
 import threading
 import RPi.GPIO as GPIO
 from functools import partial
-from PyQt4.QtGui import QApplication
+from PyQt5.QtGui import QApplication
 ZoomLevels = (1)
 
 
