@@ -375,6 +375,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.button_auto.clicked.connect(self.start_imaging)
 
+        self.pushbutton_find_endstops.clicked.connect(self.make_endstops)
+
         # Dropdowns
         self.combobox_exp.currentIndexChanged.connect(self.change_exp)
 
