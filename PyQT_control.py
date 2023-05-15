@@ -1,5 +1,9 @@
 
+import typing
+from PyQt5.QtWidgets import QWidget
 from UI_Viewfinder import Ui_Viewfinder
+from UI_config_window import Ui_MainWindow
+from UI_endstop_window import Ui_Endstop_window
 from PyQt5 import QtWidgets, QtCore, QtGui
 import sys, subprocess
 from picamera2 import Picamera2
@@ -13,6 +17,7 @@ from pathlib import Path
 from libcamera import controls
 import threading
 import RPi.GPIO as GPIO
+from functools import partial
 
 ZoomLevels = (1)
 
@@ -318,7 +323,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
 
     @QtCore.pyqtSlot()
     def exit(self):
-        sys.exit(0)
+        self.close()
 
     def set_preview(self,new_cam = False):
         """Initiate camera preview redirected to Preview widget"""
@@ -334,17 +339,259 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.Preview.addWidget(self.qpcamera, 0,0,1,1)
 
         return None
+# TODO : Build GUI controller 
+class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
+    img_config = {'HDR': False, 'IR':False, 'motor_x':False,'motor_y':False, 'motor_z':False, 'IR_and_normal':False,'step_size':1,}
+    img_dir = None
+    grid = None
+    gpio_pins = {'x': {'enable':17, 'ms1':27, 'ms2':22, 'ms3':10, 'dir':9, 'step':11}, 
+                 'y':None, 
+                 'z':None,
+                 'IR':4}
+    endstops = []
+    camera_config = { "AeEnable": False,  # Auto Exposure Value
+                        "AwbEnable":False,  # Auto White Balance
+                        "ExposureValue":0, # No exposure Val compensation --> Shouldnt be required as AeEnable:False
+                        "NoiseReductionMode": controls.draft.NoiseReductionModeEnum.Off,
+                        'Exposure':2,
+                        'AnalogueGain':1}
+    def __init__(self,gpio_pins) -> None:
+        super().__init__()
+        self.setupUi(self)
+
+        self.assign_button_function()
+        # TODO : Populate dropdowns
+        
+
+    def assign_button_function(self):
+        # Buttons
+        self.button_dslr.clicked.connect(self.launch_viewfinder)
+
+        self.pushbutton_exit.clicked.connect(self.exit)
+
+        self.button_auto.clicked.connect(self.start_imaging)
+
+        # Dropdowns
+        self.combobox_exp.currentIndexChanged.connect(self.change_exp)
+
+        self.combobox_gain.currentIndexChanged.connect(self.change_gain)
+
+        self.combobox_step.currentIndexChanged.connect(self.change_step)
+
+
+    # Change dropdown 
+    def change_exp(self,index):
+        self.camera_config['Exposure'] = int(float(self.combobox_exp.itemText(index)))
+        return
+    
+    def change_gain(self,index):
+        self.camera_config['AnalogueGain'] = int(float(self.combobox_gain.itemText(index)))
+        return
+
+    def change_step(self,index):
+        self.img_config['step_size'] = int(float(self.combobox_step.itemText(index)))
+        return
+
+    @QtCore.pyqtSlot()
+    def make_endstops(self):
+        # Initiate Engines 
+        if self.checkbox_x.isChecked():
+            self.x = Motor_Control(gpio_pins=self.gpio_pins['x'])
+        if self.checkbox_y.isChecked():
+            raise Exception('Not Implemented')
+        if self.checkbox_z.isChecked():
+            raise Exception('Not Implemented')
+        
+        self.grid = Grid_Handler(motor_x=self.x, motor_y=None, motor_z = None)
+
+        # TODO: Make window with motor control to define end stops
+        self.endstop_window = 
+        self.endstop_window.show()
+    
+    @QtCore.pyqtSlot()
+    def start_imaging(self):
+        """Starts automatic imaging chain"""
+        # Set mode for pin 4 (IR) if it hasnt been set yet
+        os.system('gpio -g mode 4 out')
+        if self.grid is None: # Add message notify-send didnt work prob wont with qt in fullscreen
+            return
+        raise Exception("Not Implemented")
+        # Establish dir name and make img collection dir
+        dirs = os.listdir(os.path.join(str(Path.home()),'Images'))
+        dirs = [i for i in dirs if 'img' in i]
+        self.img_dir = os.path.join(str(Path.home()),'Images','img_'+str(len(dirs)))
+        os.mkdir(self.img_dir) 
+
+
+        # Imging config
+        # IR
+        if self.checkbox_IR.isChecked() and not self.checkbox_IR_an_normal.isChecked():
+            self.img_config['IR'] = True
+            self.IR_filter(True)
+        elif self.checkbox_IR_an_normal.isChecked():
+            self.img_config['IR_and_normal'] = True
+            # In this case IR will be triggered after normal images
+            self.IR_filter(False)
+        else:
+            self.IR_filter(False)
+            pass
+        # HDR
+        if self.checkbox_HDR.isChecked():
+            self.img_config['HDR'] = True
+        
+        # At the end of the run check if first and last image have same area in focus to check for travel error
+        
+    def IR_filter(self,state):
+        """
+        state --> Bool : True IR filter on, False IR filter off
+        """
+        if state: os.system('gpio -g write 4 1')
+        else: os.system('gpio -g write 4 0')
+        return
+ 
+    @QtCore.pyqtSlot()
+    def launch_viewfinder(self):
+        """Launch viewfinder (window with preview and iso exp settings)"""
+        self.viewfinder = Viewfinder()
+        self.viewfinder.show()
+        return
+
+    @QtCore.pyqtSlot()
+    def exit(self):
+        self.grid.disable_all()
+        # TODO: Add shutdown of motors
+        sys.exit(0)
+
+
+class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
+    """
+    Window to move motors and calibrate endstops
+    
+    Note that due to the way axis movement is handled z will not be controlled if x and or y is not present
+    So motors must be populated in order x y z r otherwise assignment will not work correctly
+    """
+    own_step = 1
+    def __init__(self, gridcontroler = None):
+        super().__init__()
+
+        self.grid = gridcontroler
+
+        self.setupUi(self)
+
+        self.assign_button_function()
+
+        self.set_layout()
+
+        self.start_camera()
+
+        os.system('gpio -g mode 4 out')
+        # Disables IR filter
+        os.system('gpio -g write 4 0')
+
+
+    def aassign_button_function(self):
+        # Moves
+        self.pushbutton_exit.clicked.connect(self.exit)
+        move10 = partial(self.move, 10)
+        self.move_10.clicked.connect(move10)
+        move5 = partial(self.move, 5)
+        self.move_5.clicked.connect(move5)
+        moveown = partial(self.move, self.own_step)
+        self.move_own.clicked.connect(moveown)
+        moveneg10 = partial(self.move, -10)
+        self.move_10.clicked.connect(moveneg10)
+        moveneg5 = partial(self.move, -5)
+        self.move_5.clicked.connect(moveneg5)
+        movenegown = partial(self.move, self.own_step)
+        self.move_own.clicked.connect(movenegown)
+        # end and zero points
+        self.set_zero.clicked.connect(self.set_zeropoint)
+        self.set_max.clicked.connect(self.set_maximum)
+        #exit
+    
+
+    def set_layout(self):
+        # Set widget width, couldnt find in designer
+        for widget in self.verticalLayout.children():
+            widget.setFixedWidth(50)
+
+        # Add dropdown items
+        # Populate motors
+        if self.grid.x is not None:
+            self.combobox_motor.addItem('x')
+        if self.grid.y is not None:
+            self.combobox_motor.addItem('y')
+        if self.grid.z is not None:
+            self.combobox_motor.addItem('z')
+        #Populate step size
+        self.combobox_step_size.addItem(1)
+        for i in np.linspace(2,50,25):
+            self.combobox_step_size.addItem(i)
+
+        return
+    
+    def start_camera(self):
+        """Starts camera in generic preview with IR filter removed"""
+        self.camera = Picamera2()
+        self.camera.configure(self.camera.create_preview_configuration())
+        self.qpcamera = QGlPicamera2(self.camera) 
+        #TODO Check assignment correct
+        self.gridLayout.addWidget(self.qpcamera, 0,0)
+        self.camera.start()
+        return
+
+
+    @QtCore.pyqtSlot()
+    def move(self,steps=1):
+        """Moves motor by x steps, updates menu items keeping track of current pos and total moves since initiation"""
+        motor = self.combobox_motor.currentIndex()
+        # Order of list is [xyzr] not all must be given but prior indeces must be
+        steps = motor*[0]+[steps]
+        self.grid.move_dist(steps)
+        # Update pos and total move
+        _translate = QtCore.QCoreApplication.translate
+        self.menu_pos_placeholder.setTitle(_translate("Endstop_window", str(self.grid.pos)))
+        self.menu_total_move.setTitle(_translate("Endstop_window", str(self.grid.tot_move)))
+        return
+
+    @QtCore.pyqtSlot()
+    def set_zeropoint(self):
+        self.grid.make_zeropoint(axis=self.combobox_motor.currentIndex())
+        return
+    
+    @QtCore.pyqtSlot()
+    def set_maximum(self):
+        self.grid.make_endstop(axis=self.combobox_motor.currentIndex())
+        return
+
+    @QtCore.pyqtSlot()
+    def exit(self):
+        # Remove camera reference
+        self.camera.close()
+        del self.camera
+        self.close()
+        return
+
 
 
 class Grid_Handler:
-    """Class to keep track of the imaging grid"""
+    """
+    Class to keep track of the imaging grid
+
+    dir: 0 --> Towards camera
+
+    """
     # The displacement is measured in ms so the grid is step size dependent
     # TODO: Make step to mm conversion
     # Keep track of bounds
-    gridbounds = [0,0,0]
+    n_motors = 3
+    gridbounds = [0]*n_motors
     # Position in grid
-    pos = [0,0,0]
-    last_pos = [0,0,0]
+    pos = [0]*n_motors
+    tot_move = [0]*n_motors
+    last_pos = [0]*n_motors
+    # Bool to check if zeropoint set
+    zero_made = False
     def __init__(self,motor_x,motor_y=None,motor_z=None) -> None:
         # Implement File handler here
         # Implement end stop control
@@ -366,30 +613,55 @@ class Grid_Handler:
 
 
         pass
+    
+    def make_zeropoint(self,axis):
+        """
+        Sets pos for axis to zero
+        """
+        # In case max point was set prior to zero point
+        if self.gridbounds[axis] != 0:
+            # Incerment by current pos so that max point remains unchanged
+            self.gridbounds[axis] += self.pos[axis]
+        self.pos[axis] = 0
+    
+        return
 
-    def make_endstop(self, end, axis):
+    def make_endstop(self, axis, end=None):
         """
         end : current position and distance from 0 point TODO: Establish if this is meant to be front or back
         axis : int describing axes x:0, y:1, z:2 
         """
-        self.gridbounds[axis] = end
+
+        if end == None:
+            self.gridbounds[axis] = self.pos[axis]
+        else:
+            self.gridbounds[axis] = end
         return
 
     def move_dist(self,disp):
         """
         coord: [x,...] list with coords to go to
                 - Length doesnt matter will only do for provided axes (based on list index)
+
+        Coordinate 0 is the furthest from the camera at the very left bottom as seen when facing the camera
+        dir 0 causes movement towards the camera
         """
         # Check that all within bounds
         for i in range(len(disp)):
-            if not self.gridbounds[i] >= self.pos[i]+disp[i]:
-                raise Exception('Coordinate out of Grid!')
+            # Check that bounds were set - if this is pre setting bounds this is ignored
+            if self.gridbounds[i] != 0 and self.zero_made:
+                if not self.gridbounds[i] >= self.pos[i]+disp[i]:
+                    raise Exception('Coordinate out of Grid!')
+                elif self.pos[i]+disp[i] <0:
+                    raise Exception('Coordinate out of Grid!')
         # If check passed do
         # First set direction
         for i in range(len(disp)):
             # cond 1 : disp in FIXME direction, and FIXME
+            # If disp negative -> movement away from camera so gpio dir = high
+            # if -disp and True do
             if disp[i] < 0 and self.motors[i].dir: self.motors[i].toggle_dir()
-            elif disp[i] >  0 and self.motors[i].dir: self.motors[i].toggle_dir()
+            elif disp[i] > 0 and not self.motors[i].dir: self.motors[i].toggle_dir()
         # Do movement
         for i in range(len(disp)):
             # Do disp steps times
@@ -399,6 +671,8 @@ class Grid_Handler:
         # Iterate in case not all coords are given in the move
         for i in range(len(disp)):
             self.pos[i] = self.pos[i]+disp[i]
+        for i in range(len(disp)):
+            self.tot_move[i] = self.tot_move[i]+disp[i]
 
     def move_to_coord(self,coord):
         """
@@ -408,19 +682,31 @@ class Grid_Handler:
         disp = self.pos - coord
         self.move_dist(disp)
         return
+    
+    def disable_all(self):
+        if self.x is not None:
+            self.x.close()
+        if self.y is not None:
+            self.y.close()
+        if self.z is not None:
+            self.z.close()
+        return
+        
 
 
 
 
-class Motor_Control: # TODO: CHekc how 12 V motor control works -> for fan
+class Motor_Control: 
     """
     Motor Controler for Sparkfun Big Easy Driver - single motor control
     Initiate a second instance for both motors 
+
     """
     # True == On , False == Off
     enabled = False
-    # False = default dir = pin low; True = other dir = pin high 
+    # False = default dir = pin low movement towards camera; True = other dir = pin high  movement away from camera
     dir = False
+    delay = 0.1
     def __init__(self, gpio_pins={'enable':17, 'ms1':27, 'ms2':22, 'ms3':10, 'dir':9, 'step':11} , 
                  dx=1/16):
         """
@@ -474,8 +760,11 @@ class Motor_Control: # TODO: CHekc how 12 V motor control works -> for fan
         """Step is triggered by pulling gpio low to high"""
         # Cause step
         GPIO.setup(self.gpio_pins['step'], GPIO.HIGH)
+        time.sleep(self.delay/2)
         # Bakc to orig
         GPIO.setup(self.gpio_pins['step'], GPIO.LOW)
+        time.sleep(self.delay/2)
+        return
 
 
     def close(self):
