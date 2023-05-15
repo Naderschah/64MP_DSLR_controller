@@ -35,7 +35,7 @@ TODOs:
 Change comments in motor control about direction, current implementation correct, somewhere in reasoning i messed up
 
 
-
+1 microstep : 0.05 mm == 20 steps => 0.0025 mm
 
 
 qt5-tools designer
@@ -328,7 +328,9 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
 
     @QtCore.pyqtSlot()
     def exit(self):
-        self.close()
+        self.camera.stop()
+        self.hide()
+        del self.camera
 
     def set_preview(self,new_cam = False):
         """Initiate camera preview redirected to Preview widget"""
