@@ -533,7 +533,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         if self.grid.z is not None:
             self.combobox_motor.addItem('z')
         #Populate step size
-        self.combobox_step_size.addItem(1)
+        self.combobox_step_size.addItem(str(1))
         for i in np.linspace(2,50,25):
             self.combobox_step_size.addItem(str(i))
 
