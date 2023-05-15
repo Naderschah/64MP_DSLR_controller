@@ -328,7 +328,9 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
 
     @QtCore.pyqtSlot()
     def exit(self):
+        self.qpcamera.cleanup()
         self.camera.stop()
+        self.camera.close()
         self.hide()
         del self.camera
 
@@ -609,7 +611,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         # Remove camera reference
         self.gridLayout.removeWidget(self.qpcamera)
         self.camera.close()
-        self.close()
+        self.hide()
         return
 
 
