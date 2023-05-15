@@ -495,7 +495,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         os.system('gpio -g write 4 0')
 
 
-    def aassign_button_function(self):
+    def assign_button_function(self):
         # Moves
         self.pushbutton_exit.clicked.connect(self.exit)
         move10 = partial(self.move, 10)
