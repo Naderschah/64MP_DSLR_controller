@@ -596,7 +596,9 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
     
     @QtCore.pyqtSlot()
     def set_maximum(self):
+        _translate = QtCore.QCoreApplication.translate
         self.grid.make_endstop(axis=self.combobox_motor.currentIndex())
+        self.menuendpoint_placeholder.setTitle(_translate("Endstop_window", str(self.grid.gridbounds)))
         return
 
     @QtCore.pyqtSlot()

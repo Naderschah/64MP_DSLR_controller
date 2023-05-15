@@ -233,10 +233,22 @@
      <string>PlaceHolder</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuEndpoint">
+    <property name="title">
+     <string>Endpoint</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuendpoint_placeholder">
+    <property name="title">
+     <string>Placeholder</string>
+    </property>
+   </widget>
    <addaction name="menuPos"/>
    <addaction name="menu_pos_placeholder"/>
    <addaction name="menuTotal_Movement"/>
    <addaction name="menu_total_move"/>
+   <addaction name="menuEndpoint"/>
+   <addaction name="menuendpoint_placeholder"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
