@@ -681,7 +681,6 @@ class Grid_Handler:
                     return
         # If check passed do
         # First set direction
-        notification(disp)
         for i in range(len(disp)):
             # cond 1 : disp in FIXME direction, and FIXME
             # If disp negative -> movement away from camera so gpio dir = high
@@ -691,7 +690,7 @@ class Grid_Handler:
         # Do movement
         for i in range(len(disp)):
             # Do disp steps times
-            for i in range(disp[i]): self.motors[i].step()
+            for i in range(len(disp[i])): self.motors[i].step()
         # Save last state and new state
         self.last_pos = self.pos
         # Iterate in case not all coords are given in the move
