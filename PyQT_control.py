@@ -512,14 +512,13 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         self.move_10.clicked.connect(move10)
         move5 = partial(self.move, 5)
         self.move_5.clicked.connect(move5)
-        moveown = partial(self.move, self.own_step)
-        self.move_own.clicked.connect(moveown)
+        self.move_own.clicked.connect(self.move_own_implementation)
         moveneg10 = partial(self.move, -10)
         self.move__10.clicked.connect(moveneg10)
         moveneg5 = partial(self.move, -5)
         self.move__5.clicked.connect(moveneg5)
-        movenegown = partial(self.move, self.own_step)
-        self.move__own.clicked.connect(movenegown)
+        move_own_implementation_neg = partial(self.move_own_implementation, True)
+        self.move__own.clicked.connect(move_own_implementation_neg)
         # end and zero points
         self.set_zero.clicked.connect(self.set_zeropoint)
         self.set_max.clicked.connect(self.set_maximum)
@@ -527,7 +526,13 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         self.combobox_step_size.currentIndexChanged.connect(self.set_stepsize)
         #exit
         self.pushbutton_exit.clicked.connect(exit)
-    
+
+
+    def move_own_implementation(self,negative=False):
+        if negative:
+            self.move(0-self.own_step)
+        else:
+            self.move(self.own_step)
 
     def set_layout(self):
         # Set widget width, couldnt find in designer
