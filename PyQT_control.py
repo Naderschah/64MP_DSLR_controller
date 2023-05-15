@@ -560,7 +560,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         return
 
     def set_stepsize(self, index):
-        self.own_step = int(self.combobox_step_size.itemText(index))
+        self.own_step = int(float(self.combobox_step_size.itemText(index)))
         return
 
     @QtCore.pyqtSlot()
