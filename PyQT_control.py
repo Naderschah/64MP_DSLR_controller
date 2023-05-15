@@ -506,6 +506,8 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
 
         self.start_camera()
 
+        self.showFullScreen()
+
         os.system('gpio -g mode 4 out')
         # Disables IR filter
         os.system('gpio -g write 4 0')
@@ -661,7 +663,7 @@ class Grid_Handler:
             # Incerment by current pos so that max point remains unchanged
             self.gridbounds[axis] += self.pos[axis]
         self.pos[axis] = 0
-    
+        self.zero_made = True
         return
 
     def make_endstop(self, axis, end=None):
@@ -688,7 +690,7 @@ class Grid_Handler:
         for i in range(len(disp)):
             # Check that bounds were set - if this is pre setting bounds this is ignored
             if self.gridbounds[i] != 0 and self.zero_made:
-                if not self.gridbounds[i] >= self.pos[i]+disp[i]:
+                if self.gridbounds[i] >= self.pos[i]+disp[i]:
                     notification('Coordinate out of Grid')
                     return
                 elif self.pos[i]+disp[i] <0:
