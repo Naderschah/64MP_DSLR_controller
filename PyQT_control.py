@@ -428,7 +428,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     def make_endstops(self):
         # Initiate Engines, and checking if it already exists
         if self.checkbox_x.isChecked() and not hasattr(self,'mx'):
-            self.mx = Motor_Control(gpio_pins=self.gpio_pins['x'],dx=1)
+            self.mx = Motor_Control(gpio_pins=self.gpio_pins['x'],dx=1/16) # FIXME:If change dx change in move of grid controler
         if self.checkbox_y.isChecked() and not hasattr(self,'y'):
             raise Exception('Not Implemented')
         if self.checkbox_z.isChecked() and not hasattr(self,'z'):
@@ -444,6 +444,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     @QtCore.pyqtSlot()
     def start_imaging(self):
         """Starts automatic imaging chain"""
+        # Make marker so that rsync knows when to stop copying
+        os.system('echo "True" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
         # Set mode for pin 4 (IR) if it hasnt been set yet
         os.system('gpio -g mode {} out'.format(self.gpio_pins['IR']))
         if self.grid is None: # Add message notify-send didnt work prob wont with qt in fullscreen
@@ -510,7 +512,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         print('Completed imaging routine')
         self.show()
         # At the end of the run check if first and last image have same area in focus to check for travel error
-
+        # Make marker so that rsync knows when to stop copying
+        os.system('echo "False" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
     
     def make_image(self):
         """If IR and turns on IR takes image and then does either one image or HDR if HDR is set"""
@@ -521,10 +524,10 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.take_im(filename+'_IR.dng')
             self.IR_filter(True)
         if self.img_config['HDR']: 
-            mod_controls = self.custom_controls.copy()
+            mod_controls = self.camera_config.copy()
             for i in (0.5,1.5,1):
                 # Change exp time
-                mod_controls['ExposureTime'] = self.custom_controls['ExposureTime']*i
+                mod_controls['ExposureTime'] = int(self.camera_config['ExposureTime']*i)
                 self.camera.set_controls(mod_controls)
                 time.sleep(1)
                 self.take_im(filename+'_exp*{}.dng'.format(i))
@@ -538,6 +541,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         request = self.camera.capture_request()
         request.save_dng(filename)
         request.release()
+        return
 
 
     def IR_filter(self,state):
@@ -802,8 +806,8 @@ class Grid_Handler:
                 self.motors[i].toggle_dir()
         # Do movement
         for i in range(len(disp)):
-            # Do disp steps times
-            for j in range(abs(disp[i])): self.motors[i].step()
+            # Do disp steps times step size (microstepping) FIXME: Microstepping multiplier when more engine -> fix 
+            for j in range(abs(disp[i]*int(1/self.motors[i].dx))): self.motors[i].step()
         # Save last state and new state
         self.last_pos = self.pos
         # Iterate in case not all coords are given in the move
@@ -847,12 +851,13 @@ class Motor_Control:
     dir = False
     delay = 0.05
     def __init__(self, gpio_pins={'enable':17, 'ms1':27, 'ms2':22, 'ms3':10, 'dir':9, 'step':11} , 
-                 dx=1/8):
+                 dx=1/16):
         """
         gpio_pins : dict of pin name to gpio location
          keys required -> ms1 ms2 ms3 enable step dir
         dx : Step size
         """
+        self.dx = dx
         # Set mode to follow BCM not layout numbering
         GPIO.setmode(GPIO.BCM)
         # Set output mode --> All pins are output
