@@ -484,7 +484,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                 ind = 0 
                 grid = []
                 while ind < self.grid.gridbounds[i]:
-                    grid += ind
+                    grid.append(ind)
                     ind += self.img_config['step_size']
                 # Add max point if not already present
                 if self.grid.gridbounds[i] not in grid: grid += self.grid.gridbounds[i]
