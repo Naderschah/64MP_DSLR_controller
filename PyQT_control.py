@@ -512,15 +512,15 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         # At the end of the run check if first and last image have same area in focus to check for travel error
 
     
-    def make_image(self, IR_and = False, HDR = False):
+    def make_image(self):
         """If IR and turns on IR takes image and then does either one image or HDR if HDR is set"""
         filename = 'pos_{}'.format(self.grid.pos)
 
-        if IR_and:
+        if self.img_config['IR_and_normal']:
             self.IR_filter(False)
             self.take_im(filename+'_IR.dng')
             self.IR_filter(True)
-        if HDR: 
+        if self.img_config['HDR']: 
             mod_controls = self.custom_controls.copy()
             for i in (0.5,1.5,1):
                 # Change exp time
