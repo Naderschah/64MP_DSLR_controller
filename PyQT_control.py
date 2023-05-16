@@ -487,8 +487,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                     grid.append(ind)
                     ind += self.img_config['step_size']
                 # Add max point if not already present
-                if self.grid.gridbounds[i] not in grid: grid += self.grid.gridbounds[i]
-            tot_grid += grid
+                if self.grid.gridbounds[i] not in grid: grid.append(self.grid.gridbounds[i])
+            tot_grid.append(grid)
         # FIXME: Add meshgrid  for multiple motors
         print('grid:')
         print(tot_grid)
