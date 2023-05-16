@@ -362,7 +362,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                         "AwbEnable":False,  # Auto White Balance
                         "ExposureValue":0, # No exposure Val compensation --> Shouldnt be required as AeEnable:False
                         "NoiseReductionMode": controls.draft.NoiseReductionModeEnum.Off,
-                        'Exposure':2,
+                        'ExposureTime':2,
                         'AnalogueGain':1}
     def __init__(self,gpio_pins=None) -> None:
         super().__init__()
