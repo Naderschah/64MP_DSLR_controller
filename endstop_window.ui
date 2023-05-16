@@ -210,7 +210,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>22</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuPos">
@@ -243,14 +243,25 @@
      <string>Placeholder</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuISO">
+    <property name="title">
+     <string>ISO</string>
+    </property>
+   </widget>
    <addaction name="menuPos"/>
    <addaction name="menu_pos_placeholder"/>
    <addaction name="menuTotal_Movement"/>
    <addaction name="menu_total_move"/>
    <addaction name="menuEndpoint"/>
    <addaction name="menuendpoint_placeholder"/>
+   <addaction name="menuISO"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="ISO_opt1">
+   <property name="text">
+    <string>Trial</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

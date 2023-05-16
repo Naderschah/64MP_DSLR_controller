@@ -612,6 +612,12 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         # Set widget width, couldnt find in designer
         for widget in self.verticalLayout.children():
             widget.setFixedWidth(20)
+        # Add ISO 
+        self.iso = {}
+        for i in range(1,17):
+            self.iso[i]=self.menuISO.addAction(str(i))\
+            change_iso = partial(self.change_iso, i)
+            self.iso[i].triggered.connect(change_iso)
 
         # Add dropdown items
         # Populate motors
@@ -627,6 +633,9 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
             self.combobox_step_size.addItem(str(i))
 
         return
+    
+    def change_iso(self,val):
+        self.camera.set_controls({'AnalogueGain':val})
     
     def start_camera(self):
         """Starts camera in generic preview with IR filter removed"""
