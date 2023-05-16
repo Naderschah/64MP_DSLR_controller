@@ -799,7 +799,7 @@ class Grid_Handler:
         coord: [x,...] list with coords to go to
         """
         # Get coord difference
-        disp = [self.pos[i] - coord[i] for i in range(len(coord))]
+        disp = [coord[i]-self.pos[i] for i in range(len(coord))]
         self.move_dist(disp)
         return
     
