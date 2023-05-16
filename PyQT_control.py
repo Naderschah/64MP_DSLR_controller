@@ -462,7 +462,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         # HDR
         if self.checkbox_HDR.isChecked():
             self.img_config['HDR'] = True
-        print('Starting imaging with HDR={}, IR and Normal={}, Just IR'.foramt(self.img_config['HDR'],self.img_config['IR_and_normal'], self.img_config['IR']  ))
+        print('Starting imaging with HDR={}, IR and Normal={}, Just IR'.format(self.img_config['HDR'],self.img_config['IR_and_normal'], self.img_config['IR']  ))
         # Start Camera
         self.tuning = Picamera2.load_tuning_file(os.path.abspath(str(Path.home())+"/Camera/imx477_tuning_file_bare.json"))
         self.camera = Picamera2(tuning=self.tuning)
@@ -484,6 +484,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                 if self.grid.gridbounds[i] not in grid: grid += self.grid.gridbounds[i]
             tot_grid += grid
         # FIXME: Add meshgrid  for multiple motors
+        print('grid:')
+        print(tot_grid)
         np.meshgrid(*tot_grid)
         for i in tot_grid[0]: # Fixme below only works for 1D array
             print('Moving to {}'.format([i]))
