@@ -541,8 +541,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         self.viewfinder.show()
         # Copy ISO and exp settings after it did init
         self.viewfinder
-        for i in self.viewfinder.ISO_choice.count(): self.combobox_gain.addItem(str(self.viewfinder.ISO_choice.itemText(i)))
-        for i in self.exposure_choice.count(): self.combobox_exp.addItem(str(self.exposure_choice.itemText(i)))
+        for i in range(self.viewfinder.ISO_choice.count()): self.combobox_gain.addItem(str(self.viewfinder.ISO_choice.itemText(i)))
+        for i in range(self.exposure_choice.count()): self.combobox_exp.addItem(str(self.exposure_choice.itemText(i)))
         return
 
     @QtCore.pyqtSlot()
