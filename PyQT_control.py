@@ -475,6 +475,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         self.camera.set_controls(self.camera_config)
         cfg = self.camera.create_still_configuration()
         self.camera.configure()
+        self.camera.start()
         print('Configured camera')
 
         tot_grid = []
@@ -488,7 +489,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                     ind += self.img_config['step_size']
                 # Add max point if not already present
                 if self.grid.gridbounds[i] not in grid: grid.append(self.grid.gridbounds[i])
-            tot_grid.append(grid)
+                tot_grid.append(grid)
         # FIXME: Add meshgrid  for multiple motors
         print('grid:')
         print(tot_grid)
