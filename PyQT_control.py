@@ -615,7 +615,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         # Add ISO 
         self.iso = {}
         for i in range(1,17):
-            self.iso[i]=self.menuISO.addAction(str(i))\
+            self.iso[i]=self.menuISO.addAction(str(i))
             change_iso = partial(self.change_iso, i)
             self.iso[i].triggered.connect(change_iso)
 
