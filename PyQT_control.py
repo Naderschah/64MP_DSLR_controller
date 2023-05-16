@@ -381,6 +381,12 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     
     def basic_conf_and_style(self):
         self.checkbox_x.setCheckState(True)
+
+        # Populate step size (Exp and iso are populated when opening graphical)
+        self.combobox_step.addItem(str(5))
+        for i in np.linspace(10,150,15):
+            self.combobox_step.addItem(str(i))
+
         return
 
     def assign_button_function(self):
