@@ -516,9 +516,6 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         return
 
 
-                
-
-
     def take_im(self,filename):
         """Quick utility to make image so that above less cluttered"""
         request = self.camera.capture_request()
@@ -635,6 +632,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         """Starts camera in generic preview with IR filter removed"""
         self.camera = Picamera2()
         self.camera.configure(self.camera.create_preview_configuration())
+        self.camera.set_controls({'AeEnable':True})
         self.qpcamera = QGlPicamera2(self.camera) 
         self.gridLayout.addWidget(self.qpcamera, 0,0)
         self.camera.start()
