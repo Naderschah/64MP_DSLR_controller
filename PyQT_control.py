@@ -431,7 +431,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             raise Exception('Not Implemented')
         if self.checkbox_z.isChecked() and not hasattr(self,'x'):
             raise Exception('Not Implemented')
-        if self.grid is not None:
+        if self.grid is None:
             self.grid = Grid_Handler(motor_x=self.x, motor_y=None, motor_z = None)
         if not hasattr(self,'endstop_window'):
             self.endstop_window = Endstop_Window(parent=self,gridcontroler=self.grid)
