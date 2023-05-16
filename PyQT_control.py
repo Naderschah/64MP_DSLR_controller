@@ -425,11 +425,11 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     @QtCore.pyqtSlot()
     def make_endstops(self):
         # Initiate Engines, and checking if it already exists
-        if self.checkbox_x.isChecked() and not hasattr(self,'x'):
+        if self.checkbox_x.isChecked() and not hasattr(self,'mx'):
             self.mx = Motor_Control(gpio_pins=self.gpio_pins['x'],dx=1)
-        if self.checkbox_y.isChecked() and not hasattr(self,'x'):
+        if self.checkbox_y.isChecked() and not hasattr(self,'y'):
             raise Exception('Not Implemented')
-        if self.checkbox_z.isChecked() and not hasattr(self,'x'):
+        if self.checkbox_z.isChecked() and not hasattr(self,'z'):
             raise Exception('Not Implemented')
         if self.grid is None:
             self.grid = Grid_Handler(motor_x=self.mx, motor_y=None, motor_z = None)
