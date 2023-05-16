@@ -637,7 +637,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
             self.combobox_motor.addItem('z')
         #Populate step size
         self.combobox_step_size.addItem(str(1))
-        for i in np.linspace(4,100,25):
+        for i in np.linspace(20,200,10):
             self.combobox_step_size.addItem(str(i))
 
         return
