@@ -474,7 +474,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         self.camera = Picamera2(tuning=self.tuning)
         self.camera.set_controls(self.camera_config)
         cfg = self.camera.create_still_configuration()
-        self.camera.configure()
+        self.camera.configure(cfg)
         self.camera.start()
         print('Configured camera')
 
