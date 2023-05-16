@@ -503,6 +503,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         for i in tot_grid[0]: # Fixme below only works for 1D array
             print('Moving to {}'.format([i]))
             self.grid.move_to_coord([i])
+            # Wait for image to stabilize
+            time.sleep(0.5)
             self.make_image()
             print('Finished Imaging for {}'.format([i]))
         print('Completed imaging routine')
