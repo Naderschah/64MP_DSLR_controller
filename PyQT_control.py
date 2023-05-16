@@ -428,7 +428,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     def make_endstops(self):
         # Initiate Engines, and checking if it already exists
         if self.checkbox_x.isChecked() and not hasattr(self,'mx'):
-            self.mx = Motor_Control(gpio_pins=self.gpio_pins['x'],dx=1/16) # FIXME:If change dx change in move of grid controler
+            self.mx = Motor_Control(gpio_pins=self.gpio_pins['x'],dx=1/8) # FIXME:If change dx change in move of grid controler
         if self.checkbox_y.isChecked() and not hasattr(self,'y'):
             raise Exception('Not Implemented')
         if self.checkbox_z.isChecked() and not hasattr(self,'z'):
@@ -748,8 +748,6 @@ class Grid_Handler:
         else:
             self.z = None
         self.motors = [self.x, self.y, self.z]
-
-
         pass
     
     def make_zeropoint(self,axis):
