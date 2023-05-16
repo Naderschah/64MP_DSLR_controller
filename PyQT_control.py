@@ -296,7 +296,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
             #cmd = 'exiftool -Exposure={} -ISO={} -Lens={} -overwrite_original {}'.format(self.custom_controls['ExposureTime'],
             #                                                             self.custom_controls['AnalogueGain'],'"EO Ultra Compact Objective"',
             #                                                             str(Path.home())+'/Images/{}.png'.format(self.fname))
-            cmd = ['exiftool', '-Exposure={}'.format(self.mod_controls['ExposureTime']), '-ISO={}'.format(self.custom_controls['AnalogueGain']), 
+            cmd = ['exiftool', '-Exposure={}'.format(self.custom_controls['ExposureTime']), '-ISO={}'.format(self.custom_controls['AnalogueGain']), 
                    '-Lens={}'.format('EO_ULC'), '-overwrite_original', str(Path.home())+'/Images/{}.png'.format(self.fname)]
             #threading.Thread(target=subprocess.run, args=(cmd)).start()
             subprocess.run(cmd)
