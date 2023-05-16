@@ -336,7 +336,6 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
 
     def set_preview(self,new_cam = False):
         """Initiate camera preview redirected to Preview widget"""
-        # TODO: Check recommended for performance
         if new_cam : self.camera = Picamera2()
         # cfg
         # Disable que to keep memory free,
@@ -429,7 +428,6 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         
         self.grid = Grid_Handler(motor_x=self.x, motor_y=None, motor_z = None)
 
-        # TODO: Make window with motor control to define end stops
         self.endstop_window = Endstop_Window(parent=self,gridcontroler=self.grid)
         self.endstop_window.show()
     
@@ -440,14 +438,15 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         os.system('gpio -g mode {} out'.format(self.gpio_pins['IR']))
         if self.grid is None: # Add message notify-send didnt work prob wont with qt in fullscreen
             return
-        raise Exception("Not Implemented")
+        # Hide window as PyQT will start to freeze - screw doing with window 
+        self.hide()
         # Establish dir name and make img collection dir
         dirs = os.listdir(os.path.join(str(Path.home()),'Images'))
         dirs = [i for i in dirs if 'img' in i]
         self.img_dir = os.path.join(str(Path.home()),'Images','img_'+str(len(dirs)))
         os.mkdir(self.img_dir) 
-
-
+        os.chdir(self.img_dir)
+        print('Changed directory to {}'.format(self.img_dir))
         # Imging config
         # IR
         if self.checkbox_IR.isChecked() and not self.checkbox_IR_an_normal.isChecked():
@@ -463,9 +462,70 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         # HDR
         if self.checkbox_HDR.isChecked():
             self.img_config['HDR'] = True
-        
+        print('Starting imaging with HDR={}, IR and Normal={}, Just IR'.foramt(self.img_config['HDR'],self.img_config['IR_and_normal'], self.img_config['IR']  ))
+        # Start Camera
+        self.tuning = Picamera2.load_tuning_file(os.path.abspath(str(Path.home())+"/Camera/imx477_tuning_file_bare.json"))
+        self.camera = Picamera2(tuning=self.tuning)
+        self.camera.set_controls(self.camera_config)
+        cfg = self.camera.create_still_configuration()
+        self.camera.configure()
+        print('Configured camera')
+
+        tot_grid = []
+        for i in range(len(self.grid.motors)):
+            if self.grid.motors[i] != None:
+                # We create grid if motor connected
+                ind = 0 
+                grid = []
+                while ind < self.grid.gridbounds[i]:
+                    grid += ind
+                    ind += self.img_config['step_size']
+                # Add max point if not already present
+                if self.grid.gridbounds[i] not in grid: grid += self.grid.gridbounds[i]
+            tot_grid += grid
+        # FIXME: Add meshgrid  for multiple motors
+        np.meshgrid(*tot_grid)
+        for i in tot_grid[0]: # Fixme below only works for 1D array
+            print('Moving to {}'.format([i]))
+            self.grid.move_to_coord([i])
+            self.make_image()
+            print('Finished Imaging for {}'.format([i]))
+        print('Completed imaging routine')
+        self.show()
         # At the end of the run check if first and last image have same area in focus to check for travel error
-        
+
+    
+    def make_image(self, IR_and = False, HDR = False):
+        """If IR and turns on IR takes image and then does either one image or HDR if HDR is set"""
+        filename = 'pos_{}'.format(self.grid.pos)
+
+        if IR_and:
+            self.IR_filter(False)
+            self.take_im(filename+'_IR.dng')
+            self.IR_filter(True)
+        if HDR: 
+            mod_controls = self.custom_controls.copy()
+            for i in (0.5,1.5,1):
+                # Change exp time
+                mod_controls['ExposureTime'] = self.custom_controls['ExposureTime']*i
+                self.camera.set_controls(mod_controls)
+                time.sleep(1)
+                self.take_im(filename+'_exp*{}.dng'.format(i))
+        else:
+            self.take_im(filename+'_NoIR.dng')
+        return
+
+
+                
+
+
+    def take_im(self,filename):
+        """Quick utility to make image so that above less cluttered"""
+        request = self.camera.capture_request()
+        request.save_dng(filename)
+        request.release()
+
+
     def IR_filter(self,state):
         """
         state --> Bool : True IR filter on, False IR filter off
@@ -572,7 +632,6 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         self.camera = Picamera2()
         self.camera.configure(self.camera.create_preview_configuration())
         self.qpcamera = QGlPicamera2(self.camera) 
-        #TODO Check assignment correct
         self.gridLayout.addWidget(self.qpcamera, 0,0)
         self.camera.start()
         return
@@ -624,7 +683,7 @@ class Grid_Handler:
 
     """
     # The displacement is measured in ms so the grid is step size dependent
-    # TODO: Make step to mm conversion
+    # TODO: Make step to mm conversion : 1 step (no micro) == 0.0025 mm
     # Keep track of bounds
     n_motors = 3
     gridbounds = [0]*n_motors
