@@ -350,7 +350,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
 
         return None
     
-
+# TODO Add microstepping control in endstop window, and a thing that indicates its doing shit
 class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     img_config = {'HDR': False, 'IR':False, 'motor_x':False,'motor_y':False, 'motor_z':False, 'IR_and_normal':False,'step_size':1,}
     img_dir = None
@@ -510,6 +510,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.make_image()
             print('Finished Imaging for {}'.format([i]))
         print('Completed imaging routine')
+        self.gird.disable_all()
         self.show()
         # At the end of the run check if first and last image have same area in focus to check for travel error
         # Make marker so that rsync knows when to stop copying
@@ -826,11 +827,11 @@ class Grid_Handler:
     
     def disable_all(self):
         if self.x is not None:
-            self.x.close()
+            self.x.disable()
         if self.y is not None:
-            self.y.close()
+            self.y.disable()
         if self.z is not None:
-            self.z.close()
+            self.z.disable()
         return
         
 
