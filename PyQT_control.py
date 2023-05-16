@@ -639,6 +639,10 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         self.combobox_step_size.addItem(str(1))
         for i in np.linspace(20,200,10):
             self.combobox_step_size.addItem(str(i))
+        self.combobox_step_size.addItem(str(300.0))
+        self.combobox_step_size.addItem(str(400.0))
+        self.combobox_step_size.addItem(str(500.0))
+        
 
         return
     
