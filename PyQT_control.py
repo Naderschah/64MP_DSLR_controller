@@ -32,6 +32,8 @@ TODOs:
 - Figure out average imaging time 
 
 
+When opening endstop first and hten graphical Gain choices wrong (fractions) -> find out why
+
 Change comments in motor control about direction, current implementation correct, somewhere in reasoning i messed up
 
 
@@ -240,7 +242,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
             self.Capture_button.setEnabled(False)
             self.Capture_button.setStyleSheet('QPushButton {background-color: #FF1744; color: #ff1744;font: bold 30px;}')
         
-            cfg = self.camera.create_still_configuration()
+            cfg = self.camera.create_still_configuration(raw={})
             # Hope dng works
             self.fname = dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')
             self.camera.switch_mode_and_capture_file(cfg, str(Path.home())+'/Images/{}.png'.format(self.fname),
@@ -268,7 +270,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.HDR_counter += 1
         # dict with num: rel exp time
         
-        cfg = self.camera.create_still_configuration()
+        cfg = self.camera.create_still_configuration(raw={})
         # Set exp for HDR shot 
         self.mod_controls = self.custom_controls.copy()
         self.mod_controls['ExposureTime']=int(self.custom_controls['ExposureTime']*self.hdr_rel_exp[HDR_counter])
@@ -452,6 +454,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         dirs = os.listdir(os.path.join(str(Path.home()),'Images'))
         dirs = [i for i in dirs if 'img' in i]
         self.img_dir = os.path.join(str(Path.home()),'Images','img_'+str(len(dirs)))
+        if os.path.isdir(self.img_dir): # In case this already exists just do this
+            self.img_dir = 'img_{}'.format(dt.datetime.now().strftime('%Y%m%d-%h%M'))
         os.mkdir(self.img_dir) 
         os.chdir(self.img_dir)
         print('Changed directory to {}'.format(self.img_dir))
@@ -475,7 +479,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         self.tuning = Picamera2.load_tuning_file(os.path.abspath(str(Path.home())+"/Camera/imx477_tuning_file_bare.json"))
         self.camera = Picamera2(tuning=self.tuning)
         self.camera.set_controls(self.camera_config)
-        cfg = self.camera.create_still_configuration()
+        cfg = self.camera.create_still_configuration(raw={})
         self.camera.configure(cfg)
         self.camera.start()
         print('Configured camera')
@@ -591,7 +595,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
 
 
     def assign_button_function(self):
-        # Moves
+        # Moves TODO: Make all move actions pyqt slots so that the video keeps updating during
         self.pushbutton_exit.clicked.connect(self.exit)
         move10 = partial(self.move, 10)
         self.move_10.clicked.connect(move10)
