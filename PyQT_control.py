@@ -405,7 +405,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
 
     # Change dropdown 
     def change_exp(self,index):
-        self.camera_config['Exposure'] = int(float(self.combobox_exp.itemText(index)))
+        self.camera_config['ExposureTime'] = int(float(self.combobox_exp.itemText(index)))
         return
     
     def change_gain(self,index):
@@ -799,7 +799,7 @@ class Grid_Handler:
         coord: [x,...] list with coords to go to
         """
         # Get coord difference
-        disp = self.pos - coord
+        disp = [self.pos[i] - coord[i] for i in range(len(coord))]
         self.move_dist(disp)
         return
     
