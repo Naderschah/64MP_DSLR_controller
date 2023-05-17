@@ -589,7 +589,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         sys.exit(0)
 
 
-class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
+class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window): # TODO: Add exit button and message for disabled vs enabled controler
     """
     Window to move motors and calibrate endstops
     
@@ -660,6 +660,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         self.combobox_step_size.currentIndexChanged.connect(self.set_stepsize)
         #exit
         self.pushbutton_exit.clicked.connect(self.exit)
+        self.menuExit.clicked.connect(self.exit)
 
 
     def move_own_implementation(self,negative=False):
