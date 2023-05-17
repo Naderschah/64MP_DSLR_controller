@@ -636,6 +636,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         self.menu_pos_placeholder.setTitle(_translate("Endstop_window", str(self.grid.pos)))
         self.menu_total_move.setTitle(_translate("Endstop_window", str(self.grid.tot_move)))
         self.menuendpoint_placeholder.setTitle(_translate("Endstop_window", str(self.grid.gridbounds)))
+        self.menuLast_Move.setTitle(_translate("Endstop_window", str(self.parent.gamepad.last)))
         return
 
     def assign_button_function(self):
@@ -1030,6 +1031,7 @@ class XboxController(object): # Add way to turn off
     timestamp = time.time()
     input_timeout = 60 # seconds
     fine_control = False
+    last =''
     def __init__(self,grid=None):
 
         self.LeftJoystickY = 0
@@ -1165,35 +1167,46 @@ class XboxController(object): # Add way to turn off
         if self.LeftJoystickX == 1:
             self.grid.move_dist([1])
             print('Move dist 1')
+            last = 'move +1'
             move_cmd = True
         elif self.LeftJoystickX == -1:
             self.grid.move_dist([-1])
             print('Move dist -1')
+            last = 'move -1'
             move_cmd = True
         # Step size
         elif self.Y == 1:
             self.grid.change_ms()
             print('changed ms: ', self.grid.dx)
+            ms_str = {1:'1',1/2:'1/2', 1/4:'1/4', 1/8:'1/8',1/16:'1/16'}
+            last = 'Change ms {}'.format(ms_str[self.grid.dx])
         
         elif self.B == 1:# TODO: Find out how to do this for other axis
             self.grid.make_zeropoint(0)
             print('Made zeropoint')
+            last = 'Made Zeropoint'
 
         elif self.X == 1:
             self.grid.make_endstop(0)
             print('Made endstop')
+            last = 'Made Endpoint'
 
         elif self.A == 1:
             self.grid.zero_made = False
             self.grid.endstop = [0]
             print('reset grid')
+            last = 'Reset Grid'
+
         elif self.RightTrigger ==1:
             self.fine_control= True
+            last = 'Enabled Finecontrol'
+            print('Enabled Finecontrol')
 
         else:
             nothing = True
         # In case something was done record timestamp
         if not nothing: 
+            self.last = last
             self.timestamp = time.time()
             # If it wasnt a move command we wait a second so the button isnt double triggered
             if not move_cmd:
