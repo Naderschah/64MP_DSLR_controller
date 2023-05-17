@@ -967,7 +967,7 @@ class Motor_Control:
         GPIO.setup(self.gpio_pins['ms1'], pinout[0])
         GPIO.setup(self.gpio_pins['ms2'], pinout[1])
         GPIO.setup(self.gpio_pins['ms3'], pinout[2])
-        self.step_size = step_size
+        self.dx = step_size
 
     def toggle_dir(self):
         """Change state of dir pin"""
