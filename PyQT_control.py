@@ -792,6 +792,7 @@ class Grid_Handler:
     pos = [0]*n_motors
     tot_move = [0]*n_motors
     last_pos = [0]*n_motors
+    dx = 1
     # Bool to check if zeropoint set
     zero_made = False
     def __init__(self,motor_x,motor_y=None,motor_z=None) -> None:
@@ -804,6 +805,7 @@ class Grid_Handler:
         # Motors
         self.x = motor_x
         self.x.enable()
+        self.dx = self.x.dx
         if motor_y is not None:
             self.y = motor_y
         else:
@@ -894,24 +896,12 @@ class Grid_Handler:
         """
         For gamepad controler to iterate through ms
         """
-        if self.x is not None:
-            dx_curr = self.x.dx
-            # Cycle up if reached minimum
-            if dx_curr/2 < 1/16: dx_curr = 2
-            # Set half step
-            self.x.set_step_mode(dx_curr/2)
-        if self.y is not None:
-            dx_curr = self.y.dx
-            # Cycle up if reached minimum
-            if dx_curr/2 < 1/16: dx_curr = 2
-            # Set half step
-            self.y.set_step_mode(dx_curr/2)
-        if self.z is not None:
-            dx_curr = self.z.dx
-            # Cycle up if reached minimum
-            if dx_curr/2 < 1/16: dx_curr = 2
-            # Set half step
-            self.z.set_step_mode(dx_curr/2)
+        dx_curr = self.dx
+        if dx_curr/2 < 1/16: dx_curr = 2
+        for i in self.motors:
+            if i is not None:
+                i.set_step_mode(dx_curr/2)
+        self.dx = dx_curr/2
 
     def move_to_coord(self,coord):
         """
