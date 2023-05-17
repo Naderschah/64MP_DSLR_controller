@@ -1029,7 +1029,7 @@ class XboxController(object): # Add way to turn off
     # checks for last input timestamp
     timestamp = time.time()
     input_timeout = 60 # seconds
-
+    fine_control = False
     def __init__(self,grid=None):
 
         self.LeftJoystickY = 0
@@ -1125,7 +1125,8 @@ class XboxController(object): # Add way to turn off
             elif event.code == 'ABS_Z':
                 self.LeftTrigger = event.state / XboxController.MAX_TRIG_VAL # normalize between 0 and 1
             elif event.code == 'ABS_RZ':
-                self.RightTrigger = event.state / XboxController.MAX_TRIG_VAL # normalize between 0 and 1
+                # tristate will set to 1 if triggered, the normalization goes between 0 and 4
+                self.RightTrigger = self.tristate(event.state / XboxController.MAX_TRIG_VAL) # normalize between 0 and 1
             elif event.code == 'BTN_TL':
                 self.LeftBumper = event.state
             elif event.code == 'BTN_TR':
@@ -1186,6 +1187,9 @@ class XboxController(object): # Add way to turn off
             self.grid.zero_made = False
             self.grid.endstop = [0]
             print('reset grid')
+        elif self.RightTrigger ==1:
+            self.fine_control= True
+
         else:
             nothing = True
         # In case something was done record timestamp
@@ -1193,6 +1197,8 @@ class XboxController(object): # Add way to turn off
             self.timestamp = time.time()
             # If it wasnt a move command we wait a second so the button isnt double triggered
             if not move_cmd:
+                time.sleep(1)
+            if move_cmd and self.fine_control:
                 time.sleep(1)
 
         return
