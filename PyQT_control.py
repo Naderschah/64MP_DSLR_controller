@@ -868,10 +868,7 @@ class Grid_Handler:
             # Check that bounds were set - if this is pre setting bounds this is ignored
             if self.gridbounds[i] != 0 and self.zero_made:
                 if self.gridbounds[i] <= self.pos[i]+disp[i]:
-                    print(self.pos[i]+disp[i])
-                    print(self.pos[i],disp[i])
-
-                    notification('Coordinate out of Grid')
+                    notification('Coordinate out of Grid, {} {}'.format((self.pos[i],disp[i])))
                     return
                 elif self.pos[i]+disp[i] <0:
                     notification('Coordinate out of Grid')
