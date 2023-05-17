@@ -660,7 +660,8 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window): # TODO: Add exit
         self.combobox_step_size.currentIndexChanged.connect(self.set_stepsize)
         #exit
         self.pushbutton_exit.clicked.connect(self.exit)
-        self.menuExit.clicked.connect(self.exit)
+        self.menuAction.actionexit = self.menuAction.addAction('Exit')
+        self.menuExit.actionexit.clicked.connect(self.exit)
 
 
     def move_own_implementation(self,negative=False):
