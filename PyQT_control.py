@@ -1112,9 +1112,9 @@ class XboxController(object): # Add way to turn off
                 print('Enabled Controler')
                 self.control_allowed = True
                 time.sleep(1)
-                self.get_input()
             else:
                 pass
+            self.get_input()
 
     def get_input(self):
         """Records gamepad input"""
@@ -1200,7 +1200,6 @@ class XboxController(object): # Add way to turn off
             # If it wasnt a move command we wait a second so the button isnt double triggered
             if not move_cmd:
                 time.sleep(1)
-                self.get_input()
 
         return
 
