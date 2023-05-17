@@ -1167,11 +1167,11 @@ class XboxController(object): # Add way to turn off
         move_cmd = False
         # Motor x control:
         if self.LeftJoystickX == 1:
-            self.grid.move_dist(1)
+            self.grid.move_dist([1])
             print('Move dist 1')
             move_cmd = True
         elif self.LeftJoystickX == -1:
-            self.grid.move_dist(-1)
+            self.grid.move_dist([-1])
             print('Move dist -1')
             move_cmd = True
         # Step size
