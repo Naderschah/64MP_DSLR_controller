@@ -854,8 +854,12 @@ class Grid_Handler:
         Coordinate 0 is the furthest from the camera at the very left bottom as seen when facing the camera
         dir 0 causes movement towards the camera
         """
+        # Change disp to ms 16 equivalent
+        conv = {1:16, 1/2:8, 1/4:4,1/8:2, 1/16:1}
+        disp = [i*conv[self.motors[i].dx] for i in disp]
+
         # Check that all within bounds
-        for i in range(len(disp)): # TODO: Gridbounds dont work, print doesnt seem to work either
+        for i in range(len(disp)): 
             # Check that bounds were set - if this is pre setting bounds this is ignored
             if self.gridbounds[i] != 0 and self.zero_made:
                 if self.gridbounds[i] < self.pos[i]+disp[i]:
@@ -876,8 +880,8 @@ class Grid_Handler:
                 self.motors[i].toggle_dir()
         # Do movement
         for i in range(len(disp)):
-            # Do disp steps times step size (microstepping) FIXME: Microstepping multiplier when more engine -> fix 
-            for j in range(abs(disp[i]*int(1/self.motors[i].dx))): self.motors[i].step()
+            # Do disp steps times step size (microstepping)
+            for j in range(abs(disp[i])): self.motors[i].step()
         # Save last state and new state
         self.last_pos = self.pos
         # Iterate in case not all coords are given in the move
@@ -895,19 +899,19 @@ class Grid_Handler:
             # Cycle up if reached minimum
             if dx_curr/2 < 1/16: dx_curr = 2
             # Set half step
-            self.x.set_stop_mode(dx_curr/2)
+            self.x.set_step_mode(dx_curr/2)
         if self.y is not None:
             dx_curr = self.y.dx
             # Cycle up if reached minimum
             if dx_curr/2 < 1/16: dx_curr = 2
             # Set half step
-            self.y.set_stop_mode(dx_curr/2)
+            self.y.set_step_mode(dx_curr/2)
         if self.z is not None:
             dx_curr = self.z.dx
             # Cycle up if reached minimum
             if dx_curr/2 < 1/16: dx_curr = 2
             # Set half step
-            self.z.set_stop_mode(dx_curr/2)
+            self.z.set_step_mode(dx_curr/2)
 
     def move_to_coord(self,coord):
         """
