@@ -18,6 +18,9 @@ from libcamera import controls
 import threading
 import RPi.GPIO as GPIO
 from functools import partial
+# Controller imports
+from inputs import get_gamepad
+import math
 ZoomLevels = (1)
 
 
@@ -355,6 +358,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     img_config = {'HDR': False, 'IR':False, 'motor_x':False,'motor_y':False, 'motor_z':False, 'IR_and_normal':False,'step_size':1,}
     img_dir = None
     grid = None
+    gampead = None
     gpio_pins = {'x': {'enable':17, 'ms1':27, 'ms2':22, 'ms3':10, 'dir':9, 'step':11}, 
                  'y':None, 
                  'z':None,
@@ -401,6 +405,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.pushbutton_find_endstops.clicked.connect(self.make_endstops)
 
+        self.activate_gamepad.clicked.connect(self.set_gamepad)
+
         # Dropdowns
         self.combobox_exp.currentIndexChanged.connect(self.change_exp)
 
@@ -409,6 +415,13 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         self.combobox_step.currentIndexChanged.connect(self.change_step)
 
         return
+
+
+    def set_gamepad(self):
+        """Activates motor control with gamepad"""
+        # This class starts a thread that constantly reads out the gamepad, if input is found the movement is done
+        self.create_grid_controler()
+        self.gamepad = XboxController(grid = self.grid)
 
 
     # Change dropdown 
@@ -426,6 +439,14 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
 
     @QtCore.pyqtSlot()
     def make_endstops(self):
+        self.create_grid_controler()
+        if not hasattr(self,'endstop_window'):
+            self.endstop_window = Endstop_Window(parent=self,gridcontroler=self.grid)
+        else:
+            self.endstop_window.start_camera()
+        self.endstop_window.show()
+
+    def create_grid_controler(self):
         # Initiate Engines, and checking if it already exists
         if self.checkbox_x.isChecked() and not hasattr(self,'mx'):
             self.mx = Motor_Control(gpio_pins=self.gpio_pins['x'],dx=1/8) # FIXME:If change dx change in move of grid controler
@@ -435,11 +456,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             raise Exception('Not Implemented')
         if self.grid is None:
             self.grid = Grid_Handler(motor_x=self.mx, motor_y=None, motor_z = None)
-        if not hasattr(self,'endstop_window'):
-            self.endstop_window = Endstop_Window(parent=self,gridcontroler=self.grid)
-        else:
-            self.endstop_window.start_camera()
-        self.endstop_window.show()
+        return
     
     @QtCore.pyqtSlot()
     def start_imaging(self):
@@ -578,10 +595,21 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
     So motors must be populated in order x y z r otherwise assignment will not work correctly
     """
     own_step = 1
+    # In case controler is available for controlling the grid
+    minimal_config = False
     def __init__(self, parent,gridcontroler = None):
         super().__init__()
         # pass reference to parent window
         self.parent = parent
+        if self.parent.gamepad != None:
+            # Dont show vertical layout
+            self.minimal_config = True
+            # Start timer to update pos etc
+            self.timer = QtCore.QTimer()
+            self.timer.timeout.connect(self.update_grid_pos)
+            # Update every second
+            self.timer.start(1000)
+
         self.grid = gridcontroler
 
         self.setupUi(self)
@@ -600,6 +628,13 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
 
         return
 
+    def update_grid_pos(self):
+        """Updates all entries in the top row"""
+        _translate = QtCore.QCoreApplication.translate
+        self.menu_pos_placeholder.setTitle(_translate("Endstop_window", str(self.grid.pos)))
+        self.menu_total_move.setTitle(_translate("Endstop_window", str(self.grid.tot_move)))
+        self.menuendpoint_placeholder.setTitle(_translate("Endstop_window", str(self.grid.gridbounds)))
+        return
 
     def assign_button_function(self):
         # Moves TODO: Make all move actions pyqt slots so that the video keeps updating during
@@ -630,10 +665,37 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window):
         else:
             self.move(self.own_step)
 
+
+    def clear_item(self, item):
+        """Copied from https://stackoverflow.com/questions/37564728/pyqt-how-to-remove-a-layout-from-a-layout
+        for deleting vertical layout"""
+        if hasattr(item, "layout"):
+            if callable(item.layout):
+                layout = item.layout()
+        else:
+            layout = None
+
+        if hasattr(item, "widget"):
+            if callable(item.widget):
+                widget = item.widget()
+        else:
+            widget = None
+
+        if widget:
+            widget.setParent(None)
+        elif layout:
+            for i in reversed(range(layout.count())):
+                self.clear_item(layout.itemAt(i))
+
+
     def set_layout(self):
         # Set widget width, couldnt find in designer
-        for widget in self.verticalLayout.children():
-            widget.setFixedWidth(20)
+        if not self.minimal_config:
+            for widget in self.verticalLayout.children():
+                widget.setFixedWidth(20)
+        else:
+            self.clear_item(self.verticalLayout)
+
         # Add ISO 
         self.iso = {}
         for i in range(1,17):
@@ -751,6 +813,13 @@ class Grid_Handler:
         self.motors = [self.x, self.y, self.z]
         pass
     
+    def reset_grid(self,axis=None):
+        """Resets the grid"""
+        if axis = None:
+            self.zero_made = False
+            self.endstop = [0]*self.n_motors
+        return
+
     def make_zeropoint(self,axis):
         """
         Sets pos for axis to zero
@@ -814,7 +883,29 @@ class Grid_Handler:
             self.pos[i] = self.pos[i]+disp[i]
         for i in range(len(disp)):
             self.tot_move[i] = self.tot_move[i]+disp[i]
-        
+
+    def change_ms(self):
+        """
+        For gamepad controler to iterate through ms
+        """
+        if self.x is not None:
+            dx_curr = self.x.dx
+            # Cycle up if reached minimum
+            if dx_curr/2 < 1/16: dx_curr = 2
+            # Set half step
+            self.x.set_stop_mode(dx_curr/2)
+        if self.y is not None:
+            dx_curr = self.y.dx
+            # Cycle up if reached minimum
+            if dx_curr/2 < 1/16: dx_curr = 2
+            # Set half step
+            self.y.set_stop_mode(dx_curr/2)
+        if self.z is not None:
+            dx_curr = self.z.dx
+            # Cycle up if reached minimum
+            if dx_curr/2 < 1/16: dx_curr = 2
+            # Set half step
+            self.z.set_stop_mode(dx_curr/2)
 
     def move_to_coord(self,coord):
         """
@@ -921,6 +1012,177 @@ class Motor_Control:
         for key in self.gpio_pins:
             GPIO.setup(self.gpio_pins[key], GPIO.LOW)
         return
+
+
+
+
+class XboxController(object): # Add way to turn off
+    """
+    Copied from: https://stackoverflow.com/questions/46506850/how-can-i-get-input-from-an-xbox-one-controller-in-python
+    
+    The grid controls implemented work as follows:
+    left joystick : left positive movement in grid, right negative movement in grid (in x) internal class name: LeftJoystickY
+    Y : Changes ms to the next mode (1->1/2->1/4->1/8->1/16)
+    start button (3 lines parrallel) : Disable/Enable gamepad input
+
+
+    """
+    MAX_TRIG_VAL = math.pow(2, 8)
+    MAX_JOY_VAL = math.pow(2, 15)
+    control_allowed = False
+    # Counts for how many iterations no keypad input was created -> if over input_timeout sets control allowed to false
+    counter = 0
+    input_timeout = 10000
+
+    def __init__(self,grid=None):
+
+        self.LeftJoystickY = 0
+        self.LeftJoystickX = 0
+        self.RightJoystickY = 0
+        self.RightJoystickX = 0
+        self.LeftTrigger = 0
+        self.RightTrigger = 0
+        self.LeftBumper = 0
+        self.RightBumper = 0
+        self.A = 0
+        self.X = 0
+        self.Y = 0
+        self.B = 0
+        self.LeftThumb = 0
+        self.RightThumb = 0
+        self.Back = 0
+        self.Start = 0
+        self.LeftDPad = 0
+        self.RightDPad = 0
+        self.UpDPad = 0
+        self.DownDPad = 0
+
+        self._monitor_thread = threading.Thread(target=self._monitor_controller, args=())
+        self._monitor_thread.daemon = True
+        self._monitor_thread.start()
+
+
+    def add_grid(self,grid):
+        """Add grid controler after xbox thread created"""
+        self.grid = grid
+        return
+
+
+    def read(self): # return the buttons/triggers that you care about in this methode
+        lx = self.LeftJoystickX
+        # Make tristate 
+        ly = self.LeftJoystickY
+        a = self.A # Corresponds to a
+        x = self.X # corresponds to y
+        y = self.Y # corresponds to x
+        b = self.B # corresponds to b
+        return [lx, ly, a,x,y,b]
+
+    def tristate(self,lx):
+        """Takes trigger input formats it to -1,0,1"""
+        if lx >= 0.5: lx = 1
+        elif lx < 0.5 and lx>-0.5: lx = 0
+        elif lx < -0.5: lx =-1
+        return lx
+
+    def _monitor_controller(self):
+        while True:
+            events = get_gamepad()
+            for event in events:
+                if event.code == 'ABS_Y': # Minus so that up is positive
+                    self.LeftJoystickY =  self.tristate(- event.state / XboxController.MAX_JOY_VAL) # normalize between -1 and 1
+                elif event.code == 'ABS_X':# Minus so that left is positive
+                    self.LeftJoystickX = self.tristate(- event.state / XboxController.MAX_JOY_VAL) # normalize between -1 and 1
+                elif event.code == 'ABS_RY':
+                    self.RightJoystickY = event.state / XboxController.MAX_JOY_VAL # normalize between -1 and 1
+                elif event.code == 'ABS_RX':
+                    self.RightJoystickX = event.state / XboxController.MAX_JOY_VAL # normalize between -1 and 1
+                elif event.code == 'ABS_Z':
+                    self.LeftTrigger = event.state / XboxController.MAX_TRIG_VAL # normalize between 0 and 1
+                elif event.code == 'ABS_RZ':
+                    self.RightTrigger = event.state / XboxController.MAX_TRIG_VAL # normalize between 0 and 1
+                elif event.code == 'BTN_TL':
+                    self.LeftBumper = event.state
+                elif event.code == 'BTN_TR':
+                    self.RightBumper = event.state
+                elif event.code == 'BTN_SOUTH':
+                    self.A = event.state
+                elif event.code == 'BTN_NORTH':
+                    self.X = event.state #previously switched with X
+                elif event.code == 'BTN_WEST':
+                    self.Y = event.state #previously switched with Y
+                elif event.code == 'BTN_EAST':
+                    self.B = event.state
+                elif event.code == 'BTN_THUMBL':
+                    self.LeftThumb = event.state
+                elif event.code == 'BTN_THUMBR':
+                    self.RightThumb = event.state
+                elif event.code == 'BTN_SELECT':
+                    self.Back = event.state
+                elif event.code == 'BTN_START':
+                    self.Start = event.state
+                elif event.code == 'BTN_TRIGGER_HAPPY1':
+                    self.LeftDPad = event.state
+                elif event.code == 'BTN_TRIGGER_HAPPY2':
+                    self.RightDPad = event.state
+                elif event.code == 'BTN_TRIGGER_HAPPY3':
+                    self.UpDPad = event.state
+                elif event.code == 'BTN_TRIGGER_HAPPY4':
+                    self.DownDPad = event.state
+            
+            if self.control_allowed: 
+                self.counter += 1
+                # Timeout condition
+                if self.counter >= self.input_timeout:
+                    self.control_allowed = False
+                # Disable gamepad
+                elif self.Start == 1:
+                    self.control_allowed = False
+                # Else do action
+                else:
+                    self.do_input()
+            # Enable keypad
+            elif self.Start == 1:
+                self.control_allowed = True
+                time.sleep(1)
+            else:
+                pass
+
+
+    def do_input(self):
+        # Motor x control:
+        if self.LeftJoystickX == 1:
+            self.grid.move_dist(1)
+            print('Move dist 1')
+        elif self.LeftJoystickX == -1:
+            self.grid.move_dist(-1)
+            print('Move dist -1')
+        # Step size
+        elif self.Y == 1:
+            self.grid.change_ms()
+            print('changed ms: ', self.grid.dx)
+        
+        elif self.B == 1:# TODO: Find out how to do this for other axis
+            self.grid.make_zeropoint(0)
+            print('Made zeropoint')
+
+        elif self.X == 1:
+            self.grid.make_endstop(0)
+            pritn('Made endstop')
+
+        elif self.A == 1:
+            self.grid.zero_made = False
+            self.grid.endstop = [0]
+            print('reset grid')
+        
+        return
+
+
+
+
+
+
+
 
 
 def notification(msg):
