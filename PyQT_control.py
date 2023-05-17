@@ -1063,7 +1063,7 @@ class XboxController(object): # Add way to turn off
         self._monitor_thread.daemon = True
         self._monitor_thread.start()
 
-        self.grid = 
+        self.grid = grid
 
 
     def add_grid(self,grid):
@@ -1095,7 +1095,7 @@ class XboxController(object): # Add way to turn off
             # Get gamepad input
             self.get_input()
             # Do control
-            if self.control_allowed: 
+            if self.control_allowed and self.grid is not None: 
                 # Timeout condition
                 if time.time() - self.timestamp >= self.input_timeout:
                     print('Disabled Controler by timeout')
