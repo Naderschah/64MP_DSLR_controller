@@ -1032,9 +1032,9 @@ class XboxController(object): # Add way to turn off
     MAX_TRIG_VAL = math.pow(2, 8)
     MAX_JOY_VAL = math.pow(2, 15)
     control_allowed = False
-    # Counts for how many iterations no keypad input was created -> if over input_timeout sets control allowed to false
-    counter = 0
-    input_timeout = 10000
+    # checks for last input timestamp
+    timestamp = time.time()
+    input_timeout = 60 # seconds
 
     def __init__(self,grid=None):
 
@@ -1063,6 +1063,8 @@ class XboxController(object): # Add way to turn off
         self._monitor_thread.daemon = True
         self._monitor_thread.start()
 
+        self.grid = 
+
 
     def add_grid(self,grid):
         """Add grid controler after xbox thread created"""
@@ -1078,7 +1080,7 @@ class XboxController(object): # Add way to turn off
         x = self.X # corresponds to y
         y = self.Y # corresponds to x
         b = self.B # corresponds to b
-        return [lx, ly, a,x,y,b]
+        return [lx, ly, a,x,y,b,self.Start]
 
     def tristate(self,lx):
         """Takes trigger input formats it to -1,0,1"""
@@ -1090,69 +1092,78 @@ class XboxController(object): # Add way to turn off
     def _monitor_controller(self):
         print('Controller Activated')
         while True:
-            events = get_gamepad()
-            for event in events:
-                if event.code == 'ABS_Y': # Minus so that up is positive
-                    self.LeftJoystickY =  self.tristate(- event.state / XboxController.MAX_JOY_VAL) # normalize between -1 and 1
-                elif event.code == 'ABS_X':# Minus so that left is positive
-                    self.LeftJoystickX = self.tristate(- event.state / XboxController.MAX_JOY_VAL) # normalize between -1 and 1
-                elif event.code == 'ABS_RY':
-                    self.RightJoystickY = event.state / XboxController.MAX_JOY_VAL # normalize between -1 and 1
-                elif event.code == 'ABS_RX':
-                    self.RightJoystickX = event.state / XboxController.MAX_JOY_VAL # normalize between -1 and 1
-                elif event.code == 'ABS_Z':
-                    self.LeftTrigger = event.state / XboxController.MAX_TRIG_VAL # normalize between 0 and 1
-                elif event.code == 'ABS_RZ':
-                    self.RightTrigger = event.state / XboxController.MAX_TRIG_VAL # normalize between 0 and 1
-                elif event.code == 'BTN_TL':
-                    self.LeftBumper = event.state
-                elif event.code == 'BTN_TR':
-                    self.RightBumper = event.state
-                elif event.code == 'BTN_SOUTH':
-                    self.A = event.state
-                elif event.code == 'BTN_NORTH':
-                    self.X = event.state #previously switched with X
-                elif event.code == 'BTN_WEST':
-                    self.Y = event.state #previously switched with Y
-                elif event.code == 'BTN_EAST':
-                    self.B = event.state
-                elif event.code == 'BTN_THUMBL':
-                    self.LeftThumb = event.state
-                elif event.code == 'BTN_THUMBR':
-                    self.RightThumb = event.state
-                elif event.code == 'BTN_SELECT':
-                    self.Back = event.state
-                elif event.code == 'BTN_START':
-                    self.Start = event.state
-                elif event.code == 'BTN_TRIGGER_HAPPY1':
-                    self.LeftDPad = event.state
-                elif event.code == 'BTN_TRIGGER_HAPPY2':
-                    self.RightDPad = event.state
-                elif event.code == 'BTN_TRIGGER_HAPPY3':
-                    self.UpDPad = event.state
-                elif event.code == 'BTN_TRIGGER_HAPPY4':
-                    self.DownDPad = event.state
-            
+            # Get gamepad input
+            self.get_input()
+            # Do control
             if self.control_allowed: 
-                self.counter += 1
                 # Timeout condition
-                if self.counter >= self.input_timeout:
+                if time.time() - self.timestamp >= self.input_timeout:
+                    print('Disabled Controler by timeout')
                     self.control_allowed = False
                 # Disable gamepad
                 elif self.Start == 1:
+                    print('Disabled Controler by button')
                     self.control_allowed = False
                 # Else do action
                 else:
                     self.do_input()
             # Enable keypad
             elif self.Start == 1:
+                print('Enabled Controler')
                 self.control_allowed = True
                 time.sleep(1)
             else:
                 pass
 
+    def get_input(self):
+        """Records gamepad input"""
+        events = get_gamepad()
+        for event in events:
+            if event.code == 'ABS_Y': # Minus so that up is positive
+                self.LeftJoystickY =  self.tristate(- event.state / XboxController.MAX_JOY_VAL) # normalize between -1 and 1
+            elif event.code == 'ABS_X':# Minus so that left is positive
+                self.LeftJoystickX = self.tristate(- event.state / XboxController.MAX_JOY_VAL) # normalize between -1 and 1
+            elif event.code == 'ABS_RY':
+                self.RightJoystickY = event.state / XboxController.MAX_JOY_VAL # normalize between -1 and 1
+            elif event.code == 'ABS_RX':
+                self.RightJoystickX = event.state / XboxController.MAX_JOY_VAL # normalize between -1 and 1
+            elif event.code == 'ABS_Z':
+                self.LeftTrigger = event.state / XboxController.MAX_TRIG_VAL # normalize between 0 and 1
+            elif event.code == 'ABS_RZ':
+                self.RightTrigger = event.state / XboxController.MAX_TRIG_VAL # normalize between 0 and 1
+            elif event.code == 'BTN_TL':
+                self.LeftBumper = event.state
+            elif event.code == 'BTN_TR':
+                self.RightBumper = event.state
+            elif event.code == 'BTN_SOUTH':
+                self.A = event.state
+            elif event.code == 'BTN_NORTH':
+                self.X = event.state #previously switched with X
+            elif event.code == 'BTN_WEST':
+                self.Y = event.state #previously switched with Y
+            elif event.code == 'BTN_EAST':
+                self.B = event.state
+            elif event.code == 'BTN_THUMBL':
+                self.LeftThumb = event.state
+            elif event.code == 'BTN_THUMBR':
+                self.RightThumb = event.state
+            elif event.code == 'BTN_SELECT':
+                self.Back = event.state
+            elif event.code == 'BTN_START':
+                self.Start = event.state
+            elif event.code == 'BTN_TRIGGER_HAPPY1':
+                self.LeftDPad = event.state
+            elif event.code == 'BTN_TRIGGER_HAPPY2':
+                self.RightDPad = event.state
+            elif event.code == 'BTN_TRIGGER_HAPPY3':
+                self.UpDPad = event.state
+            elif event.code == 'BTN_TRIGGER_HAPPY4':
+                self.DownDPad = event.state
+        return
 
     def do_input(self):
+        # bool in case nothing is done
+        nothing = False
         # Motor x control:
         if self.LeftJoystickX == 1:
             self.grid.move_dist(1)
@@ -1177,7 +1188,11 @@ class XboxController(object): # Add way to turn off
             self.grid.zero_made = False
             self.grid.endstop = [0]
             print('reset grid')
-        
+        else:
+            nothing = True
+        # In case something was done record timestamp
+        if not nothing: 
+            self.timestamp = time.time()
         return
 
 
