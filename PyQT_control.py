@@ -1023,7 +1023,10 @@ class XboxController(object): # Add way to turn off
     left joystick : left positive movement in grid, right negative movement in grid (in x) internal class name: LeftJoystickY
     Y : Changes ms to the next mode (1->1/2->1/4->1/8->1/16)
     start button (3 lines parrallel) : Disable/Enable gamepad input
-
+    B : make zeropoint
+    X : make endstop
+    A : reset grid
+    Right Trigger : Enable finecontrol (1 sec delay after each motor input)
 
     """
     MAX_TRIG_VAL = math.pow(2, 8)
@@ -1031,7 +1034,7 @@ class XboxController(object): # Add way to turn off
     control_allowed = False
     # checks for last input timestamp
     timestamp = time.time()
-    input_timeout = 60 # seconds
+    input_timeout = 60*1000 # seconds created race condition somewhere i think so it keeps triggering 
     fine_control = False
     last =''
     def __init__(self,grid=None):
