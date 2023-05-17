@@ -57,7 +57,7 @@ qt5-tools designer
 # Docs on NoiseReductionMode wrong (min:0 max:4 -> int) on site 3 options -> str : Assume 0 is no noise reduction
 # WHat does Noise Reduction do?
 logging.basicConfig(filename=str(Path.home())+'/Camera/logs/{}.log'.format(dt.datetime.now().strftime('%Y%m%d')), filemode='w', level=logging.DEBUG)
-Picamera2.set_logging(Picamera2.DEBUG)
+Picamera2.set_logging(Picamera2.INFO)
 # Examples: https://github.com/raspberrypi/picamera2/tree/main/examples
 # Fake Long exposure: https://github.com/raspberrypi/picamera2/blob/main/examples/stack_raw.py
 
@@ -422,6 +422,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         # This class starts a thread that constantly reads out the gamepad, if input is found the movement is done
         self.create_grid_controler()
         self.gamepad = XboxController(grid = self.grid)
+        return
 
 
     # Change dropdown 
@@ -447,6 +448,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         self.endstop_window.show()
 
     def create_grid_controler(self):
+        print('Initiate motors and grid control')
         # Initiate Engines, and checking if it already exists
         if self.checkbox_x.isChecked() and not hasattr(self,'mx'):
             self.mx = Motor_Control(gpio_pins=self.gpio_pins['x'],dx=1/8) # FIXME:If change dx change in move of grid controler
@@ -1086,6 +1088,7 @@ class XboxController(object): # Add way to turn off
         return lx
 
     def _monitor_controller(self):
+        print('Controller Activated')
         while True:
             events = get_gamepad()
             for event in events:
