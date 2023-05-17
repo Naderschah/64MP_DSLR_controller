@@ -815,7 +815,7 @@ class Grid_Handler:
     
     def reset_grid(self,axis=None):
         """Resets the grid"""
-        if axis = None:
+        if axis == None:
             self.zero_made = False
             self.endstop = [0]*self.n_motors
         return
