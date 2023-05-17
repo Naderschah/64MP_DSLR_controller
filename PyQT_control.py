@@ -1164,13 +1164,16 @@ class XboxController(object): # Add way to turn off
     def do_input(self):
         # bool in case nothing is done
         nothing = False
+        move_cmd = False
         # Motor x control:
         if self.LeftJoystickX == 1:
             self.grid.move_dist(1)
             print('Move dist 1')
+            move_cmd = True
         elif self.LeftJoystickX == -1:
             self.grid.move_dist(-1)
             print('Move dist -1')
+            move_cmd = True
         # Step size
         elif self.Y == 1:
             self.grid.change_ms()
@@ -1182,7 +1185,7 @@ class XboxController(object): # Add way to turn off
 
         elif self.X == 1:
             self.grid.make_endstop(0)
-            pritn('Made endstop')
+            print('Made endstop')
 
         elif self.A == 1:
             self.grid.zero_made = False
@@ -1193,6 +1196,10 @@ class XboxController(object): # Add way to turn off
         # In case something was done record timestamp
         if not nothing: 
             self.timestamp = time.time()
+            # If it wasnt a move command we wait a second so the button isnt double triggered
+            if not move_cmd:
+                time.sleep(1)
+
         return
 
 
