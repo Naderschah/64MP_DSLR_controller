@@ -856,7 +856,7 @@ class Grid_Handler:
         """
         # Change disp to ms 16 equivalent
         conv = {1:16, 1/2:8, 1/4:4,1/8:2, 1/16:1}
-        disp = [i*conv[self.motors[i].dx] for i in disp]
+        disp = [disp[i]*conv[self.motors[i].dx] for i in range(len(disp))]
 
         # Check that all within bounds
         for i in range(len(disp)): 
