@@ -661,7 +661,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window): # TODO: Add exit
         #exit
         self.pushbutton_exit.clicked.connect(self.exit)
         self.menuExit.actionexit = self.menuExit.addAction('Exit')
-        self.menuExit.actionexit.clicked.connect(self.exit)
+        self.menuExit.actionexit.triggered.connect(self.exit)
 
 
     def move_own_implementation(self,negative=False):
