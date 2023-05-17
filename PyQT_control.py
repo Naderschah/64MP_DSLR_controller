@@ -358,7 +358,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     img_config = {'HDR': False, 'IR':False, 'motor_x':False,'motor_y':False, 'motor_z':False, 'IR_and_normal':False,'step_size':1,}
     img_dir = None
     grid = None
-    gampead = None
+    gamepad = None
     gpio_pins = {'x': {'enable':17, 'ms1':27, 'ms2':22, 'ms3':10, 'dir':9, 'step':11}, 
                  'y':None, 
                  'z':None,
