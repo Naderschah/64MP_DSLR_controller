@@ -1111,7 +1111,8 @@ class XboxController(object): # Add way to turn off
             elif self.Start == 1:
                 print('Enabled Controler')
                 self.control_allowed = True
-                time.sleep(2)
+                time.sleep(1)
+                self.get_input()
             else:
                 pass
 
@@ -1198,7 +1199,8 @@ class XboxController(object): # Add way to turn off
             self.timestamp = time.time()
             # If it wasnt a move command we wait a second so the button isnt double triggered
             if not move_cmd:
-                time.sleep(2)
+                time.sleep(1)
+                self.get_input()
 
         return
 
