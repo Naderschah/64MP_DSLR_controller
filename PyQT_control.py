@@ -560,7 +560,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def make_image(self):
         """If IR and turns on IR takes image and then does either one image or HDR if HDR is set"""
-        filename = 'pos_{}'.format(self.grid.pos)
+        filename = '{}'.format('_'.join(self.grid.pos))
 
         if self.img_config['IR_and_normal']:
             self.IR_filter(False)
@@ -574,7 +574,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                 mod_controls['ExposureTime'] = int(i)
                 self.camera.set_controls(mod_controls)
                 time.sleep(1)
-                self.take_im(filename+'_exp*{}.dng'.format(i))
+                self.take_im(filename+'_exp{}mus.dng'.format(i))
         else:
             self.take_im(filename+'_NoIR.dng')
         return
@@ -585,7 +585,6 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         request = self.camera.capture_request()
         request.save_dng(filename)
         request.release()
-        print(request.get_metadat())
         return
 
 
