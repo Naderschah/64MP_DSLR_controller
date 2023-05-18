@@ -39,11 +39,17 @@ When opening endstop first and hten graphical Gain choices wrong (fractions) -> 
 
 Change comments in motor control about direction, current implementation correct, somewhere in reasoning i messed up
 
-
+X: step res
 1 microstep : 0.05 mm == 20 steps => 0.0025 mm
+16 microstepped 1 step =  0.15625 mu m 
 
 
-qt5-tools designer
+Verti
+
+
+
+
+
 """
 
 
@@ -585,6 +591,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         request = self.camera.capture_request()
         request.save_dng(filename)
         request.release()
+        del request
+        time.sleep(1)
         return
 
 
