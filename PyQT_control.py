@@ -560,7 +560,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def make_image(self):
         """If IR and turns on IR takes image and then does either one image or HDR if HDR is set"""
-        filename = '{}'.format('_'.join(self.grid.pos))
+        filename = '{}'.format('_'.join([str(i) for i in self.grid.pos]))
 
         if self.img_config['IR_and_normal']:
             self.IR_filter(False)
