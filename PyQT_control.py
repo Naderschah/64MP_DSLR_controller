@@ -463,14 +463,17 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     @QtCore.pyqtSlot()
     def start_imaging(self):
         """Starts automatic imaging chain"""
+
         # Make marker so that rsync knows when to stop copying
         os.system('echo "True" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
         # Set mode for pin 4 (IR) if it hasnt been set yet
         os.system('gpio -g mode {} out'.format(self.gpio_pins['IR']))
+
         if self.grid is None: # Add message notify-send didnt work prob wont with qt in fullscreen
             return
         # Hide window as PyQT will start to freeze - screw doing with window 
         self.hide()
+
         # Establish dir name and make img collection dir
         dirs = os.listdir(os.path.join(str(Path.home()),'Images'))
         dirs = [i for i in dirs if 'img' in i]
@@ -480,8 +483,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         os.mkdir(self.img_dir) 
         os.chdir(self.img_dir)
         print('Changed directory to {}'.format(self.img_dir))
+        
         # Imging config
-        # IR
         if self.checkbox_IR.isChecked() and not self.checkbox_IR_an_normal.isChecked():
             self.img_config['IR'] = True
             self.IR_filter(True)
@@ -495,16 +498,32 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         # HDR
         if self.checkbox_HDR.isChecked():
             self.img_config['HDR'] = True
-        print('Starting imaging with HDR={}, IR and Normal={}, Just IR'.format(self.img_config['HDR'],self.img_config['IR_and_normal'], self.img_config['IR']  ))
-        # Start Camera
-        self.tuning = Picamera2.load_tuning_file(os.path.abspath(str(Path.home())+"/Camera/imx477_tuning_file_bare.json"))
-        self.camera = Picamera2(tuning=self.tuning)
-        self.camera.set_controls(self.camera_config)
-        cfg = self.camera.create_still_configuration(raw={})
-        self.camera.configure(cfg)
-        self.camera.start()
-        print('Configured camera')
 
+        print('Starting imaging with HDR={}, IR and Normal={}, Just IR {}'.format(self.img_config['HDR'],self.img_config['IR_and_normal'], self.img_config['IR']  ))
+        self.start_camera()
+        tot_grid = self.make_grid()
+        # Set ms to 16
+        self.grid.change_ms(1/16)
+        
+        # Iterate over grid
+        for i in tot_grid[0]: # FIXME below only works for 1D array
+            print('Moving to {} / {:.6}mm'.format(i,i*0.0025/16))
+            self.grid.move_to_coord([i])
+            # Wait for image to stabilize
+            time.sleep(0.5)
+            self.make_image()
+            print('Finished Imaging for position {}'.format([i]))
+        print('-------------------------\nCompleted imaging routine\n\n')
+
+        self.grid.disable_all()
+        self.show()
+        # TODO: At the end of the run check if first and last image have same area in focus to check for travel error
+        
+        # Make marker so that rsync knows when to stop copying
+        os.system('echo "False" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
+    
+
+    def make_grid(self):
         tot_grid = []
         for i in range(len(self.grid.motors)):
             if self.grid.motors[i] != None:
@@ -521,20 +540,19 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         print('grid:')
         print(tot_grid)
         np.meshgrid(*tot_grid)
-        for i in tot_grid[0]: # FIXME below only works for 1D array
-            print('Moving to {} / {:.6}mm'.format(i,i*0.0025/16))
-            self.grid.move_to_coord([i])
-            # Wait for image to stabilize
-            time.sleep(0.5)
-            self.make_image()
-            print('Finished Imaging for {}'.format([i]))
-        print('Completed imaging routine')
-        self.grid.disable_all()
-        self.show()
-        # At the end of the run check if first and last image have same area in focus to check for travel error
-        # Make marker so that rsync knows when to stop copying
-        os.system('echo "False" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
-    
+        return tot_grid
+
+    def start_camera(self):
+        # Start Camera
+        self.tuning = Picamera2.load_tuning_file(os.path.abspath(str(Path.home())+"/Camera/imx477_tuning_file_bare.json"))
+        self.camera = Picamera2(tuning=self.tuning)
+        self.camera.set_controls(self.camera_config)
+        cfg = self.camera.create_still_configuration(raw={})
+        self.camera.configure(cfg)
+        self.camera.start()
+        print('Configured camera')
+        return
+
     def make_image(self):
         """If IR and turns on IR takes image and then does either one image or HDR if HDR is set"""
         filename = 'pos_{}'.format(self.grid.pos)
@@ -851,29 +869,31 @@ class Grid_Handler:
             self.gridbounds[axis] = end
         return 
 
-    def move_dist(self,disp): # FIXME: Why coordinate out of grid?
+    def move_dist(self,disp, adjust_ms=True): # FIXME: Why coordinate out of grid?
         """
-        coord: [x,...] list with coords to go to
+        disp: [x,...] list with displacement steps to go to
                 - Length doesnt matter will only do for provided axes (based on list index)
+        adjust_ms : adjust step for current stepping relative to grid (which is relative to ms16)
 
         Coordinate 0 is the furthest from the camera at the very left bottom as seen when facing the camera
         dir 0 causes movement towards the camera
         """
         # Change disp to ms 16 equivalent
         conv = {1:16, 1/2:8, 1/4:4,1/8:2, 1/16:1}
-        disp = [int(disp[i]*conv[self.motors[i].dx]) for i in range(len(disp))]
+        if adjust_ms:
+            disp = [int(disp[i]*conv[self.motors[i].dx]) for i in range(len(disp))]
         
         # Check that all within bounds
         for i in range(len(disp)): 
             # Check that bounds were set - if this is pre setting bounds this is ignored
             if self.gridbounds[i] != 0 and self.zero_made:
                 if self.gridbounds[i] < self.pos[i]+disp[i]:
-                    notification('Coordinate out of Grid, {} {}'.format((self.pos[i],disp[i])))
+                    notification('Coordinate out of Grid (gt gb)')
                     return
                 elif self.pos[i]+disp[i] <0:
-                    notification('Coordinate out of Grid')
+                    notification('Coordinate out of Grid (lt 0)')
                     return
-        # If check passed do
+        
         # First set direction
         for i in range(len(disp)):
             # cond 1 : disp in FIXME direction, and FIXME
@@ -883,6 +903,7 @@ class Grid_Handler:
                 self.motors[i].toggle_dir()
             elif disp[i] > 0 and self.motors[i].dir: 
                 self.motors[i].toggle_dir()
+                
         # Do movement
         for i in range(len(disp)):
             # Do disp steps times step size (microstepping)
@@ -895,16 +916,23 @@ class Grid_Handler:
         for i in range(len(disp)):
             self.tot_move[i] = self.tot_move[i]+disp[i]
 
-    def change_ms(self):
+    def change_ms(self,ms = None):
         """
-        For gamepad controler to iterate through ms
+        originally for gamepad controler to iterate through ms
+        if ms is specified changes to that one
         """
-        dx_curr = self.dx
-        if dx_curr/2 < 1/16: dx_curr = 2
-        for i in self.motors:
-            if i is not None:
-                i.set_step_mode(dx_curr/2)
-        self.dx = dx_curr/2
+        if ms is None:
+            dx_curr = self.dx
+            if dx_curr/2 < 1/16: dx_curr = 2
+            for i in self.motors:
+                if i is not None:
+                    i.set_step_mode(dx_curr/2)
+            self.dx = dx_curr/2
+        else:
+            for i in self.motors:
+                if i is not None:
+                    i.set_step_mode(ms)
+            self.dx = ms
 
     def move_to_coord(self,coord):
         """
@@ -913,10 +941,7 @@ class Grid_Handler:
         # Get coord difference
         disp = [coord[i]-self.pos[i] for i in range(len(coord))]
         print('disp: ', disp)
-        # Set to current microstepping --> inverse operation will be performed later
-        conv = {1:16, 1/2:8, 1/4:4,1/8:2, 1/16:1}
-        disp = [disp[i]/conv[self.motors[i].dx] for i in range(len(disp))]
-        self.move_dist(disp)
+        self.move_dist(disp, adjust_ms=False)
         return
     
     def disable_all(self):
