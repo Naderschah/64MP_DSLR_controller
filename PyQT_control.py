@@ -507,7 +507,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         
         # Adjust grid to minimum movement FIXME: make applicablkle to more than 1 motor
         # Check which end pos is closer to, 0 or endstop
-        if self.tot_grid[0][-1] - self.grid.pos[0] < self.grid.pos[0]:
+        if tot_grid[0][-1] - self.grid.pos[0] < self.grid.pos[0]:
             tot_grid[0] = reversed(tot_grid[0])
 
         # Iterate over grid
@@ -568,9 +568,10 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.IR_filter(True)
         if self.img_config['HDR']: 
             mod_controls = self.camera_config.copy()
-            for i in (0.5,1.5,1):
+            for i in [self.camera_config['ExposureTime']*i for i in (0.5,1.5,1)]:
                 # Change exp time
-                mod_controls['ExposureTime'] = int(self.camera_config['ExposureTime']*i)
+                print(i)
+                mod_controls['ExposureTime'] = int(i)
                 self.camera.set_controls(mod_controls)
                 time.sleep(1)
                 self.take_im(filename+'_exp*{}.dng'.format(i))
@@ -584,6 +585,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         request = self.camera.capture_request()
         request.save_dng(filename)
         request.release()
+        print(request.get_metadat())
         return
 
 
