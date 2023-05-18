@@ -849,9 +849,9 @@ class Grid_Handler:
             self.gridbounds[axis] = self.pos[axis]
         else:
             self.gridbounds[axis] = end
-        return
+        return 
 
-    def move_dist(self,disp):
+    def move_dist(self,disp): # FIXME: Why coordinate out of grid?
         """
         coord: [x,...] list with coords to go to
                 - Length doesnt matter will only do for provided axes (based on list index)
@@ -862,12 +862,12 @@ class Grid_Handler:
         # Change disp to ms 16 equivalent
         conv = {1:16, 1/2:8, 1/4:4,1/8:2, 1/16:1}
         disp = [disp[i]*conv[self.motors[i].dx] for i in range(len(disp))]
-
+        
         # Check that all within bounds
         for i in range(len(disp)): 
             # Check that bounds were set - if this is pre setting bounds this is ignored
             if self.gridbounds[i] != 0 and self.zero_made:
-                if self.gridbounds[i] <= self.pos[i]+disp[i]:
+                if self.gridbounds[i] < self.pos[i]+disp[i]:
                     notification('Coordinate out of Grid, {} {}'.format((self.pos[i],disp[i])))
                     return
                 elif self.pos[i]+disp[i] <0:
@@ -912,6 +912,10 @@ class Grid_Handler:
         """
         # Get coord difference
         disp = [coord[i]-self.pos[i] for i in range(len(coord))]
+        print('disp: ', disp)
+        # Set to current microstepping --> inverse operation will be performed later
+        conv = {1:16, 1/2:8, 1/4:4,1/8:2, 1/16:1}
+        disp = [disp[i]/conv[self.motors[i].dx] for i in range(len(disp))]
         self.move_dist(disp)
         return
     
