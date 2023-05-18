@@ -529,7 +529,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.make_image()
             print('Finished Imaging for {}'.format([i]))
         print('Completed imaging routine')
-        self.gird.disable_all()
+        self.grid.disable_all()
         self.show()
         # At the end of the run check if first and last image have same area in focus to check for travel error
         # Make marker so that rsync knows when to stop copying
@@ -1075,6 +1075,7 @@ class XboxController(object): # Add way to turn off
         """Add grid controler after xbox thread created"""
         self.grid = grid
         return
+
 
 
     def read(self): # return the buttons/triggers that you care about in this methode
