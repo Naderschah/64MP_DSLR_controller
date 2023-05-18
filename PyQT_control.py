@@ -1041,6 +1041,8 @@ class XboxController(object): # Add way to turn off
     input_timeout = 60*1000 # seconds created race condition somewhere i think so it keeps triggering 
     fine_control = False
     last =''
+    # Boolean to stop commands from being stacked on top of one another
+    cmd_running = False
     def __init__(self,grid=None):
 
         self.LeftJoystickY = 0
@@ -1171,58 +1173,61 @@ class XboxController(object): # Add way to turn off
 
     def do_input(self):
         # bool in case nothing is done
-        nothing = False
-        move_cmd = False
-        # Motor x control:
-        if self.LeftJoystickX == 1:
-            self.grid.move_dist([1])
-            print('Move dist 1')
-            last = 'move +1'
-            move_cmd = True
-        elif self.LeftJoystickX == -1:
-            self.grid.move_dist([-1])
-            print('Move dist -1')
-            last = 'move -1'
-            move_cmd = True
-        # Step size
-        elif self.Y == 1:
-            self.grid.change_ms()
-            print('changed ms: ', self.grid.dx)
-            ms_str = {1:'1',1/2:'1/2', 1/4:'1/4', 1/8:'1/8',1/16:'1/16'}
-            last = 'Change ms {}'.format(ms_str[self.grid.dx])
-        
-        elif self.B == 1:# TODO: Find out how to do this for other axis
-            self.grid.make_zeropoint(0)
-            print('Made zeropoint')
-            last = 'Made Zeropoint'
+        if not self.cmd_running:
+            self.cmd_running = True
+            nothing = False
+            move_cmd = False
+            # Motor x control:
+            if self.LeftJoystickX == 1:
+                self.grid.move_dist([1])
+                print('Move dist 1')
+                last = 'move +1'
+                move_cmd = True
+            elif self.LeftJoystickX == -1:
+                self.grid.move_dist([-1])
+                print('Move dist -1')
+                last = 'move -1'
+                move_cmd = True
+            # Step size
+            elif self.Y == 1:
+                self.grid.change_ms()
+                print('changed ms: ', self.grid.dx)
+                ms_str = {1:'1',1/2:'1/2', 1/4:'1/4', 1/8:'1/8',1/16:'1/16'}
+                last = 'Change ms {}'.format(ms_str[self.grid.dx])
 
-        elif self.X == 1:
-            self.grid.make_endstop(0)
-            print('Made endstop')
-            last = 'Made Endpoint'
+            elif self.B == 1:# TODO: Find out how to do this for other axis
+                self.grid.make_zeropoint(0)
+                print('Made zeropoint')
+                last = 'Made Zeropoint'
 
-        elif self.A == 1:
-            self.grid.zero_made = False
-            self.grid.endstop = [0]
-            print('reset grid')
-            last = 'Reset Grid'
+            elif self.X == 1:
+                self.grid.make_endstop(0)
+                print('Made endstop')
+                last = 'Made Endpoint'
 
-        elif self.RightTrigger ==1:
-            self.fine_control= True
-            last = 'Enabled Finecontrol'
-            print('Enabled Finecontrol')
+            elif self.A == 1:
+                self.grid.zero_made = False
+                self.grid.endstop = [0]
+                print('reset grid')
+                last = 'Reset Grid'
 
-        else:
-            nothing = True
-        # In case something was done record timestamp
-        if not nothing: 
-            self.last = last
-            self.timestamp = time.time()
-            # If it wasnt a move command we wait a second so the button isnt double triggered
-            if not move_cmd:
-                time.sleep(1)
-            if move_cmd and self.fine_control:
-                time.sleep(1)
+            elif self.RightTrigger ==1:
+                self.fine_control= True
+                last = 'Enabled Finecontrol'
+                print('Enabled Finecontrol')
+
+            else:
+                nothing = True
+            # In case something was done record timestamp
+            if not nothing: 
+                self.last = last
+                self.timestamp = time.time()
+                # If it wasnt a move command we wait a second so the button isnt double triggered
+                if not move_cmd:
+                    time.sleep(1)
+                if move_cmd and self.fine_control:
+                    time.sleep(1)
+            self.cmd_running = False
 
         return
 
