@@ -505,6 +505,11 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         # Set ms to 16
         self.grid.change_ms(1/16)
         
+        # Adjust grid to minimum movement FIXME: make applicablkle to more than 1 motor
+        # Check which end pos is closer to, 0 or endstop
+        if self.tot_grid[0][-1] - self.grid.pos[0] < self.grid.pos[0]:
+            tot_grid[0] = reversed(tot_grid[0])
+
         # Iterate over grid
         for i in tot_grid[0]: # FIXME below only works for 1D array
             print('Moving to {} / {:.6}mm'.format(i,i*0.0025/16))
@@ -940,7 +945,6 @@ class Grid_Handler:
         """
         # Get coord difference
         disp = [coord[i]-self.pos[i] for i in range(len(coord))]
-        print('disp: ', disp)
         self.move_dist(disp, adjust_ms=False)
         return
     
