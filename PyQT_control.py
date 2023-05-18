@@ -521,8 +521,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         print('grid:')
         print(tot_grid)
         np.meshgrid(*tot_grid)
-        for i in tot_grid[0]: # Fixme below only works for 1D array
-            print('Moving to {}'.format([i]))
+        for i in tot_grid[0]: # FIXME below only works for 1D array
+            print('Moving to {} / {:.6}mm'.format(i,i*0.0025/16))
             self.grid.move_to_coord([i])
             # Wait for image to stabilize
             time.sleep(0.5)
@@ -861,7 +861,7 @@ class Grid_Handler:
         """
         # Change disp to ms 16 equivalent
         conv = {1:16, 1/2:8, 1/4:4,1/8:2, 1/16:1}
-        disp = [disp[i]*conv[self.motors[i].dx] for i in range(len(disp))]
+        disp = [int(disp[i]*conv[self.motors[i].dx]) for i in range(len(disp))]
         
         # Check that all within bounds
         for i in range(len(disp)): 
