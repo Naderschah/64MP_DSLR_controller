@@ -477,7 +477,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         return
     
     @QtCore.pyqtSlot()
-    def start_imaging(self):
+    def start_imaging(self): # TODO: Add thing to adjust exposure if brightness too low (if below 50% increase exp so that mean 50%)
         """Starts automatic imaging chain"""
 
         # Make marker so that rsync knows when to stop copying
@@ -525,7 +525,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         # Check which end pos is closer to, 0 or endstop
         if tot_grid[0][-1] - self.grid.pos[0] < self.grid.pos[0]:
             tot_grid[0] = reversed(tot_grid[0])
-
+        # Check image brightness
+        self.adjust_exp()
         # Iterate over grid
         for i in tot_grid[0]: # FIXME below only works for 1D array
             print('Moving to {} / {:.6}mm'.format(i,i*0.0025/16))
@@ -543,6 +544,25 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         # Make marker so that rsync knows when to stop copying
         os.system('echo "False" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
     
+    def adjust_exp(self,brightness = 0.4):
+        """It happened a lot that the images were underexposed so we will first check
+        brightness -> mean of image/max val should be above this value
+        """
+        while True:
+            # Will be uint8
+            arr = self.camera.capture_array()
+            max_val = np.iinfo(arr.dtype).max
+            if np.mean(arr)/max_val > brightness:
+                break
+            else:
+                # Double exp time
+                print('Brightness to low, increasing to: {}'.format(self.camera_config['ExposureTime'] *2))
+                self.camera_config['ExposureTime']= self.camera_config['ExposureTime'] *2
+                self.camera.set_controls(self.camera_config)
+                # Wait a second
+                time.sleep(1)
+        print('Final Exp {}'.format(self.camera_config['ExposureTime']))
+        print('Final ISO {}'.format(self.camera_config['AnalogueGain']))
 
     def make_grid(self):
         tot_grid = []
