@@ -547,6 +547,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     def adjust_exp(self,brightness = 0.2):
         """It happened a lot that the images were underexposed so we will first check
         brightness -> mean of image/max val should be above this value
+        Assumes nothing in focus
         """
         while True:
             # Will be uint8
