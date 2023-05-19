@@ -44,11 +44,17 @@ X: step res
 16 microstepped 1 step =  0.15625 mu m 
 
 
-Verti
+Vertical and Horizontal res
+ 1.55 μm × 1.55 μm pixel size
+ 7.9 mm diag, horiz: 6.2868 mm x 4.712 mm
 
+with 2x:
+ each px sees 0.775x0.775 mu m
+ the sensor sees 3.1434 mm x 2.356
 
-
-
+with 4x:
+ each px sees 0.3875x0.3875 mu m
+ the sensor sees 1.5717 mm x 1.178
 
 """
 
@@ -107,12 +113,13 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         if self.menu_item_count_exp == None:
             self.menu_item_count_exp = int(np.log2(self.camera.camera_controls['ExposureTime'][1]))
         # Set comboBox items camera_controls returns (min,max, current)
-        self.ISO = self.camera.camera_controls['AnalogueGain']
-        self.Exp = self.camera.camera_controls['ExposureTime']
+        # On second initiation this stops working so this
+        self.ISO = (1,22,None)#self.camera.camera_controls['AnalogueGain']
+        self.Exp = (114, 694422939, None)# self.camera.camera_controls['ExposureTime']
         ISO = self.ISO
         Exp = self.Exp
-        for i in np.linspace(ISO[0]-1,ISO[1],self.menu_item_count): self.ISO_choice.addItem(str(i))
-        for i in np.logspace(start=1,stop=self.menu_item_count_exp,num=self.menu_item_count_exp,base=2): self.exposure_choice.addItem(str(i))
+        for i in np.linspace(ISO[0]-1,ISO[1],22): self.ISO_choice.addItem(str(i))
+        for i in np.logspace(np.log2(114),np.log2(694422939),base=2): self.exposure_choice.addItem(str(i))
         # FIXME: ISO an EXP none on load:
         self.custom_controls['AnalogueGain']=1
         self.custom_controls['ExposureTime']=1
@@ -399,6 +406,9 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         for i in np.linspace(10,150,15):
             self.combobox_step.addItem(str(i))
 
+        for i in np.linspace(1,22,22): self.combobox_gain.addItem(str(i))
+        for i in np.logspace(np.log2(114),np.log2(694422939),base=2): self.combobox_exp.addItem(str(i))
+
         return
 
     def assign_button_function(self):
@@ -609,10 +619,6 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         """Launch viewfinder (window with preview and iso exp settings)"""
         self.viewfinder = Viewfinder()
         self.viewfinder.show()
-        # Copy ISO and exp settings after it did init
-        self.viewfinder
-        for i in range(self.viewfinder.ISO_choice.count()): self.combobox_gain.addItem(str(self.viewfinder.ISO_choice.itemText(i)))
-        for i in range(self.viewfinder.exposure_choice.count()): self.combobox_exp.addItem(str(self.viewfinder.exposure_choice.itemText(i)))
         return
 
     @QtCore.pyqtSlot()
