@@ -544,7 +544,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         # Make marker so that rsync knows when to stop copying
         os.system('echo "False" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
     
-    def adjust_exp(self,brightness = 0.4):
+    def adjust_exp(self,brightness = 0.2):
         """It happened a lot that the images were underexposed so we will first check
         brightness -> mean of image/max val should be above this value
         """
