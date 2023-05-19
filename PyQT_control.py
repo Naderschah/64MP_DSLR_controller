@@ -119,7 +119,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         ISO = self.ISO
         Exp = self.Exp
         for i in np.linspace(ISO[0]-1,ISO[1],22): self.ISO_choice.addItem(str(i))
-        for i in np.logspace(np.log2(114),np.log2(694422939),base=2): self.exposure_choice.addItem(str(i))
+        for i in np.logspace(np.log2(114),np.log2(694422939),base=2,num = round(np.log2(694422939)) - int(np.log2(114))): self.exposure_choice.addItem(str(i))
         # FIXME: ISO an EXP none on load:
         self.custom_controls['AnalogueGain']=1
         self.custom_controls['ExposureTime']=1
@@ -407,7 +407,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.combobox_step.addItem(str(i))
 
         for i in np.linspace(1,22,22): self.combobox_gain.addItem(str(i))
-        for i in np.logspace(np.log2(114),np.log2(694422939),base=2): self.combobox_exp.addItem(str(i))
+        for i in np.logspace(np.log2(114),np.log2(694422939),base=2,num = round(np.log2(694422939)) - int(np.log2(114))): self.combobox_exp.addItem(str(i))
 
         return
 
