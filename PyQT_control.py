@@ -40,8 +40,11 @@ When opening endstop first and hten graphical Gain choices wrong (fractions) -> 
 Change comments in motor control about direction, current implementation correct, somewhere in reasoning i messed up
 
 X: step res
-1 microstep : 0.05 mm == 20 steps => 0.0025 mm
-16 microstepped 1 step =  0.15625 mu m 
+1 step @ MS1 == 0.004 mm
+Pred:
+1 step @ MS16 ==  0.00025 mm 
+Measured:
+1 step @ MS16 ==  0.00025 mm 
 
 
 Vertical and Horizontal res
@@ -938,6 +941,9 @@ class Grid_Handler:
         """
         # Change disp to ms 16 equivalent
         conv = {1:16, 1/2:8, 1/4:4,1/8:2, 1/16:1}
+        # Keep move command for current microstepping
+        # Disp is from here on out a book keeping tool
+        move = disp
         if adjust_ms:
             disp = [int(disp[i]*conv[self.motors[i].dx]) for i in range(len(disp))]
         
@@ -964,10 +970,10 @@ class Grid_Handler:
         # Save last state 
         self.last_pos = self.pos
         # Do movement
-        for i in range(len(disp)):
+        for i in range(len(move)):
             # Do disp steps times step size (microstepping)
             count = 0 
-            for j in range(abs(disp[i])): 
+            for j in range(abs(move[i])): 
                 self.motors[i].step()
                 count += 1
             print("moved {} steps".format(count))
@@ -998,8 +1004,8 @@ class Grid_Handler:
     def move_to_coord(self,coord):
         """
         coord: [x,...] list with coords to go to
-
-        Intended to be used by imaging script -> motor has to be 1/16 stepped for this
+        IMPORTANT: MS must be 1/16 for it to produce grid reliable results
+        Intended to be used by imaging script
         """
         # Get coord difference
         disp = [coord[i]-self.pos[i] for i in range(len(coord))]
