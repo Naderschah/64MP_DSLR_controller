@@ -474,6 +474,15 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             raise Exception('Not Implemented')
         if self.grid is None:
             self.grid = Grid_Handler(motor_x=self.mx, motor_y=None, motor_z = None)
+            # Check if old gridbounds exist
+            if os.path.isfile('grid'):
+                print('Loading Old Gridbounds')
+                with open('grid') as f:
+                    cont = f.read()
+                pos, bounds = cont.split('\n')
+                # Populate bounds
+                self.grid.pos = [int(i) for i in pos.split(':')[1].split(',')]
+                self.grid.gridbounds = [int(i) for i in bounds.split(':')[1].split(',')]
         return
     
     @QtCore.pyqtSlot()
@@ -536,7 +545,12 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.make_image()
             print('Finished Imaging for position {}'.format([i]))
         print('-------------------------\nCompleted imaging routine\n\n')
-
+        # Save the grid in case we want to restart
+        print('Saving imaging grid')
+        with open('grid') as f:
+            f.write('pos:{}'.format(','.join(self.grid.pos)))
+            f.write('endpoint:{}'.format(','.join(self.grid.gridbounds)))
+            
         self.grid.disable_all()
         self.show()
         # TODO: At the end of the run check if first and last image have same area in focus to check for travel error
@@ -621,7 +635,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         """Quick utility to make image so that above less cluttered"""
         request = self.camera.capture_request(wait=True)
         request.save_dng(filename)
-        request.save(filename+'.jpeg')
+        request.save('main',filename+'.jpeg')
         request.release()
         del request
         time.sleep(1)
