@@ -954,24 +954,27 @@ class Grid_Handler:
         
         # First set direction
         for i in range(len(disp)):
-            # cond 1 : disp in FIXME direction, and FIXME
-            # If disp negative -> movement away from camera so gpio dir = high
+            # If disp negative -> movement away from camera so gpio dir = high <--- this may be wrong
             # if -disp and True do
             if disp[i] < 0 and not self.motors[i].dir: 
                 self.motors[i].toggle_dir()
             elif disp[i] > 0 and self.motors[i].dir: 
                 self.motors[i].toggle_dir()
                 
+        # Save last state 
+        self.last_pos = self.pos
         # Do movement
         for i in range(len(disp)):
             # Do disp steps times step size (microstepping)
-            for j in range(abs(disp[i])): self.motors[i].step()
-        # Save last state and new state
-        self.last_pos = self.pos
-        # Iterate in case not all coords are given in the move
+            count = 0 
+            for j in range(abs(disp[i])): 
+                self.motors[i].step()
+                count += 1
+            print("moved {} steps".format(count))
+            print('Same as expected: {}'.format(count == abs(disp[i])))
+        # Save new pos and tot move
         for i in range(len(disp)):
             self.pos[i] = self.pos[i]+disp[i]
-        for i in range(len(disp)):
             self.tot_move[i] = self.tot_move[i]+disp[i]
 
     def change_ms(self,ms = None):
@@ -995,9 +998,12 @@ class Grid_Handler:
     def move_to_coord(self,coord):
         """
         coord: [x,...] list with coords to go to
+
+        Intended to be used by imaging script -> motor has to be 1/16 stepped for this
         """
         # Get coord difference
         disp = [coord[i]-self.pos[i] for i in range(len(coord))]
+        print(disp)
         self.move_dist(disp, adjust_ms=False)
         return
     
