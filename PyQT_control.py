@@ -44,7 +44,7 @@ X: step res
 Pred:
 1 step @ MS16 ==  0.00025 mm 
 Measured:
-1 step @ MS16 ==  0.00025 mm 
+1 step @ MS16 ==  ? mm 
 
 
 Vertical and Horizontal res
@@ -667,7 +667,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
 
     @QtCore.pyqtSlot()
     def exit(self):
-        self.grid.disable_all()
+        if self.grid is not None:
+            self.grid.disable_all()
         sys.exit(0)
 
 
@@ -801,10 +802,11 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window): # TODO: Add exit
         #Populate step size
         self.combobox_step_size.addItem(str(1))
         for i in np.linspace(20,200,10):
-            self.combobox_step_size.addItem(str(i))
-        self.combobox_step_size.addItem(str(300.0))
-        self.combobox_step_size.addItem(str(400.0))
-        self.combobox_step_size.addItem(str(500.0))
+            # chr == give character of number
+            self.combobox_step_size.addItem(str(i)+' == '+ str(i*0.00025*1e3)+chr(951))
+        self.combobox_step_size.addItem(str(300.0)+' == '+ str(300*0.00025*1e3)+chr(951))
+        self.combobox_step_size.addItem(str(400.0)+' == '+ str(400*0.00025*1e3)+chr(951))
+        self.combobox_step_size.addItem(str(500.0)+' == '+ str(500*0.00025*1e3)+chr(951))
         
 
         return
@@ -823,7 +825,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window): # TODO: Add exit
         return
 
     def set_stepsize(self, index):
-        self.own_step = int(float(self.combobox_step_size.itemText(index)))
+        self.own_step = int(float(self.combobox_step_size.itemText(index).split('==')[0].strip(' ')))
         return
 
     @QtCore.pyqtSlot()
