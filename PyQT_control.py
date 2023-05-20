@@ -496,6 +496,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
 
         if self.grid is None: # Add message notify-send didnt work prob wont with qt in fullscreen
             return
+        elif self.grid.gridbounds == [0]*self.grid.n_motors:
+            return
         # Hide window as PyQT will start to freeze - screw doing with window 
         self.hide()
 
