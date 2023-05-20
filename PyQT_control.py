@@ -380,6 +380,9 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                  'z':None,
                  'IR':4}
     endstops = []
+    # 1 step at 16 ms to mm travel conversion
+    ms16step_mm = 0.00025
+
     camera_config = { "AeEnable": False,  # Auto Exposure Value
                         "AwbEnable":False,  # Auto White Balance
                         "ExposureValue":0, # No exposure Val compensation --> Shouldnt be required as AeEnable:False
@@ -405,9 +408,9 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         self.checkbox_x.setCheckState(True)
 
         # Populate step size (Exp and iso are populated when opening graphical)
-        self.combobox_step.addItem(str(5))
+        self.combobox_step.addItem(str(5)+' == '+ str(5*self.ms16step_mm*1e3)+chr(956)+'m')
         for i in np.linspace(10,150,15):
-            self.combobox_step.addItem(str(i))
+            self.combobox_step.addItem(str(i)+' == '+ str(i*self.ms16step_mm*1e3)+chr(956)+'m')
 
         for i in np.linspace(1,22,22): self.combobox_gain.addItem(str(i))
         for i in np.logspace(int(np.log2(114))+1,round(np.log2(694422939)),base=2,num = round(np.log2(694422939)) - int(np.log2(114))): self.combobox_exp.addItem(str(i))
@@ -454,7 +457,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         return
 
     def change_step(self,index):
-        self.img_config['step_size'] = int(float(self.combobox_step.itemText(index)))
+        self.img_config['step_size'] = int(float(self.combobox_step.itemText(index).split('==')[0].strip(' ')))
         return
 
     @QtCore.pyqtSlot()
@@ -686,6 +689,8 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window): # TODO: Add exit
         super().__init__()
         # pass reference to parent window
         self.parent = parent
+        self.ms16step_mm = parent.ms15step_mm
+
         if self.parent.gamepad != None:
             # Dont show vertical layout
             self.minimal_config = True
@@ -800,13 +805,13 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window): # TODO: Add exit
         if self.grid.z is not None:
             self.combobox_motor.addItem('z')
         #Populate step size
-        self.combobox_step_size.addItem(str(1))
+        self.combobox_step_size.addItem(str(1)+' == '+ str(1*self.ms16step_mm*1e3)+chr(956)+'m')
         for i in np.linspace(20,200,10):
             # chr == give character of number
-            self.combobox_step_size.addItem(str(i)+' == '+ str(i*0.00025*1e3)+chr(951))
-        self.combobox_step_size.addItem(str(300.0)+' == '+ str(300*0.00025*1e3)+chr(951))
-        self.combobox_step_size.addItem(str(400.0)+' == '+ str(400*0.00025*1e3)+chr(951))
-        self.combobox_step_size.addItem(str(500.0)+' == '+ str(500*0.00025*1e3)+chr(951))
+            self.combobox_step_size.addItem(str(i)+' == '+ str(i*self.ms16step_mm*1e3)+chr(956)+'m')
+        self.combobox_step_size.addItem(str(300.0)+' == '+ str(300*self.ms16step_mm*1e3)+chr(956)+'m')
+        self.combobox_step_size.addItem(str(400.0)+' == '+ str(400*self.ms16step_mm*1e3)+chr(956)+'m')
+        self.combobox_step_size.addItem(str(500.0)+' == '+ str(500*self.ms16step_mm*1e3)+chr(956)+'m')
         
 
         return
