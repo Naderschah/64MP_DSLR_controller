@@ -1372,10 +1372,14 @@ def get_res():
 
 
 if __name__=='__main__':
-
-    app = QtWidgets.QApplication(sys.argv)
-    main = Main()
-    sys.exit(app.exec_())
+    try:
+        app = QtWidgets.QApplication(sys.argv)
+        main = Main()
+        sys.exit(app.exec_())
+    except Exception as e:
+        logging.error('Exception occured, terminating')
+        logging.error(e)
+        sys.exit(0)
 
 
 
