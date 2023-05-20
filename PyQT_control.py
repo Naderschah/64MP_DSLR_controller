@@ -477,7 +477,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             # Check if old gridbounds exist
             if os.path.isfile('grid'):
                 print('Loading Old Gridbounds')
-                with open('grid') as f:
+                with open('grid','r') as f:
                     cont = f.read()
                 pos, bounds = cont.split('\n')
                 # Populate bounds
@@ -549,7 +549,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         print('-------------------------\nCompleted imaging routine\n\n')
         # Save the grid in case we want to restart
         print('Saving imaging grid')
-        with open('grid') as f:
+        with open('grid','w') as f:
             f.write('pos:{}'.format(','.join(self.grid.pos)))
             f.write('endpoint:{}'.format(','.join(self.grid.gridbounds)))
             
