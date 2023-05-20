@@ -547,7 +547,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     def adjust_exp(self,brightness = 0.2):
         """It happened a lot that the images were underexposed so we will first check
         brightness -> mean of image/max val should be above this value
-        Assumes nothing in focus
+        Assumes nothing in focus 
         """
         while True:
             # Will be uint8
@@ -621,6 +621,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         """Quick utility to make image so that above less cluttered"""
         request = self.camera.capture_request(wait=True)
         request.save_dng(filename)
+        request.save(filename+'.jpeg')
         request.release()
         del request
         time.sleep(1)
