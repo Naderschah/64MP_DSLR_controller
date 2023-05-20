@@ -557,6 +557,10 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             f.write('endpoint:{}'.format(','.join([str(i) for i in self.grid.gridbounds])))
             
         self.grid.disable_all()
+        # Release Camera
+        self.camera.stop()
+        self.camera.close()
+        del self.camera
         self.show()
         # TODO: At the end of the run check if first and last image have same area in focus to check for travel error
         
