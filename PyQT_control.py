@@ -644,7 +644,6 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         """Quick utility to make image so that above less cluttered"""
         request = self.camera.capture_request(wait=True)
         request.save_dng(filename)
-        request.save('main',filename+'.jpeg')
         request.release()
         del request
         time.sleep(1)
