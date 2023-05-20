@@ -550,8 +550,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         # Save the grid in case we want to restart
         print('Saving imaging grid')
         with open('grid','w') as f:
-            f.write('pos:{}'.format(','.join(self.grid.pos)))
-            f.write('endpoint:{}'.format(','.join(self.grid.gridbounds)))
+            f.write('pos:{}'.format(','.join([str(i) for i in self.grid.pos])))
+            f.write('endpoint:{}'.format(','.join([str(i) for i in self.grid.gridbounds])))
             
         self.grid.disable_all()
         self.show()
@@ -1030,7 +1030,7 @@ class Motor_Control:
     enabled = False
     # False = default dir = pin low movement towards camera; True = other dir = pin high  movement away from camera
     dir = False
-    delay = 0.05
+    delay = 0.1
     def __init__(self, gpio_pins={'enable':17, 'ms1':27, 'ms2':22, 'ms3':10, 'dir':9, 'step':11} , 
                  dx=1/16):
         """
