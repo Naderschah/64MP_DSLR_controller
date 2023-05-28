@@ -377,10 +377,10 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     img_dir = None
     grid = None
     gamepad = None
-    motor_dir = [1,1,1]
+    motor_dir = [-1,-1,-1]
     gpio_pins = {'x': [19,5,0,11],
-                 'y':[9,10,22,27], 
-                 'z':[17,4,3,2],
+                 'y':[17,4,3,2], 
+                 'z':[9,10,22,27],
                  'IR':4}
     endstops = []
     # 1 step at 16 ms to mm travel conversion
@@ -970,7 +970,8 @@ class Grid_Handler:
         # Adjust roation direction relative to grid
         # Check which list to iterate
         if len(self.motor_dir)>len(disp): length = len(disp)
-        if len(self.motor_dir)<len(disp): length = len(self.motor_dir)
+        elif len(self.motor_dir)<len(disp): length = len(self.motor_dir)
+        else: length = len(self.motor_dir)
         for i in range(length):
             if len(disp) < i:
                 disp[i] = disp[i]*self.motor_dir[i]
