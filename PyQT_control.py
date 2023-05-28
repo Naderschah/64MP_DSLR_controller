@@ -21,7 +21,7 @@ from functools import partial
 # Controller imports
 from inputs import get_gamepad
 import math
-from ULN2003 import ULN2003
+from ULN2003Pi import ULN2003
 
 ZoomLevels = (1)
 
@@ -377,6 +377,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     img_dir = None
     grid = None
     gamepad = None
+    motor_dir = [-1,1,1]
     gpio_pins = {'x': [19,5,0,11],
                  'y':[9,10,22,27], 
                  'z':[17,4,3,2],
@@ -492,7 +493,9 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.mz = None
 
         if self.grid is None:
-            self.grid = Grid_Handler(motor_x=self.mx, motor_y=self.my, motor_z = self.mz)
+            self.grid = Grid_Handler(motor_x=self.mx, motor_y=self.my, motor_z = self.mz, 
+                                    # if -1 invert motor direction
+                                    motor_dir = self.motor_dir)
             # Check if old gridbounds exist
             if os.path.isfile('grid'):
                 print('Loading Old Gridbounds')
@@ -900,7 +903,7 @@ class Grid_Handler:
     dx = 1
     # Bool to check if zeropoint set
     zero_made = False
-    def __init__(self,motor_x,motor_y=None,motor_z=None,dx=None) -> None:
+    def __init__(self,motor_x,motor_y=None,motor_z=None,motor_dir=None,dx=None) -> None:
         # Implement File handler here
         # Implement end stop control
         # Implement depth map recording 
@@ -908,11 +911,12 @@ class Grid_Handler:
         # ----- Could just set rsync to run every 5 minutes when raspberry images
         
         self.dx = dx
+        self.motor_dir= motor_dir
         # Motors
-        if motor_y is not None:
-            self.y = motor_x
+        if motor_x is not None:
+            self.x = motor_x
         else:
-            self.y = None
+            self.x = None
         if motor_y is not None:
             self.y = motor_y
         else:
@@ -961,6 +965,11 @@ class Grid_Handler:
         disp --> displacement in motor steps
         adjust_ms --> From big easy driver microstepping --> No longer used
         """
+        # Adjust roation direction relative to grid
+        for i in range(len(self.motor_dir)):
+            if len(disp) < i:
+                disp[i] = disp[i]*self.motor_dir[i]
+
         for i in range(len(disp)): 
             # Check that bounds were set - if this is pre setting bounds this is ignored
             if self.gridbounds[i] != 0 and self.zero_made:
@@ -1096,8 +1105,10 @@ class BigEasyDriver:
     # False = default dir = pin low movement towards camera; True = other dir = pin high  movement away from camera
     dir = False
     delay = 0.1
-    def __init__(self, gpio_pins={'enable':17, 'ms1':27, 'ms2':22, 'ms3':10, 'dir':9, 'step':11} , 
-                 dx=1/16):
+    def __init__(self, 
+                 gpio_pins={'enable':17, 'ms1':27, 'ms2':22, 'ms3':10, 'dir':9, 'step':11} , 
+                 dx=1,
+                 ):
         """
         gpio_pins : dict of pin name to gpio location
          keys required -> ms1 ms2 ms3 enable step dir
