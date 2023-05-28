@@ -582,7 +582,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         self.adjust_exp()
         # TODO : Rewrite in numpy
        
-        x_forward,y_forward, z_forward = [[True if self.grid.gridbounds[i] - self.grid.pos[i] < self.grid.pos[i]][0] for i in range(len(self.grid.pos))]
+        x_forward,y_forward, z_forward = [[True if (self.grid.gridbounds[i] - self.grid.pos[i] < self.grid.pos[i]) else False][0] for i in range(len(self.grid.pos))]
         coord_arr = []
         # Iterate max possible coordinate
         for i in range(self.grid.gridbounds[2],*[-1 if not z_forward else 1]): # z
