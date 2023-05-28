@@ -509,11 +509,10 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                 print('Loading Old Gridbounds')
                 with open(str(Path.home())+'/grid','r') as f:
                     cont = f.read()
-                pos, bounds,endstop = cont.split('\n')
+                pos, bounds = cont.split('\n')
                 # Populate bounds
                 self.grid.pos = [int(i) for i in pos.split(':')[1].split(',')]
                 self.grid.gridbounds = [int(i) for i in bounds.split(':')[1].split(',')]
-                self.grid.endstop = [int(i) for i in endstop.split(':')[1].split(',')]
         return
     
     def make_img_dir(self):
@@ -563,7 +562,6 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         with open(str(Path.home())+'/grid','w') as f:
             f.write('pos:{}\n'.format(','.join([str(i) for i in self.grid.pos])))
             f.write('endpoint:{}'.format(','.join([str(i) for i in self.grid.gridbounds])))
-            f.write('endstop:{}'.format(','.join([str(i) for i in self.grid.endstop])))
         # Make marker so that rsync knows when to stop copying
         os.system('echo "True" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
         # Set mode for pin 4 (IR) if it hasnt been set yet
