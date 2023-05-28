@@ -538,7 +538,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             if res.lower() =='Y'.lower():
                 ask = True
                 break
-            elif res.lower() =='N'.lower()::
+            elif res.lower() =='N'.lower():
                 ask = False
                 break
         
