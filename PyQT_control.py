@@ -377,7 +377,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     img_dir = None
     grid = None
     gamepad = None
-    motor_dir = [-1,1,1]
+    motor_dir = [1,1,1]
     gpio_pins = {'x': [19,5,0,11],
                  'y':[9,10,22,27], 
                  'z':[17,4,3,2],
@@ -483,11 +483,11 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.mx = ULN2003.ULN2003(self.gpio_pins['x'])
         else:
             self.mx = None
-        if self.checkbox_y.isChecked() and not hasattr(self,'y'):
+        if self.checkbox_y.isChecked() and not hasattr(self,'my'):
             self.my = ULN2003.ULN2003(self.gpio_pins['y'])
         else:
             self.my = None
-        if self.checkbox_z.isChecked() and not hasattr(self,'z'):
+        if self.checkbox_z.isChecked() and not hasattr(self,'mz'):
             self.mz = ULN2003.ULN2003(self.gpio_pins['z'])
         else:
             self.mz = None
@@ -989,7 +989,8 @@ class Grid_Handler:
         self.last_pos = self.pos
         # Do movement
         for i in range(len(disp)):
-            self.motors[i].step(disp[i])
+            if disp[i] != 0:
+                self.motors[i].step(disp[i])
         # Save new pos and tot move
         for i in range(len(disp)):
             self.pos[i] = self.pos[i]+disp[i]
