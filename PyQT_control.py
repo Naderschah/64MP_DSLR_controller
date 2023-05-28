@@ -547,21 +547,17 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             y = float(input('What is the y-distance in mm: '))
             z = float(input('What is the z-distance in mm: '))
             # Convert px size to mm #FIXME: Variable magnification
-            px_size = 1.55 # mu
+            px_size = 1.55*1e-3 # mu
             im_y_len = 4056*px_size
             im_z_len = 3040*px_size
             overlap = 0.4
             # Remove non overlap distance
             y -= (1-overlap)*im_y_len
             z -= (1-overlap)*im_z_len
-            self.grid.gridbound = [int(x/self.step_mm)+1,
+            self.grid.set_gridbounds([int(x/self.step_mm)+1,
                                    int(y/self.step_mm)+1,
-                                   int(z/self.step_mm)+1]
-        # TODO: Fix below, add Grid Handler initiation in this
-
-        # It gets stuck somehwere below here, presumably at the grid creation
-
-
+                                   int(z/self.step_mm)+1])
+        # TODO: add Grid Handler initiation in this
 
 
         print('Saving imaging grid')
@@ -579,7 +575,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             return
         # Hide window as PyQT will start to freeze - screw doing with window 
         self.hide()
-
+        print('Creating Paths')
         # Change to img directory
         self.make_img_dir()
         
@@ -608,6 +604,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         #    tot_grid[0] = reversed(tot_grid[0])
 
         # Check image brightness
+        print('Adjusting exposure')
         self.adjust_exp()
         
         # TODO : Rewrite in numpy
@@ -615,13 +612,14 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         x_forward,y_forward, z_forward = [[True if (self.grid.gridbounds[i] - self.grid.pos[i] < self.grid.pos[i]) else False][0] for i in range(len(self.grid.pos))]
         coord_arr = []
         # Iterate max possible coordinate
+        print('Starting Imaging')
         start = time.time()
         count=0
-        for i in range(self.grid.gridbounds[2],*[-1 if not z_forward else 1]): # z
+        for i in range(*[self.grid.gridbounds[2] if not z_forward else 0],*[self.grid.gridbounds[2] if z_forward else 0],*[-1 if not z_forward else 1]): # z
             y_sub = []
-            for j in range(self.grid.gridbounds[1],*[-1 if not y_forward else 1]): # y
+            for j in range(*[self.grid.gridbounds[1] if not y_forward else 0],*[self.grid.gridbounds[1] if y_forward else 0],*[-1 if not y_forward else 1]): # y
                 x_sub = []
-                for k in range(self.grid.gridbounds[0],*[-1 if not x_forward else 1]): # x
+                for k in range(*[self.grid.gridbounds[0] if not x_forward else 0],*[self.grid.gridbounds[0] if x_forward else 0],*[-1 if not x_forward else 1]): # x
                     print('Moving to {} / {:.6}mm'.format([i,j,k],[f*self.step_mm for f in [i,j,k]]))
                     self.grid.move_to_coord([k,j,i])
                     time.sleep(0.01)
@@ -1002,6 +1000,10 @@ class Grid_Handler:
         self.motors = [self.x, self.y, self.z]
         pass
     
+    def set_gridbounds(self,bounds):
+        self.gridbounds = bounds
+
+
     def reset_grid(self,axis=None):
         """Resets the grid"""
         if axis == None:
