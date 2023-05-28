@@ -532,6 +532,23 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     def start_imaging(self): # TODO: Add thing to adjust exposure if brightness too low (if below 50% increase exp so that mean 50%)
         """Starts automatic imaging chain"""
         # Save the grid in case we want to restart or something fails
+        print('Do you want to use the gridpoint as the maximum coordinate? Otherwise the current positon will be the zeropoint (back bottom left, when facing the camera) and the dimensions will be asked')
+        while True:
+            res = input('y/n: ')
+            if res.lower() =='Y'.lower():
+                ask = True
+                break
+            elif res.lower() =='N'.lower()::
+                ask = False
+                break
+        
+        if ask: 
+            self.grid.pos=[0]*self.grid.n_motors
+            x = input('What is the x-distance in mm: ')
+            y = input('What is the y-distance in mm: ')
+            z = input('What is the z-distance in mm: ')
+            self.grid.gridbound = [int(x/self.step_mm)+1,int(y/self.step_mm)+1,int(z/self.step_mm)+1]
+        
         print('Saving imaging grid')
         with open(str(Path.home())+'/grid','w') as f:
             f.write('pos:{}\n'.format(','.join([str(i) for i in self.grid.pos])))
@@ -569,17 +586,16 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
 
         print('Starting imaging with HDR={}, IR and Normal={}, Just IR {}'.format(self.img_config['HDR'],self.img_config['IR_and_normal'], self.img_config['IR']  ))
         self.start_camera()
-        tot_grid = self.make_grid()
 
+        #tot_grid = self.make_grid()
         # Check which end pos is closer to, 0 or endstop
         # One motor implementation: (worked)
         #if tot_grid[0][-1] - self.grid.pos[0] < self.grid.pos[0]:
         #    tot_grid[0] = reversed(tot_grid[0])
-        for i in range(len(tot_grid)):
-            if tot_grid[i][-1] - self.grid.pos[i] < self.grid.pos[i]:
-                tot_grid[i] = reversed(tot_grid[i])
+
         # Check image brightness
         self.adjust_exp()
+        
         # TODO : Rewrite in numpy
        
         x_forward,y_forward, z_forward = [[True if (self.grid.gridbounds[i] - self.grid.pos[i] < self.grid.pos[i]) else False][0] for i in range(len(self.grid.pos))]
@@ -595,8 +611,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             y_forward = not y_forward   
 
 
-        for i in coord_arr: # FIXME below only works for 1D array
-            print('Moving to {} / {:.6}mm'.format(i,i*0.0025/16))
+        for i in coord_arr: 
+            print('Moving to {} / {:.6}mm'.format(i,i*self.step_mm))
             self.grid.move_to_coord(i)
             # Wait for image to stabilize
             time.sleep(0.5)
@@ -681,7 +697,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.IR_filter(True)
         if self.img_config['HDR']: 
             mod_controls = self.camera_config.copy()
-            for i in [self.camera_config['ExposureTime']*i for i in (0.5,0.75,1,1.25,1.5)]:
+            for i in [self.camera_co nfig['ExposureTime']*i for i in (0.5,0.75,1,1.25,1.5)]:
                 # Change exp time
                 print(i)
                 mod_controls['ExposureTime'] = int(i)
