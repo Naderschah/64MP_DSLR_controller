@@ -558,10 +558,10 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                                    int(y/self.step_mm)+1,
                                    int(z/self.step_mm)+1]
         
-        print('Saving imaging grid')
-        with open(str(Path.home())+'/grid','w') as f:
-            f.write('pos:{}\n'.format(','.join([str(i) for i in self.grid.pos])))
-            f.write('endpoint:{}'.format(','.join([str(i) for i in self.grid.gridbounds])))
+        #print('Saving imaging grid')
+        #with open(str(Path.home())+'/grid','w') as f:
+        #    f.write('pos:{}\n'.format(','.join([str(i) for i in self.grid.pos])))
+        #    f.write('endpoint:{}'.format(','.join([str(i) for i in self.grid.gridbounds])))
         # Make marker so that rsync knows when to stop copying
         os.system('echo "True" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
         # Set mode for pin 4 (IR) if it hasnt been set yet
