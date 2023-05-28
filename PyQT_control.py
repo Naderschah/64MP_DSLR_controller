@@ -49,8 +49,11 @@ Measured:
 1 step @ MS16 ==  ? mm 
 
 TODO: Convert to new motors look up step conversion
+angle per step = 5.625°/63.68395
+old motor angle per ms16 = 	1.8°/16
 
-
+so angle per step now = 0.00025 / (1.8°/16) * (5.625°/63.68395)
+                      = 0.00019628179470651555 mm 
 
 Vertical and Horizontal res
  1.55 μm × 1.55 μm pixel size
@@ -389,7 +392,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     # 1 step at 16 ms to mm travel conversion
     ms16step_mm = 0.00025
     # Todo:
-    step_mm = 1
+    step_mm = 0.00019628179470651555
 
     camera_config = { "AeEnable": False,  # Auto Exposure Value
                         "AwbEnable":False,  # Auto White Balance
@@ -969,14 +972,6 @@ class Grid_Handler:
         disp --> displacement in motor steps
         adjust_ms --> From big easy driver microstepping --> No longer used
         """
-        # Adjust roation direction relative to grid
-        # Check which list to iterate
-        if len(self.motor_dir)>len(disp): length = len(disp)
-        elif len(self.motor_dir)<len(disp): length = len(self.motor_dir)
-        else: length = len(self.motor_dir)
-        for i in range(length):
-            disp[i] = disp[i]*self.motor_dir[i]
-
         for i in range(len(disp)): 
             # Check that bounds were set - if this is pre setting bounds this is ignored
             if self.gridbounds[i] != 0 and self.zero_made:
@@ -986,7 +981,13 @@ class Grid_Handler:
                 elif self.pos[i]+disp[i] <0:
                     notification('Coordinate out of Grid (lt 0)')
                     return
-        
+        # Adjust roation direction relative to grid
+        # Check which list to iterate
+        if len(self.motor_dir)>len(disp): length = len(disp)
+        elif len(self.motor_dir)<len(disp): length = len(self.motor_dir)
+        else: length = len(self.motor_dir)
+        for i in range(length):
+            disp[i] = disp[i]*self.motor_dir[i]
         # Save last state 
         self.last_pos = self.pos
         # Do movement
