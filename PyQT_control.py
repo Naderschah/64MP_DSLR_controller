@@ -968,7 +968,10 @@ class Grid_Handler:
         adjust_ms --> From big easy driver microstepping --> No longer used
         """
         # Adjust roation direction relative to grid
-        for i in range(len(self.motor_dir)):
+        # Check which list to iterate
+        if len(self.motor_dir)>len(disp): length = len(disp)
+        if len(self.motor_dir)<len(disp): length = len(self.motor_dir)
+        for i in range(length):
             if len(disp) < i:
                 disp[i] = disp[i]*self.motor_dir[i]
 
