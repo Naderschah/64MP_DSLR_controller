@@ -67,6 +67,8 @@ with 4x:
  each px sees 0.3875x0.3875 mu m
  the sensor sees 1.5717 mm x 1.178
 
+ 
+# TODO: Add magnification entry, and overlap percentage between images to compute y and z
 """
 
 
@@ -514,6 +516,18 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.grid.endstop = [int(i) for i in endstop.split(':')[1].split(',')]
         return
     
+    def make_img_dir(self):
+        # Establish dir name and make img collection dir
+        dirs = os.listdir(os.path.join(str(Path.home()),'Images'))
+        dirs = [i for i in dirs if 'img' in i]
+        self.img_dir = os.path.join(str(Path.home()),'Images','img_'+str(len(dirs)))
+        if os.path.isdir(self.img_dir): # In case this already exists just do this
+            self.img_dir = os.path.join(str(Path.home()),'Images','img_{}'.format(dt.datetime.now().strftime('%Y%m%d-%h%M')))
+        os.mkdir(self.img_dir) 
+        os.chdir(self.img_dir)
+        print('Changed directory to {}'.format(self.img_dir))
+
+
     @QtCore.pyqtSlot()
     def start_imaging(self): # TODO: Add thing to adjust exposure if brightness too low (if below 50% increase exp so that mean 50%)
         """Starts automatic imaging chain"""
@@ -535,15 +549,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         # Hide window as PyQT will start to freeze - screw doing with window 
         self.hide()
 
-        # Establish dir name and make img collection dir
-        dirs = os.listdir(os.path.join(str(Path.home()),'Images'))
-        dirs = [i for i in dirs if 'img' in i]
-        self.img_dir = os.path.join(str(Path.home()),'Images','img_'+str(len(dirs)))
-        if os.path.isdir(self.img_dir): # In case this already exists just do this
-            self.img_dir = 'img_{}'.format(dt.datetime.now().strftime('%Y%m%d-%h%M'))
-        os.mkdir(self.img_dir) 
-        os.chdir(self.img_dir)
-        print('Changed directory to {}'.format(self.img_dir))
+        # Change to img directory
+        self.make_img_dir()
         
         # Imging config
         if self.checkbox_IR.isChecked() and not self.checkbox_IR_an_normal.isChecked():
@@ -563,18 +570,34 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         print('Starting imaging with HDR={}, IR and Normal={}, Just IR {}'.format(self.img_config['HDR'],self.img_config['IR_and_normal'], self.img_config['IR']  ))
         self.start_camera()
         tot_grid = self.make_grid()
-        # self.grid.change_ms(1/16)
-        
-        # Adjust grid to minimum movement FIXME: make applicablkle to more than 1 motor
+
         # Check which end pos is closer to, 0 or endstop
-        if tot_grid[0][-1] - self.grid.pos[0] < self.grid.pos[0]:
-            tot_grid[0] = reversed(tot_grid[0])
+        # One motor implementation: (worked)
+        #if tot_grid[0][-1] - self.grid.pos[0] < self.grid.pos[0]:
+        #    tot_grid[0] = reversed(tot_grid[0])
+        for i in range(len(tot_grid)):
+            if tot_grid[i][-1] - self.grid.pos[i] < self.grid.pos[i]:
+                tot_grid[i] = reversed(tot_grid[i])
         # Check image brightness
         self.adjust_exp()
-        # Iterate over grid
-        for i in tot_grid[0]: # FIXME below only works for 1D array
+        # TODO : Rewrite in numpy
+       
+        x_forward,y_forward, z_forward = [[True if self.grid.gridbounds[i] - self.grid.pos[i] < self.grid.pos[i]][0] for i in range(len(self.grid.pos))]
+        coord_arr = []
+        # Iterate max possible coordinate
+        for i in range(self.grid.gridbounds[2],*[-1 if not z_forward else 1]): # z
+            y_sub = []
+            for j in range(self.grid.gridbounds[1],*[-1 if not y_forward else 1]): # y
+                x_sub = []
+                for k in range(self.grid.gridbounds[0],*[-1 if not x_forward else 1]): # x
+                    coord_arr.append([k,j,i])
+                x_forward = not x_forward
+            y_forward = not y_forward   
+
+
+        for i in coord_arr: # FIXME below only works for 1D array
             print('Moving to {} / {:.6}mm'.format(i,i*0.0025/16))
-            self.grid.move_to_coord([i])
+            self.grid.move_to_coord(i)
             # Wait for image to stabilize
             time.sleep(0.5)
             self.make_image()
@@ -621,16 +644,20 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                 # We create grid if motor connected
                 ind = 0 
                 grid = []
+                stp_size = self.img_config['step_size']
+
+                # FIXME: Below temporary
+                if i == 1: stp_size = 16000
+                if i == 2: stp_size = 8000
                 while ind < self.grid.gridbounds[i]:
                     grid.append(ind)
-                    ind += self.img_config['step_size']
+                    ind += stp_size
                 # Add max point if not already present
                 if self.grid.gridbounds[i] not in grid: grid.append(self.grid.gridbounds[i])
                 tot_grid.append(grid)
         # FIXME: Add meshgrid  for multiple motors
         print('grid:')
         print(tot_grid)
-        np.meshgrid(*tot_grid)
         return tot_grid
 
     def start_camera(self):
