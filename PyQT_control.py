@@ -954,7 +954,7 @@ class Grid_Handler:
 
     def make_endstop(self, axis, end=None):
         """
-        end : current position and distance from 0 point TODO: Establish if this is meant to be front or back
+        end : current position and distance from 0 point 
         axis : int describing axes x:0, y:1, z:2 
         """
 
@@ -994,6 +994,9 @@ class Grid_Handler:
         for i in range(len(disp)):
             if disp[i] != 0:
                 self.motors[i].step(disp[i])
+        # For book keeping undo motor correction
+        for i in range(length):
+            disp[i] = disp[i]*self.motor_dir[i]
         # Save new pos and tot move
         for i in range(len(disp)):
             self.pos[i] = self.pos[i]+disp[i]
