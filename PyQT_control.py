@@ -513,7 +513,11 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     @QtCore.pyqtSlot()
     def start_imaging(self): # TODO: Add thing to adjust exposure if brightness too low (if below 50% increase exp so that mean 50%)
         """Starts automatic imaging chain"""
-
+        # Save the grid in case we want to restart or something fails
+        print('Saving imaging grid')
+        with open(str(Path.home())+'/grid','w') as f:
+            f.write('pos:{}\n'.format(','.join([str(i) for i in self.grid.pos])))
+            f.write('endpoint:{}'.format(','.join([str(i) for i in self.grid.gridbounds])))
         # Make marker so that rsync knows when to stop copying
         os.system('echo "True" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
         # Set mode for pin 4 (IR) if it hasnt been set yet
@@ -554,8 +558,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         print('Starting imaging with HDR={}, IR and Normal={}, Just IR {}'.format(self.img_config['HDR'],self.img_config['IR_and_normal'], self.img_config['IR']  ))
         self.start_camera()
         tot_grid = self.make_grid()
-        # Set ms to 16
-        self.grid.change_ms(1/16)
+        # self.grid.change_ms(1/16)
         
         # Adjust grid to minimum movement FIXME: make applicablkle to more than 1 motor
         # Check which end pos is closer to, 0 or endstop
@@ -572,11 +575,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.make_image()
             print('Finished Imaging for position {}'.format([i]))
         print('-------------------------\nCompleted imaging routine\n\n')
-        # Save the grid in case we want to restart
-        print('Saving imaging grid')
-        with open(str(Path.home())+'/grid','w') as f:
-            f.write('pos:{}\n'.format(','.join([str(i) for i in self.grid.pos])))
-            f.write('endpoint:{}'.format(','.join([str(i) for i in self.grid.gridbounds])))
+        
             
         self.grid.disable_all(gpio_pins=self.gpio_pins)
         # Release Camera
@@ -825,12 +824,12 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window): # TODO: Add exit
             self.combobox_motor.addItem('z')
         #Populate step size
         self.combobox_step_size.addItem(str(1)+' == '+ str(1*self.step_mm*1e3)+chr(956)+'m')
-        for i in np.linspace(20,200,10):
+        for i in np.linspace(200,2000,10):
             # chr == give character of number
             self.combobox_step_size.addItem(str(i)+' == '+ str(i*self.step_mm*1e3)+chr(956)+'m')
-        self.combobox_step_size.addItem(str(300.0)+' == '+ str(300*self.step_mm*1e3)+chr(956)+'m')
-        self.combobox_step_size.addItem(str(400.0)+' == '+ str(400*self.step_mm*1e3)+chr(956)+'m')
-        self.combobox_step_size.addItem(str(500.0)+' == '+ str(500*self.step_mm*1e3)+chr(956)+'m')
+        self.combobox_step_size.addItem(str(3000.0)+' == '+ str(300*self.step_mm*1e3)+chr(956)+'m')
+        self.combobox_step_size.addItem(str(4000.0)+' == '+ str(400*self.step_mm*1e3)+chr(956)+'m')
+        self.combobox_step_size.addItem(str(5000.0)+' == '+ str(500*self.step_mm*1e3)+chr(956)+'m')
         
 
         return
