@@ -854,8 +854,10 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window): # TODO: Add exit
         """Moves motor by x steps, updates menu items keeping track of current pos and total moves since initiation"""
         motor = self.combobox_motor.currentIndex()
         # Order of list is [xyzr] not all must be given but prior indeces must be
-        steps = motor*[0]+[steps]
-        self.grid.move_dist(steps)
+        # Generate step list of correct length to make motor move
+        steps_ = (motor+1)*[0]
+        steps_[motor] = steps
+        self.grid.move_dist(steps_)
         # Update pos and total move
         _translate = QtCore.QCoreApplication.translate
         self.menu_pos_placeholder.setTitle(_translate("Endstop_window", str(self.grid.pos)))
