@@ -578,7 +578,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             f.write('pos:{}\n'.format(','.join([str(i) for i in self.grid.pos])))
             f.write('endpoint:{}'.format(','.join([str(i) for i in self.grid.gridbounds])))
             
-        self.grid.disable_all()
+        self.grid.disable_all(gpio_pins=self.gpio_pins)
         # Release Camera
         self.camera.stop()
         self.camera.close()
@@ -1091,13 +1091,17 @@ class Grid_Handler:
         self.move_dist(disp, adjust_ms=False)
         return
     
-    def disable_all(self):
-        if self.x is not None:
-            self.x.disable()
-        if self.y is not None:
-            self.y.disable()
-        if self.z is not None:
-            self.z.disable()
+    def disable_all(self,gpio_pins):
+        # Disable pins
+        import RPi.GPIO as GPIO
+        pins = []
+        if gpio_pins['x'] is not None:
+            pins += gpio_pins['x']
+        if gpio_pins['y'] is not None:
+            pins += gpio_pins['y']
+        if gpio_pins['z'] is not None:
+            pins += gpio_pins['z']
+        for i in pins: GPIO.output(self.pins[p],0)
         return
         
 
