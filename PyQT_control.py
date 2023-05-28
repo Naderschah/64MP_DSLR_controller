@@ -21,6 +21,8 @@ from functools import partial
 # Controller imports
 from inputs import get_gamepad
 import math
+from ULN2003 import ULN2003
+
 ZoomLevels = (1)
 
 
@@ -375,9 +377,9 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     img_dir = None
     grid = None
     gamepad = None
-    gpio_pins = {'x': {'enable':17, 'ms1':27, 'ms2':22, 'ms3':10, 'dir':9, 'step':11}, 
-                 'y':None, 
-                 'z':None,
+    gpio_pins = {'x': [19,5,0,11],
+                 'y':[9,10,22,27], 
+                 'z':[17,4,3,2],
                  'IR':4}
     endstops = []
     # 1 step at 16 ms to mm travel conversion
@@ -406,6 +408,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     
     def basic_conf_and_style(self):
         self.checkbox_x.setCheckState(True)
+        self.checkbox_y.setCheckState(True)
+        self.checkbox_z.setCheckState(True)
 
         # Populate step size (Exp and iso are populated when opening graphical)
         self.combobox_step.addItem(str(5)+' == '+ str(5*self.ms16step_mm*1e3)+chr(956)+'m')
@@ -473,13 +477,20 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         print('Initiate motors and grid control')
         # Initiate Engines, and checking if it already exists
         if self.checkbox_x.isChecked() and not hasattr(self,'mx'):
-            self.mx = Motor_Control(gpio_pins=self.gpio_pins['x'],dx=1/8) # FIXME:If change dx change in move of grid controler
+            self.mx = ULN2003.ULN2003(self.gpio_pins['x'])
+        else:
+            self.mx = None
         if self.checkbox_y.isChecked() and not hasattr(self,'y'):
-            raise Exception('Not Implemented')
+            self.my = ULN2003.ULN2003(self.gpio_pins['y'])
+        else:
+            self.my = None
         if self.checkbox_z.isChecked() and not hasattr(self,'z'):
-            raise Exception('Not Implemented')
+            self.mz = ULN2003.ULN2003(self.gpio_pins['z'])
+        else:
+            self.mz = None
+
         if self.grid is None:
-            self.grid = Grid_Handler(motor_x=self.mx, motor_y=None, motor_z = None)
+            self.grid = Grid_Handler(motor_x=self.mx, motor_y=self.my, motor_z = self.mz)
             # Check if old gridbounds exist
             if os.path.isfile('grid'):
                 print('Loading Old Gridbounds')
@@ -631,7 +642,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.IR_filter(True)
         if self.img_config['HDR']: 
             mod_controls = self.camera_config.copy()
-            for i in [self.camera_config['ExposureTime']*i for i in (0.5,1.5,1)]:
+            for i in [self.camera_config['ExposureTime']*i for i in (0.5,0.75,1,1.25,1.5)]:
                 # Change exp time
                 print(i)
                 mod_controls['ExposureTime'] = int(i)
@@ -887,17 +898,19 @@ class Grid_Handler:
     dx = 1
     # Bool to check if zeropoint set
     zero_made = False
-    def __init__(self,motor_x,motor_y=None,motor_z=None) -> None:
+    def __init__(self,motor_x,motor_y=None,motor_z=None,dx=None) -> None:
         # Implement File handler here
         # Implement end stop control
         # Implement depth map recording 
         # Possibly implement automatic rsync from raspi to pc but dont know if that will work well
         # ----- Could just set rsync to run every 5 minutes when raspberry images
         
+        self.dx = dx
         # Motors
-        self.x = motor_x
-        self.x.enable()
-        self.dx = self.x.dx
+        if motor_y is not None:
+            self.y = motor_x
+        else:
+            self.y = None
         if motor_y is not None:
             self.y = motor_y
         else:
@@ -940,8 +953,39 @@ class Grid_Handler:
             self.gridbounds[axis] = end
         return 
 
-    def move_dist(self,disp, adjust_ms=True): # FIXME: Why coordinate out of grid?
+
+    def move_dist(self,disp,adjust_ms=None):
         """
+        disp --> displacement in motor steps
+        adjust_ms --> From big easy driver microstepping --> No longer used
+        """
+        for i in range(len(disp)): 
+            # Check that bounds were set - if this is pre setting bounds this is ignored
+            if self.gridbounds[i] != 0 and self.zero_made:
+                if self.gridbounds[i] < self.pos[i]+disp[i]:
+                    notification('Coordinate out of Grid (gt gb)')
+                    return
+                elif self.pos[i]+disp[i] <0:
+                    notification('Coordinate out of Grid (lt 0)')
+                    return
+        
+        # Save last state 
+        self.last_pos = self.pos
+        # Do movement
+        for i in range(len(disp)):
+            self.motors[i].step(disp[i])
+        # Save new pos and tot move
+        for i in range(len(disp)):
+            self.pos[i] = self.pos[i]+disp[i]
+            self.tot_move[i] = self.tot_move[i]+disp[i]
+        return
+
+
+    def move_dist_old(self,disp, adjust_ms=True):
+        """
+        Written for big easy driver
+        Newer motors easier to use
+
         disp: [x,...] list with displacement steps to go to
                 - Length doesnt matter will only do for provided axes (based on list index)
         adjust_ms : adjust step for current stepping relative to grid (which is relative to ms16)
@@ -950,6 +994,7 @@ class Grid_Handler:
         dir 0 causes movement towards the camera
         """
         # Change disp to ms 16 equivalent
+    
         conv = {1:16, 1/2:8, 1/4:4,1/8:2, 1/16:1}
         # Keep move command for current microstepping
         # Disp is from here on out a book keeping tool
@@ -1036,8 +1081,10 @@ class Grid_Handler:
 
 
 
-class Motor_Control: 
+class BigEasyDriver: 
     """
+    No longer used
+
     Motor Controler for Sparkfun Big Easy Driver - single motor control
     Initiate a second instance for both motors 
 
