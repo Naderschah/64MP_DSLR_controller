@@ -692,7 +692,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     @QtCore.pyqtSlot()
     def exit(self):
         if self.grid is not None:
-            self.grid.disable_all()
+            self.grid.disable_all(gpio_pins=self.gpio_pins)
         sys.exit(0)
 
 
