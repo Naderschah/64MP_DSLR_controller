@@ -544,10 +544,20 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         
         if ask: 
             self.grid.pos=[0]*self.grid.n_motors
-            x = input('What is the x-distance in mm: ')
-            y = input('What is the y-distance in mm: ')
-            z = input('What is the z-distance in mm: ')
-            self.grid.gridbound = [int(x/self.step_mm)+1,int(y/self.step_mm)+1,int(z/self.step_mm)+1]
+            x = float(input('What is the x-distance in mm: '))
+            y = float(input('What is the y-distance in mm: '))
+            z = float(input('What is the z-distance in mm: '))
+            # Convert px size to mm #FIXME: Variable magnification
+            px_size = 1.55 # mu
+            im_y_len = 4056*px_size
+            im_z_len = 3040*px_size
+            overlap = 0.4
+            # Remove non overlap distance
+            y -= (1-overlap)*im_y_len
+            z -= (1-overlap)*im_z_len
+            self.grid.gridbound = [int(x/self.step_mm)+1,
+                                   int(y/self.step_mm)+1,
+                                   int(z/self.step_mm)+1]
         
         print('Saving imaging grid')
         with open(str(Path.home())+'/grid','w') as f:
