@@ -48,6 +48,9 @@ Pred:
 Measured:
 1 step @ MS16 ==  ? mm 
 
+TODO: Convert to new motors look up step conversion
+
+
 
 Vertical and Horizontal res
  1.55 μm × 1.55 μm pixel size
@@ -377,7 +380,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     img_dir = None
     grid = None
     gamepad = None
-    motor_dir = [-1,-1,-1]
+    motor_dir = [-1,1,-1]
     gpio_pins = {'x': [19,5,0,11],
                  'y':[17,4,3,2], 
                  'z':[9,10,22,27],
@@ -973,8 +976,7 @@ class Grid_Handler:
         elif len(self.motor_dir)<len(disp): length = len(self.motor_dir)
         else: length = len(self.motor_dir)
         for i in range(length):
-            if len(disp) < i:
-                disp[i] = disp[i]*self.motor_dir[i]
+            disp[i] = disp[i]*self.motor_dir[i]
 
         for i in range(len(disp)): 
             # Check that bounds were set - if this is pre setting bounds this is ignored
