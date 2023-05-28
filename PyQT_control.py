@@ -557,11 +557,17 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.grid.gridbound = [int(x/self.step_mm)+1,
                                    int(y/self.step_mm)+1,
                                    int(z/self.step_mm)+1]
-        
-        #print('Saving imaging grid')
-        #with open(str(Path.home())+'/grid','w') as f:
-        #    f.write('pos:{}\n'.format(','.join([str(i) for i in self.grid.pos])))
-        #    f.write('endpoint:{}'.format(','.join([str(i) for i in self.grid.gridbounds])))
+        # TODO: Fix below, add Grid Handler initiation in this
+
+        # It gets stuck somehwere below here, presumably at the grid creation
+
+
+
+
+        print('Saving imaging grid')
+        with open(str(Path.home())+'/grid','w') as f:
+            f.write('pos:{}\n'.format(','.join([str(i) for i in self.grid.pos])))
+            f.write('endpoint:{}'.format(','.join([str(i) for i in self.grid.gridbounds])))
         # Make marker so that rsync knows when to stop copying
         os.system('echo "True" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
         # Set mode for pin 4 (IR) if it hasnt been set yet
@@ -609,25 +615,33 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         x_forward,y_forward, z_forward = [[True if (self.grid.gridbounds[i] - self.grid.pos[i] < self.grid.pos[i]) else False][0] for i in range(len(self.grid.pos))]
         coord_arr = []
         # Iterate max possible coordinate
+        start = time.time()
+        count=0
         for i in range(self.grid.gridbounds[2],*[-1 if not z_forward else 1]): # z
             y_sub = []
             for j in range(self.grid.gridbounds[1],*[-1 if not y_forward else 1]): # y
                 x_sub = []
                 for k in range(self.grid.gridbounds[0],*[-1 if not x_forward else 1]): # x
-                    coord_arr.append([k,j,i])
+                    print('Moving to {} / {:.6}mm'.format([i,j,k],[f*self.step_mm for f in [i,j,k]]))
+                    self.grid.move_to_coord([k,j,i])
+                    time.sleep(0.01)
+                    self.make_image()
+                    count +=1
+                    if int(k) in np.linspace(0,self.grid.gridbounds[0],10).astype(int):
+                        # Printing
+                        perc = count/np.prod(self.grid.gridbounds)
+                        now = time.time()
+                        print('Completed {:.1} in {:.2}s, time left ~{:.0}m:{:.0}s'.format(perc,now-start, ((now-start)/perc)//60, ((now-start)/perc)%60))
+
                 x_forward = not x_forward
+                # Printing
+                perc = count/np.prod(self.grid.gridbounds)
+                now = time.time()
+                print('Completed {:.1} in {:.2}s, time left ~{:.0}m:{:.0}s'.format(perc,now-start, ((now-start)/perc)//60, ((now-start)/perc)%60))
             y_forward = not y_forward   
-
-
-        for i in coord_arr: 
-            print('Moving to {} / {:.6}mm'.format(i,i*self.step_mm))
-            self.grid.move_to_coord(i)
-            # Wait for image to stabilize
-            time.sleep(0.5)
-            self.make_image()
-            print('Finished Imaging for position {}'.format([i]))
-        print('-------------------------\nCompleted imaging routine\n\n')
         
+        print('-------------------------\nCompleted imaging routine\n\n')
+
             
         self.grid.disable_all(gpio_pins=self.gpio_pins)
         # Release Camera
