@@ -503,7 +503,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                                     # if -1 invert motor direction
                                     motor_dir = self.motor_dir)
             # Check if old gridbounds exist
-            if os.path.isfile('grid'):
+            if os.path.isfile(str(Path.home())+'/grid'):
                 print('Loading Old Gridbounds')
                 with open(str(Path.home())+'/grid','r') as f:
                     cont = f.read()
