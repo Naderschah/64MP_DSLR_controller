@@ -514,10 +514,9 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                 print('Loading Old Gridbounds')
                 with open(str(Path.home())+'/grid','r') as f:
                     cont = f.read()
-                pos, bounds = cont.split('\n')
+                pos = cont
                 # Populate bounds
                 self.grid.pos = [int(i) for i in pos.split(':')[1].split(',')]
-                self.grid.gridbounds = [int(i) for i in bounds.split(':')[1].split(',')]
         return
     
     def make_img_dir(self):
@@ -563,14 +562,18 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.grid.set_gridbounds([int(x/self.step_mm)+1,
                                    int(y/self.step_mm)+1,
                                    int(z/self.step_mm)+1])
+            # max vals 
+            max_x = int((13 / self.step_mm) * 0.9)
+            max_y = int((13 / self.step_mm) * 0.9)
+            max_z = int((10 / self.step_mm) * 0.9)
+            if self.grid.gridbounds[0] > max_x or self.grid.gridbounds[1] > max_y or self.grid.gridbounds[2] > max_z:
+                print('Grid out of bounds')
+                print('Max Possible x : {}, y : {}, z : {}'.format(max_x,max_y,max_z))
+                print('Set x : {}, y : {}, z : {}'.format(*self.grid.gridbounds))
+                return
             self.grid.set_pos([0,0,0])
         # TODO: add Grid Handler initiation in this
 
-
-        print('Saving imaging grid')
-        with open(str(Path.home())+'/grid','w') as f:
-            f.write('pos:{}\n'.format(','.join([str(i) for i in self.grid.pos])))
-            f.write('endpoint:{}'.format(','.join([str(i) for i in self.grid.gridbounds])))
         # Make marker so that rsync knows when to stop copying
         os.system('echo "True" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
         # Set mode for pin 4 (IR) if it hasnt been set yet
@@ -644,7 +647,6 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         print('Saving imaging grid')
         with open(str(Path.home())+'/grid','w') as f:
             f.write('pos:{}\n'.format(','.join([str(i) for i in self.grid.pos])))
-            f.write('endpoint:{}'.format(','.join([str(i) for i in self.grid.gridbounds])))
             
         self.grid.disable_all(gpio_pins=self.gpio_pins)
         # Release Camera
@@ -842,6 +844,12 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window): # TODO: Add exit
         self.menuExit.actionexit = self.menuExit.addAction('Exit')
         self.menuExit.actionexit.triggered.connect(self.exit)
 
+        # Move zero
+        self.pushButton_move_zero.clicked.connect(self.move_to_zero)
+
+    def move_to_zero(self):
+        self.grid.move_to_coord([0,0,0])
+        
 
     def move_own_implementation(self,negative=False):
         if negative:
