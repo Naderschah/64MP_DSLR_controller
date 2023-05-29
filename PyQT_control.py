@@ -898,11 +898,13 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window): # TODO: Add exit
         #Populate step size
         self.combobox_step_size.addItem(str(1)+' == '+ str(1*self.step_mm*1e3)+chr(956)+'m')
         for i in np.linspace(200,2000,10):
-            # chr == give character of number
+            # chr == give character of number # TODO : Add mm based travel
             self.combobox_step_size.addItem(str(i)+' == '+ str(i*self.step_mm*1e3)+chr(956)+'m')
         self.combobox_step_size.addItem(str(3000.0)+' == '+ str(3000*self.step_mm*1e3)+chr(956)+'m')
         self.combobox_step_size.addItem(str(4000.0)+' == '+ str(4000*self.step_mm*1e3)+chr(956)+'m')
         self.combobox_step_size.addItem(str(5000.0)+' == '+ str(5000*self.step_mm*1e3)+chr(956)+'m')
+        self.combobox_step_size.addItem(str(10000.0)+' == '+ str(10000*self.step_mm*1e3)+chr(956)+'m')
+        self.combobox_step_size.addItem(str(30000.0)+' == '+ str(30000*self.step_mm*1e3)+chr(956)+'m')
         
 
         return
