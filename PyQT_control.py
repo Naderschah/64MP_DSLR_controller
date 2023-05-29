@@ -631,13 +631,19 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                 x_sub = []
                 for k in range(*[self.grid.gridbounds[0] if not x_forward else 0],*[self.grid.gridbounds[0]+1 if x_forward else -1],*[int(-1*self.img_config['step_size']) if not x_forward else int(1*self.img_config['step_size'])]): # x
                     sys.stdout.flush()
-                    print('Moving to {} / {}mm'.format([l,j,i],[f*self.step_mm for f in [k,j,i]]))
+                    print('Moving to {} / {}mm'.format([k,j,i],[f*self.step_mm for f in [k,j,i]]))
                     self.grid.move_to_coord([k,j,i])
                     time.sleep(0.01)
                     self.make_image()
                     count +=1
-                    # Print progress
+                    # Print progress # TODO: Estimate wrong, firs generate total grid size
                     perc = count/np.prod(self.grid.gridbounds)
+                    # Adjust x step
+                    perc = perc/self.img_config['step_size']
+                    # Adjust y step
+                    perc = perc/((1-overlap)*im_y_len/self.step_mm)
+                    # Adjust z step
+                    perc = perc/((1-overlap)*im_z_len/self.step_mm)
                     now = time.time()
                     print('Completed {:.1} in {:.2}s, time left ~{:.0}m:{:.0}s'.format(perc,now-start, ((now-start)/perc)//60, ((now-start)/perc)%60))
                 x_forward = not x_forward
