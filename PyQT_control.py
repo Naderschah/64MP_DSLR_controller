@@ -385,7 +385,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     img_dir = None
     grid = None
     gamepad = None
-    motor_dir = [-1,1,-1]
+    motor_dir = [-1,1,1]
     gpio_pins = {'x': [19,5,0,11],
                  'y':[17,4,3,2], 
                  'z':[9,10,22,27],
