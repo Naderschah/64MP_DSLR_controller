@@ -627,13 +627,13 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             for j in range(*[self.grid.gridbounds[1] if not y_forward else 0],*[self.grid.gridbounds[1]+1 if y_forward else -1],*[int(-1*(1-overlap)*im_y_len/self.step_mm) if not y_forward else int(1*(1-overlap)*im_y_len/self.step_mm)]): # y
                 x_sub = []
                 for k in range(*[self.grid.gridbounds[0] if not x_forward else 0],*[self.grid.gridbounds[0]+1 if x_forward else -1],*[int(-1*self.img_config['step_size']) if not x_forward else int(1*self.img_config['step_size'])]): # x
+                    sys.stdout.flush()
                     print('Moving to {} / {}mm'.format([l,j,i],[f*self.step_mm for f in [k,j,i]]))
                     self.grid.move_to_coord([k,j,i])
                     time.sleep(0.01)
                     self.make_image()
                     count +=1
                     # Print progress
-                    sys.stdout.flush()
                     perc = count/np.prod(self.grid.gridbounds)
                     now = time.time()
                     print('Completed {:.1} in {:.2}s, time left ~{:.0}m:{:.0}s'.format(perc,now-start, ((now-start)/perc)//60, ((now-start)/perc)%60))
