@@ -68,6 +68,8 @@ with 4x:
  the sensor sees 1.5717 mm x 1.178
 
  
+ at 2x HFOV : 11,85
+ 
 # TODO: Add magnification entry, and overlap percentage between images to compute y and z
 """
 
@@ -619,28 +621,23 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         # Iterate max possible coordinate
         print('Starting Imaging')
         start = time.time()
-        count=0 # FIXME: Temporary overlap
-        for i in range(*[self.grid.gridbounds[2] if not z_forward else 0],*[self.grid.gridbounds[2] if z_forward else 0],*[int(-1*(1-overlap)*im_z_len/self.step_mm) if not z_forward else int(1*(1-overlap)*im_z_len/self.step_mm)]): # z
+        count=0 # FIXME: Temporary overlap + xyz move to max after first x row
+        for i in range(*[self.grid.gridbounds[2] if not z_forward else 0],*[self.grid.gridbounds[2]+1 if z_forward else -1],*[int(-1*(1-overlap)*im_z_len/self.step_mm) if not z_forward else int(1*(1-overlap)*im_z_len/self.step_mm)]): # z
             y_sub = []
-            for j in range(*[self.grid.gridbounds[1] if not y_forward else 0],*[self.grid.gridbounds[1] if y_forward else 0],*[int(-1*(1-overlap)*im_y_len/self.step_mm) if not y_forward else int(1*(1-overlap)*im_y_len/self.step_mm)]): # y
+            for j in range(*[self.grid.gridbounds[1] if not y_forward else 0],*[self.grid.gridbounds[1]+1 if y_forward else -1],*[int(-1*(1-overlap)*im_y_len/self.step_mm) if not y_forward else int(1*(1-overlap)*im_y_len/self.step_mm)]): # y
                 x_sub = []
-                for k in range(*[self.grid.gridbounds[0] if not x_forward else 0],*[self.grid.gridbounds[0] if x_forward else 0],*[int(-1*self.img_config['step_size']) if not x_forward else int(1*self.img_config['step_size'])]): # x
-                    print('Moving to {} / {}mm'.format([i,j,k],[f*self.step_mm for f in [i,j,k]]))
+                for k in range(*[self.grid.gridbounds[0] if not x_forward else 0],*[self.grid.gridbounds[0]+1 if x_forward else -1],*[int(-1*self.img_config['step_size']) if not x_forward else int(1*self.img_config['step_size'])]): # x
+                    print('Moving to {} / {}mm'.format([l,j,i],[f*self.step_mm for f in [k,j,i]]))
                     self.grid.move_to_coord([k,j,i])
                     time.sleep(0.01)
                     self.make_image()
                     count +=1
-                    if int(k) in np.linspace(0,self.grid.gridbounds[0],10).astype(int):
-                        # Printing
-                        perc = count/np.prod(self.grid.gridbounds)
-                        now = time.time()
-                        print('Completed {:.1} in {:.2}s, time left ~{:.0}m:{:.0}s'.format(perc,now-start, ((now-start)/perc)//60, ((now-start)/perc)%60))
-
+                    # Print progress
+                    sys.stdout.flush()
+                    perc = count/np.prod(self.grid.gridbounds)
+                    now = time.time()
+                    print('Completed {:.1} in {:.2}s, time left ~{:.0}m:{:.0}s'.format(perc,now-start, ((now-start)/perc)//60, ((now-start)/perc)%60))
                 x_forward = not x_forward
-                # Printing
-                perc = count/np.prod(self.grid.gridbounds)
-                now = time.time()
-                print('Completed {:.1} in {:.2}s, time left ~{:.0}m:{:.0}s'.format(perc,now-start, ((now-start)/perc)//60, ((now-start)/perc)%60))
             y_forward = not y_forward   
         
         print('-------------------------\nCompleted imaging routine\n\n')
@@ -1183,7 +1180,7 @@ class Grid_Handler:
             pins += gpio_pins['y']
         if gpio_pins['z'] is not None:
             pins += gpio_pins['z']
-        for i in pins: GPIO.output(pins[i],0)
+        for i in pins: GPIO.output(i,0)
         return
         
 
