@@ -620,7 +620,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         print('Starting Imaging')
         start = time.time()
         count=0 # FIXME: Temporary overlap
-        for i in range(*[self.grid.gridbounds[2] if not z_forward else 0],*[self.grid.gridbounds[2] if z_forward else 0],*[-1 if not z_forward else 1])*(1-overlap)*im_z_len: # z
+        for i in range(*[self.grid.gridbounds[2] if not z_forward else 0],*[self.grid.gridbounds[2] if z_forward else 0],*[-1 if not z_forward else 1]*(1-overlap)*im_z_len): # z
             y_sub = []
             for j in range(*[self.grid.gridbounds[1] if not y_forward else 0],*[self.grid.gridbounds[1] if y_forward else 0],*[-1 if not y_forward else 1]*(1-overlap)*im_y_len): # y
                 x_sub = []
