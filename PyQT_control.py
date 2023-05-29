@@ -540,7 +540,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             elif res.lower() =='N'.lower():
                 ask = False
                 break
-        
+        if not hasattr(self,'grid'):
+            self.create_grid_controler()
         if ask: 
             self.grid.pos=[0]*self.grid.n_motors
             x = float(input('What is the x-distance in mm: '))
@@ -557,6 +558,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.grid.set_gridbounds([int(x/self.step_mm)+1,
                                    int(y/self.step_mm)+1,
                                    int(z/self.step_mm)+1])
+            self.grid.set_pos([0,0,0])
         # TODO: add Grid Handler initiation in this
 
 
@@ -620,7 +622,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             for j in range(*[self.grid.gridbounds[1] if not y_forward else 0],*[self.grid.gridbounds[1] if y_forward else 0],*[-1 if not y_forward else 1]): # y
                 x_sub = []
                 for k in range(*[self.grid.gridbounds[0] if not x_forward else 0],*[self.grid.gridbounds[0] if x_forward else 0],*[-1 if not x_forward else 1]): # x
-                    print('Moving to {} / {:.6}mm'.format([i,j,k],[f*self.step_mm for f in [i,j,k]]))
+                    print('Moving to {} / {}mm'.format([i,j,k],[f*self.step_mm for f in [i,j,k]]))
                     self.grid.move_to_coord([k,j,i])
                     time.sleep(0.01)
                     self.make_image()
@@ -639,7 +641,10 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             y_forward = not y_forward   
         
         print('-------------------------\nCompleted imaging routine\n\n')
-
+        print('Saving imaging grid')
+        with open(str(Path.home())+'/grid','w') as f:
+            f.write('pos:{}\n'.format(','.join([str(i) for i in self.grid.pos])))
+            f.write('endpoint:{}'.format(','.join([str(i) for i in self.grid.gridbounds])))
             
         self.grid.disable_all(gpio_pins=self.gpio_pins)
         # Release Camera
@@ -895,9 +900,9 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window): # TODO: Add exit
         for i in np.linspace(200,2000,10):
             # chr == give character of number
             self.combobox_step_size.addItem(str(i)+' == '+ str(i*self.step_mm*1e3)+chr(956)+'m')
-        self.combobox_step_size.addItem(str(3000.0)+' == '+ str(300*self.step_mm*1e3)+chr(956)+'m')
-        self.combobox_step_size.addItem(str(4000.0)+' == '+ str(400*self.step_mm*1e3)+chr(956)+'m')
-        self.combobox_step_size.addItem(str(5000.0)+' == '+ str(500*self.step_mm*1e3)+chr(956)+'m')
+        self.combobox_step_size.addItem(str(3000.0)+' == '+ str(3000*self.step_mm*1e3)+chr(956)+'m')
+        self.combobox_step_size.addItem(str(4000.0)+' == '+ str(4000*self.step_mm*1e3)+chr(956)+'m')
+        self.combobox_step_size.addItem(str(5000.0)+' == '+ str(5000*self.step_mm*1e3)+chr(956)+'m')
         
 
         return
@@ -1002,6 +1007,9 @@ class Grid_Handler:
     
     def set_gridbounds(self,bounds):
         self.gridbounds = bounds
+    
+    def set_pos(self,pos):
+        self.pos = pos
 
 
     def reset_grid(self,axis=None):
