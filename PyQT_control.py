@@ -427,6 +427,9 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         for i in np.linspace(10,150,15):
             self.combobox_step.addItem(str(i)+' == '+ str(i*self.step_mm*1e3)+chr(956)+'m')
 
+        for i in np.linspace(100,1500,15):
+            self.combobox_step.addItem(str(i)+' == '+ str(i*self.step_mm*1e3)+chr(956)+'m')
+
         for i in np.linspace(1,22,22): self.combobox_gain.addItem(str(i))
         for i in np.logspace(int(np.log2(114))+1,round(np.log2(694422939)),base=2,num = round(np.log2(694422939)) - int(np.log2(114))): self.combobox_exp.addItem(str(i))
 
