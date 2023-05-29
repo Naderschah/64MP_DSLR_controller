@@ -620,11 +620,11 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         print('Starting Imaging')
         start = time.time()
         count=0 # FIXME: Temporary overlap
-        for i in range(*[self.grid.gridbounds[2] if not z_forward else 0],*[self.grid.gridbounds[2] if z_forward else 0],*[-1 if not z_forward else 1]*(1-overlap)*im_z_len): # z
+        for i in range(*[self.grid.gridbounds[2] if not z_forward else 0],*[self.grid.gridbounds[2] if z_forward else 0],*[-1*(1-overlap)*im_z_len if not z_forward else 1*(1-overlap)*im_z_len]): # z
             y_sub = []
-            for j in range(*[self.grid.gridbounds[1] if not y_forward else 0],*[self.grid.gridbounds[1] if y_forward else 0],*[-1 if not y_forward else 1]*(1-overlap)*im_y_len): # y
+            for j in range(*[self.grid.gridbounds[1] if not y_forward else 0],*[self.grid.gridbounds[1] if y_forward else 0],*[-1*(1-overlap)*im_y_len if not y_forward else 1*(1-overlap)*im_y_len]): # y
                 x_sub = []
-                for k in range(*[self.grid.gridbounds[0] if not x_forward else 0],*[self.grid.gridbounds[0] if x_forward else 0],*[-1 if not x_forward else 1]*self.img_config['step_size']): # x
+                for k in range(*[self.grid.gridbounds[0] if not x_forward else 0],*[self.grid.gridbounds[0] if x_forward else 0],*[-1*self.img_config['step_size'] if not x_forward else 1*self.img_config['step_size']]): # x
                     print('Moving to {} / {}mm'.format([i,j,k],[f*self.step_mm for f in [i,j,k]]))
                     self.grid.move_to_coord([k,j,i])
                     time.sleep(0.01)
