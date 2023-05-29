@@ -644,9 +644,6 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             y_forward = not y_forward   
         
         print('-------------------------\nCompleted imaging routine\n\n')
-        print('Saving imaging grid')
-        with open(str(Path.home())+'/grid','w') as f:
-            f.write('pos:{}\n'.format(','.join([str(i) for i in self.grid.pos])))
             
         self.grid.disable_all(gpio_pins=self.gpio_pins)
         # Release Camera
@@ -849,7 +846,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window): # TODO: Add exit
 
     def move_to_zero(self):
         self.grid.move_to_coord([0,0,0])
-        
+
 
     def move_own_implementation(self,negative=False):
         if negative:
@@ -1088,6 +1085,9 @@ class Grid_Handler:
         for i in range(len(disp)):
             self.pos[i] = self.pos[i]+disp[i]
             self.tot_move[i] = self.tot_move[i]+disp[i]
+        # Save new coordinate
+        with open(str(Path.home())+'/grid','w') as f:
+            f.write('pos:{}\n'.format(','.join([str(i) for i in self.pos])))
         return
 
 
@@ -1174,7 +1174,6 @@ class Grid_Handler:
         """
         # Get coord difference
         disp = [coord[i]-self.pos[i] for i in range(len(coord))]
-        print(disp)
         self.move_dist(disp, adjust_ms=False)
         return
     
