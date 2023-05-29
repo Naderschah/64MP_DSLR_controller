@@ -614,12 +614,12 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         
         # TODO : Rewrite in numpy
        
-        x_forward,y_forward, z_forward = [[True if (self.grid.gridbounds[i] - self.grid.pos[i] < self.grid.pos[i]) else False][0] for i in range(len(self.grid.pos))]
+        x_forward,y_forward, z_forward = [[True if (self.grid.gridbounds[i] - self.grid.pos[i] > self.grid.pos[i]) else False][0] for i in range(len(self.grid.pos))]
         coord_arr = []
         # Iterate max possible coordinate
         print('Starting Imaging')
         start = time.time()
-        count=0
+        count=0 # FIXME: Moves to the wrong extreme
         for i in range(*[self.grid.gridbounds[2] if not z_forward else 0],*[self.grid.gridbounds[2] if z_forward else 0],*[-1 if not z_forward else 1]): # z
             y_sub = []
             for j in range(*[self.grid.gridbounds[1] if not y_forward else 0],*[self.grid.gridbounds[1] if y_forward else 0],*[-1 if not y_forward else 1]): # y
@@ -775,7 +775,7 @@ class Endstop_Window(QtWidgets.QMainWindow, Ui_Endstop_window): # TODO: Add exit
     
     Note that due to the way axis movement is handled z will not be controlled if x and or y is not present
     So motors must be populated in order x y z r otherwise assignment will not work correctly
-    """
+    """ # TODO: Add scale to image and mm based steps
     own_step = 1
     # In case controler is available for controlling the grid
     minimal_config = False
