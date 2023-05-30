@@ -25,7 +25,7 @@ from ULN2003Pi import ULN2003
 
 ZoomLevels = (1)
 
-
+DEBUG = True
 """
 
 TODOs: 
@@ -555,7 +555,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             px_size = 1.55*1e-3 # mu
             im_y_len = 4056*px_size
             im_z_len = 3040*px_size
-            overlap = 0.4
+            overlap = 0.6 # May be too much
             # Remove non overlap distance
             y -= (1-overlap)*im_y_len
             z -= (1-overlap)*im_z_len
@@ -577,7 +577,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         # Make marker so that rsync knows when to stop copying
         os.system('echo "True" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
         # Set mode for pin 4 (IR) if it hasnt been set yet
-        os.system('gpio -g mode {} out'.format(self.gpio_pins['IR']))
+        #os.system('gpio -g mode {} out'.format(self.gpio_pins['IR']))
 
         if self.grid is None: # Add message notify-send didnt work prob wont with qt in fullscreen
             return
@@ -607,12 +607,6 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         print('Starting imaging with HDR={}, IR and Normal={}, Just IR {}'.format(self.img_config['HDR'],self.img_config['IR_and_normal'], self.img_config['IR']  ))
         self.start_camera()
 
-        #tot_grid = self.make_grid()
-        # Check which end pos is closer to, 0 or endstop
-        # One motor implementation: (worked)
-        #if tot_grid[0][-1] - self.grid.pos[0] < self.grid.pos[0]:
-        #    tot_grid[0] = reversed(tot_grid[0])
-
         # Check image brightness
         print('Adjusting exposure')
         self.adjust_exp()
@@ -624,28 +618,34 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         # Iterate max possible coordinate
         print('Starting Imaging')
         start = time.time()
-        count=0 # FIXME: Temporary overlap + xyz move to max after first x row
+        count=0 # FIXME: Use reverse instead of all these boolean conditions
+        # Then fix the grid so that it works --> 
+        # Just fix the range, or make a meshgrid
         for i in range(*[self.grid.gridbounds[2] if not z_forward else 0],*[self.grid.gridbounds[2]+1 if z_forward else -1],*[int(-1*(1-overlap)*im_z_len/self.step_mm) if not z_forward else int(1*(1-overlap)*im_z_len/self.step_mm)]): # z
+        for i in range(0,self.grid.gridbounds[2],-1*(1-overlap)*im_z_len/self.step_mm): # z
             y_sub = []
             for j in range(*[self.grid.gridbounds[1] if not y_forward else 0],*[self.grid.gridbounds[1]+1 if y_forward else -1],*[int(-1*(1-overlap)*im_y_len/self.step_mm) if not y_forward else int(1*(1-overlap)*im_y_len/self.step_mm)]): # y
                 x_sub = []
                 for k in range(*[self.grid.gridbounds[0] if not x_forward else 0],*[self.grid.gridbounds[0]+1 if x_forward else -1],*[int(-1*self.img_config['step_size']) if not x_forward else int(1*self.img_config['step_size'])]): # x
-                    sys.stdout.flush()
-                    print('Moving to {} / {}mm'.format([k,j,i],[f*self.step_mm for f in [k,j,i]]))
-                    self.grid.move_to_coord([k,j,i])
-                    time.sleep(0.01)
-                    self.make_image()
-                    count +=1
-                    # Print progress # TODO: Estimate wrong, firs generate total grid size
-                    perc = count/np.prod(self.grid.gridbounds)
-                    # Adjust x step
-                    perc = perc/self.img_config['step_size']
-                    # Adjust y step
-                    perc = perc/((1-overlap)*im_y_len/self.step_mm)
-                    # Adjust z step
-                    perc = perc/((1-overlap)*im_z_len/self.step_mm)
-                    now = time.time()
-                    print('Completed {:.1} in {:.2}s, time left ~{:.0}m:{:.0}s'.format(perc,now-start, ((now-start)/perc)//60, ((now-start)/perc)%60))
+                    if not DEBUG:
+                        sys.stdout.flush()
+                        print('Moving to {} / {}mm'.format([k,j,i],[f*self.step_mm for f in [k,j,i]]))
+                        self.grid.move_to_coord([k,j,i])
+                        time.sleep(0.01)
+                        self.make_image()
+                        count +=1
+                        # Print progress # TODO: Estimate wrong, firs generate total grid size
+                        perc = count/np.prod(self.grid.gridbounds)
+                        # Adjust x step
+                        perc = perc/self.img_config['step_size']
+                        # Adjust y step
+                        perc = perc/((1-overlap)*im_y_len/self.step_mm)
+                        # Adjust z step
+                        perc = perc/((1-overlap)*im_z_len/self.step_mm)
+                        now = time.time()
+                        print('Completed {:.1} in {:.2}s, time left ~{:.0}m:{:.0}s'.format(perc,now-start, ((now-start)/perc)//60, ((now-start)/perc)%60))
+                    else:
+                        print(k,j,i)
                 x_forward = not x_forward
             y_forward = not y_forward   
         
