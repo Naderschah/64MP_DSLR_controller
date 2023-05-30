@@ -25,7 +25,7 @@ from ULN2003Pi import ULN2003
 
 ZoomLevels = (1)
 
-DEBUG = True
+DEBUG = False
 """
 
 TODOs: 
@@ -548,17 +548,20 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.create_grid_controler()
         if ask: 
             self.grid.pos=[0]*self.grid.n_motors
+            m = float(input('What is the magnification: '))
             x = float(input('What is the x-distance in mm: '))
             y = float(input('What is the y-distance in mm: '))
             z = float(input('What is the z-distance in mm: '))
-            # Convert px size to mm #FIXME: Variable magnification
+            # Convert px size to mm 
             px_size = 1.55*1e-3 # mu
             im_y_len = 4056*px_size
             im_z_len = 3040*px_size
             overlap = 0.6 # May be too much
-            # Remove non overlap distance
-            y -= (1-overlap)*im_y_len
-            z -= (1-overlap)*im_z_len
+            # Remove non overlap distance (in step units)
+            overlap_coeff = (1-overlap)/self.step_mm * (1.5e-3*m)
+            y -= int(overlap_coeff*im_y_len)
+            z -= int(overlap_coeff*im_z_len)
+
             self.grid.set_gridbounds([int(x/self.step_mm)+1,
                                    int(y/self.step_mm)+1,
                                    int(z/self.step_mm)+1])
@@ -616,17 +619,31 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         x_forward,y_forward, z_forward = [[True if (self.grid.gridbounds[i] - self.grid.pos[i] > self.grid.pos[i]) else False][0] for i in range(len(self.grid.pos))]
         coord_arr = []
         # Iterate max possible coordinate
+        
+        def make_list(z_step, gridbound):
+            """Function to sample grid space"""
+            z_coord = []
+            curr = 0
+            while True:
+                if curr > gridbound:
+                    z_coord.append(gridbound)
+                    break
+                z_coord.append(curr)
+                curr+=z_step
+            return z_coord
+        z_coord = make_list(z_step= int(1*overlap_coeff*im_z_len),gridbound=self.grid.gridbounds[2])
+        y_coord = make_list(z_step= int(1*overlap_coeff*im_y_len),gridbound=self.grid.gridbounds[1])
+        x_coord = make_list(z_step= int(1*self.img_config['step_size']),gridbound=self.grid.gridbounds[0])
+        # Set starting direction
+        if not x_forward: x_coord = x_coord[::-1]
+        if not y_forward: y_coord = y_coord[::-1]
+        if not z_forward: z_coord = z_coord[::-1]
         print('Starting Imaging')
         start = time.time()
-        count=0 # FIXME: Use reverse instead of all these boolean conditions
-        # Then fix the grid so that it works --> 
-        # Just fix the range, or make a meshgrid
-        for i in range(*[self.grid.gridbounds[2] if not z_forward else 0],*[self.grid.gridbounds[2]+1 if z_forward else -1],*[int(-1*(1-overlap)*im_z_len/self.step_mm) if not z_forward else int(1*(1-overlap)*im_z_len/self.step_mm)]): # z
-        for i in range(0,self.grid.gridbounds[2],-1*(1-overlap)*im_z_len/self.step_mm): # z
-            y_sub = []
-            for j in range(*[self.grid.gridbounds[1] if not y_forward else 0],*[self.grid.gridbounds[1]+1 if y_forward else -1],*[int(-1*(1-overlap)*im_y_len/self.step_mm) if not y_forward else int(1*(1-overlap)*im_y_len/self.step_mm)]): # y
-                x_sub = []
-                for k in range(*[self.grid.gridbounds[0] if not x_forward else 0],*[self.grid.gridbounds[0]+1 if x_forward else -1],*[int(-1*self.img_config['step_size']) if not x_forward else int(1*self.img_config['step_size'])]): # x
+        count=0 
+        for i in z_coord:
+            for j in y_coord:
+                for k in x_coord:
                     if not DEBUG:
                         sys.stdout.flush()
                         print('Moving to {} / {}mm'.format([k,j,i],[f*self.step_mm for f in [k,j,i]]))
@@ -646,8 +663,9 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                         print('Completed {:.1} in {:.2}s, time left ~{:.0}m:{:.0}s'.format(perc,now-start, ((now-start)/perc)//60, ((now-start)/perc)%60))
                     else:
                         print(k,j,i)
-                x_forward = not x_forward
-            y_forward = not y_forward   
+                # Invert coordinates
+                x_coord = x_coord[::-1]
+            y_coord = y_coord[::-1]  
         
         print('-------------------------\nCompleted imaging routine\n\n')
             
