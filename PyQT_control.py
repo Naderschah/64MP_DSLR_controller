@@ -562,14 +562,14 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             overlap = 0.6 # May be too much
             # Remove non overlap distance (in step units)
             overlap_coeff = (1-overlap)/self.step_mm * m
-            y -= int(overlap_coeff*im_y_len)
-            if y<=0 : 
-                print('y gridbound to small')
-                return
-            z -= int(overlap_coeff*im_z_len)
-            if z<=0 : 
-                print('z gridbound to small')
-                return
+            #y -= int(overlap_coeff*im_y_len)
+            #if y<=0 : 
+            #    print('y gridbound to small')
+            #    return
+            #z -= int(overlap_coeff*im_z_len)
+            #if z<=0 : 
+            #    print('z gridbound to small')
+            #    return
 
             self.grid.set_gridbounds([  x,
                                         y,
