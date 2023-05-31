@@ -550,8 +550,10 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.grid.pos=[0]*self.grid.n_motors
             m = float(input('What is the magnification: '))
             x = float(input('What is the x-distance in mm: '))
+            x = x/self.step_mm
             y = float(input('What is the y-distance in mm: '))
             z = float(input('What is the z-distance in mm: '))
+            z = z/self.step_mm
             # Convert px size to mm 
             px_size = 1.55*1e-3 
             im_y_len = 4056*px_size # mm width
