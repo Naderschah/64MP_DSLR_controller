@@ -553,14 +553,20 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             y = float(input('What is the y-distance in mm: '))
             z = float(input('What is the z-distance in mm: '))
             # Convert px size to mm 
-            px_size = 1.55*1e-3 # mu
-            im_y_len = 4056*px_size
+            px_size = 1.55*1e-3 
+            im_y_len = 4056*px_size # mm width
             im_z_len = 3040*px_size
             overlap = 0.6 # May be too much
             # Remove non overlap distance (in step units)
-            overlap_coeff = (1-overlap)/self.step_mm * (1.5e-3*m)
+            overlap_coeff = (1-overlap)/self.step_mm * m
             y -= int(overlap_coeff*im_y_len)
+            if y<=0 : 
+                print('y gridbound to small')
+                return
             z -= int(overlap_coeff*im_z_len)
+            if z<=0 : 
+                print('z gridbound to small')
+                return
 
             self.grid.set_gridbounds([int(x/self.step_mm)+1,
                                    int(y/self.step_mm)+1,
