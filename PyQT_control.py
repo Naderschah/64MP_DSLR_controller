@@ -550,10 +550,11 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.grid.pos=[0]*self.grid.n_motors
             m = float(input('What is the magnification: '))
             x = float(input('What is the x-distance in mm: '))
-            x = x/self.step_mm
+            x = int(x/self.step_mm)+1
             y = float(input('What is the y-distance in mm: '))
+            y = int(y/self.step_mm)+1
             z = float(input('What is the z-distance in mm: '))
-            z = z/self.step_mm
+            z = int(z/self.step_mm)+1
             # Convert px size to mm 
             px_size = 1.55*1e-3 
             im_y_len = 4056*px_size # mm width
@@ -570,9 +571,9 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                 print('z gridbound to small')
                 return
 
-            self.grid.set_gridbounds([int(x/self.step_mm)+1,
-                                   int(y/self.step_mm)+1,
-                                   int(z/self.step_mm)+1])
+            self.grid.set_gridbounds([  x,
+                                        y,
+                                        z])
             # max vals 
             max_x = int((13 / self.step_mm) * 0.9)
             max_y = int((13 / self.step_mm) * 0.9)
