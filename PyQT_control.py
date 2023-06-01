@@ -55,6 +55,10 @@ old motor angle per ms16 = 	1.8°/16
 so angle per step now = 0.00025 / (1.8°/16) * (5.625°/63.68395)
                       = 0.00019628179470651555 mm 
 
+Above wrong --> find out why
+
+Measured mm/step = 0.00012397
+
 Vertical and Horizontal res
  1.55 μm × 1.55 μm pixel size
  7.9 mm diag, horiz: 6.2868 mm x 4.712 mm
@@ -396,7 +400,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     # 1 step at 16 ms to mm travel conversion
     ms16step_mm = 0.00025
     # Todo:
-    step_mm = 0.00019628179470651555
+    step_mm = 0.00012397
 
     camera_config = { "AeEnable": False,  # Auto Exposure Value
                         "AwbEnable":False,  # Auto White Balance
