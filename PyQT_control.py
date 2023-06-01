@@ -633,10 +633,9 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         coord_arr = []
         # Iterate max possible coordinate
         
-        def make_list(z_step, gridbound):
+        def make_list(z_step, gridbound,curr=0):
             """Function to sample grid space"""
             z_coord = []
-            curr = 0
             while True:
                 if curr > gridbound:
                     z_coord.append(gridbound)
@@ -644,9 +643,9 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                 z_coord.append(curr)
                 curr+=z_step
             return z_coord
-        z_coord = make_list(z_step= int(1*overlap_coeff*im_z_len),gridbound=self.grid.gridbounds[2])
-        y_coord = make_list(z_step= int(1*overlap_coeff*im_y_len),gridbound=self.grid.gridbounds[1])
-        x_coord = make_list(z_step= int(1*self.img_config['step_size']),gridbound=self.grid.gridbounds[0])
+        z_coord = make_list(z_step= int(1*overlap_coeff*im_z_len),gridbound=self.grid.gridbounds[2],=36000)
+        y_coord = make_list(z_step= int(1*overlap_coeff*im_y_len),gridbound=self.grid.gridbounds[1],=80665)
+        x_coord = make_list(z_step= int(1*self.img_config['step_size']),gridbound=self.grid.gridbounds[0],curr=30407)
         # Set starting direction
         if not x_forward: x_coord = x_coord[::-1]
         if not y_forward: y_coord = y_coord[::-1]
