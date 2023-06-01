@@ -587,7 +587,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                 print('Max Possible x : {}, y : {}, z : {}'.format(max_x,max_y,max_z))
                 print('Set x : {}, y : {}, z : {}'.format(*self.grid.gridbounds))
                 return
-            self.grid.set_pos([0,0,0])
+            #self.grid.set_pos([0,0,0])
         # TODO: add Grid Handler initiation in this
 
         # Make marker so that rsync knows when to stop copying
