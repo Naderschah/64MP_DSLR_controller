@@ -1,0 +1,44 @@
+import RPi.GPIO as GPIO
+import time
+endstops = {'x_min':[21,20], 'x_max':[16,12], 'y_min':[1,7],'y_max':[8,25], 'z_min':[24,23],'z_max':[18,15]}
+
+
+def read_pin(pin_nr, check_for=0.05, timeout=2)
+    """Reads GPIO pin of pin_nr in BCM numbering
+    check_for time in seconds for which signal mustnt fluctuate
+    timeout -> if timeout reached without constant signal raises Exception
+    """
+    # Def last read
+    last = GPIO.input(pin_nr)
+    start_t = time.now()
+    # Check for timeout condition
+    while time.time()-start_t < timeout:
+        # Check for timing till true condition
+        start_c = time.now()
+        while time.time()-start_c < check_for:
+            new = GPIO.input(pin_nr)
+            # break inner while loop if fialed to read consistently
+            if new != last: 
+                print('Signal varied!')
+                break
+            # Overwrite last and repeat
+            last = new
+        # If it reaches here check for condition is satisfied and break for loop
+        break
+    # Return if true or false
+    return last
+
+# Set them up
+if endstops is not None:
+    for key in endstops:
+        # Set one as signal sender
+        GPIO.setup(endstops[key][0], GPIO.OUT)
+        # Pull high so that signal travels
+        GPIO.setup(endstops[key][0], GPIO.HIGH)
+        # And other as receiver
+        GPIO.setup(endstops[key][1], GPIO.IN)
+        print('Checking endstop for {}'.format(key))
+        # Check signal is being received
+        if read_pin(endstops[key][1]) == 0:
+            # If the above is zero there is no signal through the set up, so raise exception for operator to check if endstop is triggered (and then untrigger) or fix hardware problem
+            raise Exception('Endstop does not provide signal, check whats going on\n PIN:{} | NAME: {}'.format(endstops[key][1], key))

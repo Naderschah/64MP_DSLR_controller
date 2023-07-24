@@ -395,7 +395,10 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     gpio_pins = {'x': [19,5,0,11],
                  'y':[17,4,3,2], 
                  'z':[9,10,22,27],
-                 'IR':4}
+                 'IR':None,
+                 # Endstops are connected to normally closed (ie signal travels if not clicked)!
+                 'Endstops': {'x_min':[21,20], 'x_max':[16,12], 'y_min':[1,7],'y_max':[8,25], 'z_min':[24,23],'z_max':[18,15]},
+                 }
     endstops = []
     # 1 step at 16 ms to mm travel conversion
     ms16step_mm = 0.00025
@@ -420,8 +423,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             logging.info('Using default gpio pins')
 
         self.basic_conf_and_style()
-
         return
+
     
     def basic_conf_and_style(self):
         self.checkbox_x.setCheckState(True)
@@ -493,6 +496,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.endstop_window.start_camera()
         self.endstop_window.show()
 
+
     def create_grid_controler(self):
         print('Initiate motors and grid control')
         # Initiate Engines, and checking if it already exists
@@ -512,7 +516,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.grid is None:
             self.grid = Grid_Handler(motor_x=self.mx, motor_y=self.my, motor_z = self.mz, 
                                     # if -1 invert motor direction
-                                    motor_dir = self.motor_dir)
+                                    motor_dir = self.motor_dir, endstops = self.gpio_pins['Endstops'])
             # Check if old gridbounds exist
             if os.path.isfile(str(Path.home())+'/grid'):
                 print('Loading Old Gridbounds')
@@ -1016,6 +1020,7 @@ class Grid_Handler:
     # Keep track of bounds
     n_motors = 3
     gridbounds = [0]*n_motors
+    zeropoint = [0]*n_motors
     # Position in grid
     pos = [0]*n_motors
     tot_move = [0]*n_motors
@@ -1023,7 +1028,7 @@ class Grid_Handler:
     dx = 1
     # Bool to check if zeropoint set
     zero_made = False
-    def __init__(self,motor_x,motor_y=None,motor_z=None,motor_dir=None,dx=None) -> None:
+    def __init__(self,motor_x,motor_y=None,motor_z=None,motor_dir=None,dx=None, endstops=None) -> None:
         # Implement File handler here
         # Implement end stop control
         # Implement depth map recording 
@@ -1046,7 +1051,62 @@ class Grid_Handler:
         else:
             self.z = None
         self.motors = [self.x, self.y, self.z]
-        pass
+        # Set up endstops
+        # TODO: Add checking of endstops at each move, if finds endstop define as new end/start point --> recreate coord system to always be relative to starting point, but also have find endstops just in case
+        # FIXME: In move_dist in the check for < 0 add conditional to if endstops present, so that one can go below 0 when they are there and working ---> Very last thing to do!
+        # FIXME: Add saving of gridbounts and check it complies with current pos --> If zeropoint negative on load (only load so that imaging doesnt get changed coordinate systems) make it zero and move pos and gridbound accordingly
+        if endstops is not None:
+            self.has_endstops = True
+            self.endstops = [[0,0],[0,0],[0,0]]
+            for key in endstops:
+                # Set one as signal sender
+                GPIO.setup(endstops[key][0], GPIO.OUT)
+                # Pull high so that signal travels
+                GPIO.setup(endstops[key][0], GPIO.HIGH)
+                # And other as receiver
+                GPIO.setup(endstops[key][1], GPIO.IN)
+                print('Checking endstop for {}'.format(key))
+                # Check signal is being received
+                if self.read_pin(endstops[key][1]) == 0:
+                    # If the above is zero there is no signal through the set up, so raise exception for operator to check if endstop is triggered (and then untrigger) or fix hardware problem
+                    raise Exception('Endstop does not provide signal, check whats going on')
+                # Add reading endstops to class and quickly parse which position of the array it goes
+                if 'x' in key: coord = 0
+                elif 'y' in key: coord = 1
+                elif 'z' in key: coord = 2
+                if 'min' in key: pos = 0
+                else: pos = 1 
+                self.endstops[coord][pos] =  endstops[key][1]
+        else:
+            self.has_endstops = False
+
+        return
+
+    def read_pin(self,pin_nr, check_for=0.05, timeout=2)
+        """Reads GPIO pin of pin_nr in BCM numbering
+        check_for time in seconds for which signal mustnt fluctuate
+        timeout -> if timeout reached without constant signal raises Exception
+        """
+        # Def last read
+        last = GPIO.input(pin_nr)
+        start_t = time.now()
+        # Check for timeout condition
+        while time.time()-start_t < timeout:
+            # Check for timing till true condition
+            start_c = time.now()
+            while time.time()-start_c < check_for:
+                new = GPIO.input(pin_nr)
+                # break inner while loop if fialed to read consistently
+                if new != last: 
+                    print('Signal varied!')
+                    break
+                # Overwrite last and repeat
+                last = new
+            # If it reaches here check for condition is satisfied and break for loop
+            break
+        # Return if true or false
+        return last
+
     
     def set_gridbounds(self,bounds):
         self.gridbounds = bounds
@@ -1064,13 +1124,18 @@ class Grid_Handler:
 
     def make_zeropoint(self,axis):
         """
-        Sets pos for axis to zero
+        Set zeropoint for axis
         """
-        # In case max point was set prior to zero point
-        if self.gridbounds[axis] != 0:
-            # Incerment by current pos so that max point remains unchanged
-            self.gridbounds[axis] += self.pos[axis]
-        self.pos[axis] = 0
+        if self.has_endstops:
+            self.zeropoint = self.pos
+        else:
+            # In case max point was set prior to zero point
+            if self.gridbounds[axis] != 0:
+                # Incerment by current pos so that max point remains unchanged
+                self.gridbounds[axis] += self.pos[axis]
+            self.pos[axis] = 0
+
+        # TODO: Check the below is still required
         self.zero_made = True
         return
 
@@ -1098,7 +1163,7 @@ class Grid_Handler:
                 if self.gridbounds[i] < self.pos[i]+disp[i]:
                     notification('Coordinate out of Grid (gt gb)')
                     return
-                elif self.pos[i]+disp[i] <0:
+                elif self.pos[i]+disp[i] < self.zeropoint[i]:
                     notification('Coordinate out of Grid (lt 0)')
                     return
         # Adjust roation direction relative to grid
@@ -1110,9 +1175,25 @@ class Grid_Handler:
             disp[i] = disp[i]*self.motor_dir[i]
         # Save last state 
         self.last_pos = self.pos
+        if self.has_endstops:
+            # Get direction so we know which endstop to use, the ULN driver automatically implies direction
+            direction = [0 if i<0 else 1 for i in disp]
         # Do movement
         for i in range(len(disp)):
             if disp[i] != 0:
+                if self.has_endstops:  
+                    # Check endstop state, if no current max grid range
+                    res = self.read_pin(pin_nr=self.endstop[i][direction[i]])  # i contains xyz index direction contains xyz up or down index
+                    if not res:
+                        #FIXME: Handle
+                        # If minima
+                        if direction[i] == 0:
+                            # Make current axis zero
+                            self.make_zeropoint(axis=i) # FIXME: Modify make zeropoint to allow for negative gridbounds ----> done check it worked
+                        # If maxima
+                        if direction[i] == 1:
+                            self.make_endstop(axis=i)
+                        return
                 self.motors[i].step(disp[i])
         # For book keeping undo motor correction
         for i in range(length):
@@ -1223,6 +1304,7 @@ class Grid_Handler:
             pins += gpio_pins['y']
         if gpio_pins['z'] is not None:
             pins += gpio_pins['z']
+        if gpio_pins['Endstio']
         for i in pins: GPIO.output(i,0)
         return
         
