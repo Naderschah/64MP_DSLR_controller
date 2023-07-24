@@ -86,10 +86,8 @@ with 4x:
 
 # Note all setting changes after camera start take a little to be enables (1-5s)
 # For 64MP all sensor modes have a different crop limit
-
-# Docs on NoiseReductionMode wrong (min:0 max:4 -> int) on site 3 options -> str : Assume 0 is no noise reduction
-# WHat does Noise Reduction do?
-logging.basicConfig(filename=str(Path.home())+'/Camera/logs/{}.log'.format(dt.datetime.now().strftime('%Y%m%d')), filemode='w', level=logging.DEBUG)
+ 
+logging.basicConfig(filename=str(Path.home())+'/PiCamera_DSLR_like_controller/logs/{}.log'.format(dt.datetime.now().strftime('%Y%m%d')), filemode='w', level=logging.DEBUG)
 Picamera2.set_logging(Picamera2.INFO)
 # Examples: https://github.com/raspberrypi/picamera2/tree/main/examples
 # Fake Long exposure: https://github.com/raspberrypi/picamera2/blob/main/examples/stack_raw.py
