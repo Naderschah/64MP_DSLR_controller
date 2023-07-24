@@ -1089,7 +1089,7 @@ class Grid_Handler:
 
         return
 
-    def read_pin(pin_nr, check_for=0.05, assure=2, threshhold=0.05):
+    def read_pin(self,pin_nr, check_for=0.05, assure=2, threshhold=0.05):
         """Reads GPIO pin of pin_nr in BCM numbering
         check_for time in seconds for which signal mustnt fluctuate
 
