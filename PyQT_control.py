@@ -1313,7 +1313,6 @@ class Grid_Handler:
             pins += gpio_pins['y']
         if gpio_pins['z'] is not None:
             pins += gpio_pins['z']
-        if gpio_pins['Endstio']
         for i in pins: GPIO.output(i,0)
         return
         
