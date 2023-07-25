@@ -1065,17 +1065,17 @@ class Grid_Handler:
             self.endstops = endstops
             GPIO.setmode(GPIO.BCM)
             for key in endstops:
-                GPIO.setup(endstops[key][0], GPIO.IN, pull_up_down=GPIO.PUD_UP)
-                GPIO.setup(endstops[key][1], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+                GPIO.setup(key[0], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+                GPIO.setup(key[1], GPIO.IN, pull_up_down=GPIO.PUD_UP)
                 time.sleep(0.01)
             # Check signal is being received
             for key in endstops:
                 print('Checking endstop for {}'.format(key[0]))
-                if GPIO.input(endstops[key]) == 1:
+                if GPIO.input(key[0]) == 1:
                     # If the above is zero there is no signal through the set up, so raise exception for operator to check if endstop is triggered (and then untrigger) or fix hardware problem
                     raise Exception('Endstop triggered')
                 print('Checking endstop for {}'.format(key[0]))
-                if GPIO.input(endstops[key]) == 1:
+                if GPIO.input(key[1]) == 1:
                     # If the above is zero there is no signal through the set up, so raise exception for operator to check if endstop is triggered (and then untrigger) or fix hardware problem
                     raise Exception('Endstop triggered')
             
@@ -1178,9 +1178,6 @@ class Grid_Handler:
         if len(self.motor_dir)>len(disp): length = len(disp)
         elif len(self.motor_dir)<len(disp): length = len(self.motor_dir)
         else: length = len(self.motor_dir)
-        if self.has_endstops:
-            # Get direction so we know which endstop to use, the ULN driver automatically implies direction
-            direction = [0 if i<0 else 1 for i in disp]
         for i in range(length):
             disp[i] = disp[i]*self.motor_dir[i]
         # Save last state 
@@ -1330,7 +1327,6 @@ class Grid_Handler:
         if gpio_pins['z'] is not None:
             pins += gpio_pins['z']
         for i in pins: GPIO.output(i,0)
-        if self.has_endstops: self.thread.stop()
         return
         
 
