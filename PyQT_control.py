@@ -398,7 +398,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                  'z':[17,4,3,2], 
                  'IR':None,
                  # Endstops are connected to normally closed (ie signal travels if not clicked)!
-                 'Endstops': {'x_min':20, 'x_max':21, 'y_min':16,'y_max':12, 'z_min':8,'z_max':7},
+                 'Endstops': {'x_min':21, 'x_max':20, 'y_min':16,'y_max':12, 'z_min':8,'z_max':7},
                  }
     endstops = []
     # 1 step at 16 ms to mm travel conversion
@@ -1201,23 +1201,22 @@ class Grid_Handler:
                 sign = int(disp[i]/abs(disp[i]))
                 while abs(moved) < abs(disp[i])-check_interval:
                     # Check endstops
-                    if self.has_endstops:  
-                        # Endstop hit == 1 - just check both
-                        if any([GPIO.input(self.endstops[i][j]) for j in range(2)]):
-                            if direction[i] == 0: # minimum
-                                # Make current axis zero
-                                self.make_zeropoint(axis=i) 
-                                print('Made zeropoint based on endstop')
-                                found_endstop  = True
-                                break
-                            if direction[i] == 1: # maximum
-                                self.make_endstop(axis=i)
-                                print('Made max point< based on endstop')
-                                found_endstop = False
-                                break
-                            # Break for loop overwrite disp and continue
+                    if self.has_endstops:
+                        if GPIO.input(self.endstops[i][0]):
+                            self.make_zeropoint(axis=i) 
+                            print('Made zeropoint based on endstop')
+                            found_endstop = True
+                            # Break while loop overwrite disp and continue
                             disp[i] = moved
                             break
+                        elif GPIO.input(self.endstops[i][1]):
+                            self.make_endstop(axis=i)
+                            print('Made max point based on endstop')
+                            found_endstop = True
+                            # Break while loop overwrite disp and continue
+                            disp[i] = moved
+                            break
+                        
                     print('Moving {}'.format(sign*check_interval))
                     self.motors[i].step(sign*check_interval*self.motor_dir[i])
                     moved += sign*check_interval*self.motor_dir[i]
