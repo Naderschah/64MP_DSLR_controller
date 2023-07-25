@@ -38,7 +38,7 @@ GPIO.setmode(GPIO.BCM)
 
 GPIO.setup(pins[0], GPIO.OUT)
 
-GPIO.setup(pins[1], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(pins[1], GPIO.IN)
 
 GPIO.setup(pins[0], GPIO.HIGH)
 
