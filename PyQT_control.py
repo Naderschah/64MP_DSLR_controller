@@ -1170,27 +1170,28 @@ class Grid_Handler:
         disp --> displacement in motor steps
         adjust_ms --> From big easy driver microstepping --> No longer used
         """
-        for i in range(len(disp)): 
-            # Check that bounds were set - if this is pre setting bounds this is ignored
-            if self.gridbounds[i] != 0 and self.zero_made:
-                if self.gridbounds[i] < self.pos[i]+disp[i]:
-                    notification('Coordinate out of Grid (gt gb)')
-                    return
-                elif self.pos[i]+disp[i] < self.zeropoint[i]:
-                    notification('Coordinate out of Grid (lt 0)')
-                    return
+        if not self.has_endstops:
+            for i in range(len(disp)): 
+                # Check that bounds were set - if this is pre setting bounds this is ignored
+                if self.gridbounds[i] != 0 and self.zero_made:
+                    if self.gridbounds[i] < self.pos[i]+disp[i]:
+                        notification('Coordinate out of Grid (gt gb)')
+                        return
+                    elif self.pos[i]+disp[i] < self.zeropoint[i]:
+                        notification('Coordinate out of Grid (lt 0)')
+                        return
         # Adjust roation direction relative to grid
         # Check which list to iterate
         if len(self.motor_dir)>len(disp): length = len(disp)
         elif len(self.motor_dir)<len(disp): length = len(self.motor_dir)
         else: length = len(self.motor_dir)
+        if self.has_endstops:
+            # Get direction so we know which endstop to use, the ULN driver automatically implies direction
+            direction = [0 if i<0 else 1 for i in disp]
         for i in range(length):
             disp[i] = disp[i]*self.motor_dir[i]
         # Save last state 
         self.last_pos = self.pos
-        if self.has_endstops:
-            # Get direction so we know which endstop to use, the ULN driver automatically implies direction
-            direction = [0 if i<0 else 1 for i in disp]
         # Do movement
         found_endstop =  False
         for i in range(len(disp)):
@@ -1208,16 +1209,18 @@ class Grid_Handler:
                                 self.make_zeropoint(axis=i) 
                                 print('Made zeropoint based on endstop')
                                 found_endstop  = True
+                                break
                             if direction[i] == 1: # maximum
                                 self.make_endstop(axis=i)
                                 print('Made max point< based on endstop')
                                 found_endstop = False
+                                break
                             # Break for loop overwrite disp and continue
                             disp[i] = moved
                             break
                     print('Moving {}'.format(sign*check_interval))
-                    self.motors[i].step(sign*check_interval)
-                    moved += sign*check_interval
+                    self.motors[i].step(sign*check_interval*self.motor_dir[i])
+                    moved += sign*check_interval*self.motor_dir[i]
                 # Once the above terminates we still need to move the remainder
                 if disp[i] - moved != 0 and not found_endstop:
                     self.motors[i].step(disp[i] - moved)
