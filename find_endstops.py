@@ -1,5 +1,7 @@
 from PyQT_control import Grid_Handler
 from ULN2003Pi import ULN2003
+import RPi.GPIO as GPIO
+import time
 
 motor_dir = [1,1,1]
 gpio_pins = {'x': [19,5,0,11],
@@ -20,10 +22,12 @@ if res.lower() == 'y':
     # Find minimum
     while True:
         # Move 
-        found_endstop = grid.move_dist([-1000])
+        if not GPIO.input(gpio_pins['Endstops'][0][0]):
+            found_endstop = grid.move_dist([-1000])
         input('type now ', found_endstop)
         print('left move')
         print(found_endstop) 
+        time.sleep(1)
         if found_endstop[0][0] and found_endstop[0][1]=='min':
             break
     print('Found X min')
