@@ -1085,7 +1085,7 @@ class Grid_Handler:
                 if 'min' in key: pos = 0
                 else: pos = 1 
                 self.endstops[coord][pos] =  endstops[key][1]
-                print('Starting endstop thread')
+            print('Starting endstop thread')
             # Boolean the thread will modify to keep track of endstops
             self.endstop_bool = [[True,True],[True,True],[True,True]]
             self.thread_x = Thread(target = self.read_endstop_x,)
@@ -1100,7 +1100,7 @@ class Grid_Handler:
 
         return
 
-    def read_pin(self,pin_nr, check_for=0.05, assure=1, threshhold=0.05):
+    def read_pin(self,pin_nr, check_for=0.05, assure=2, threshhold=0.05):
         """Reads GPIO pin of pin_nr in BCM numbering
         check_for time in seconds for which signal mustnt fluctuate
 
@@ -1125,6 +1125,7 @@ class Grid_Handler:
                     varied += 1
                     counter +=1
                     break
+        if (varied/counter > threshhold): print(varied, counter)
         return (varied/counter > threshhold)
 
 
