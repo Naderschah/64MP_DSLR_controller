@@ -1088,9 +1088,9 @@ class Grid_Handler:
                 print('Starting endstop thread')
                 # Boolean the thread will modify to keep track of endstops
                 self.endstop_bool = [[True,True],[True,True],[True,True]]
-                self.thread_x = Thread(target = self.read_endstop, args =(0))
-                self.thread_y = Thread(target = self.read_endstop, args =(1))
-                self.thread_z = Thread(target = self.read_endstop, args =(2))
+                self.thread_x = Thread(target = self.read_endstop_x,)
+                self.thread_y = Thread(target = self.read_endstop_y, )
+                self.thread_z = Thread(target = self.read_endstop_z, )
                 self.thread_x.start()
                 self.thread_y.start()
                 self.thread_z.start()
@@ -1127,13 +1127,35 @@ class Grid_Handler:
                     break
         return (varied/counter > threshhold)
 
-    def read_endstop(self,axis,*args):
+
+    # Couldnt figure out how to pass argument to thread so this
+    def read_endstop_x(self):
         """Threaded function to keep knowledge of endstop pin state"""
         # Iterate axis then max min
+        axis = 0
         while True:
             for pos in range(len(self.endstops[axis])):
                 self.endstop_bool[axis][pos] = self.read_pin(self.endstops[axis][pos])
         return
+
+    def read_endstop_y(self):
+        """Threaded function to keep knowledge of endstop pin state"""
+        # Iterate axis then max min
+        axis = 1
+        while True:
+            for pos in range(len(self.endstops[axis])):
+                self.endstop_bool[axis][pos] = self.read_pin(self.endstops[axis][pos])
+        return
+
+    def read_endstop_z(self):
+        """Threaded function to keep knowledge of endstop pin state"""
+        # Iterate axis then max min
+        axis = 2
+        while True:
+            for pos in range(len(self.endstops[axis])):
+                self.endstop_bool[axis][pos] = self.read_pin(self.endstops[axis][pos])
+        return
+
 
 
     
