@@ -1088,8 +1088,12 @@ class Grid_Handler:
                 print('Starting endstop thread')
                 # Boolean the thread will modify to keep track of endstops
                 self.endstop_bool = [[True,True],[True,True],[True,True]]
-                self.thread = Thread(target = self.read_endstops, args =())
-                self.thread.start()
+                self.thread_x = Thread(target = self.read_endstops, args =(0))
+                self.thread_y = Thread(target = self.read_endstops, args =(1))
+                self.thread_z = Thread(target = self.read_endstops, args =(2))
+                self.thread_x.start()
+                self.thread_y.start()
+                self.thread_z.start()
 
         else:
             self.has_endstops = False
@@ -1123,13 +1127,12 @@ class Grid_Handler:
                     break
         return (varied/counter > threshhold)
 
-    def read_endstops(self,*args):
+    def read_endstop(self,axis,*args):
         """Threaded function to keep knowledge of endstop pin state"""
         # Iterate axis then max min
         while True:
-            for axis in range(len(self.endstops)):
-                for pos in range(len(self.endstops[axis])):
-                    self.endstop_bool[axis][pos] = self.read_pin(self.endstops[axis][pos])
+            for pos in range(len(self.endstops[axis])):
+                self.endstop_bool[axis][pos] = self.read_pin(self.endstops[axis][pos])
         return
 
 
