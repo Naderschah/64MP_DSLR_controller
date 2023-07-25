@@ -1070,7 +1070,7 @@ class Grid_Handler:
                 # And other as receiver --> Pud Up doesnt seem to be required but why not
                 GPIO.setup(endstops[key][1], GPIO.IN, pull_up_down=GPIO.PUD_UP)
                 # Pull low just in case
-                GPIO.setup(endstops[key][1], GPIO.LOW)
+                #GPIO.setup(endstops[key][1], GPIO.LOW)
                 # Pull high so that signal travels
                 GPIO.setup(endstops[key][0], GPIO.HIGH)
                 print('Checking endstop for {}'.format(key))
