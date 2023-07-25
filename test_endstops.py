@@ -8,7 +8,7 @@ gpio_pins = {'x': [19,5,0,11],
                  'z':[9,10,22,27],
                  'IR':None,
                  # Endstops are connected to normally closed (ie signal travels if not clicked)!
-                 'Endstops':{'x_min':[21], 'x_max':[20], 'y_min':[16],'y_max':[12], 'z_min':[7],'z_max':[8]},
+                 'Endstops': {'x_min':21, 'x_max':20, 'y_min':16,'y_max':12, 'z_min':7,'z_max':8},
                  }
 import time
 

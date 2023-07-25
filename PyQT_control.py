@@ -398,7 +398,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                  'z':[9,10,22,27],
                  'IR':None,
                  # Endstops are connected to normally closed (ie signal travels if not clicked)!
-                 'Endstops': {'x_min':[21], 'x_max':[20], 'y_min':[16],'y_max':[12], 'z_min':[7],'z_max':[8]},
+                 'Endstops': {'x_min':21, 'x_max':20, 'y_min':16,'y_max':12, 'z_min':7,'z_max':8},
                  }
     endstops = []
     # 1 step at 16 ms to mm travel conversion
