@@ -1073,7 +1073,7 @@ class Grid_Handler:
                 GPIO.setup(endstops[key][0], GPIO.HIGH)
                 print('Checking endstop for {}'.format(key))
                 # Check signal is being received
-                time.sleep(0.1)
+                time.sleep(0.01)
                 if self.read_pin(endstops[key][1]) == 0:
                     # If the above is zero there is no signal through the set up, so raise exception for operator to check if endstop is triggered (and then untrigger) or fix hardware problem
                     raise Exception('Endstop does not provide signal, check whats going on')
@@ -1181,7 +1181,7 @@ class Grid_Handler:
         return 
 
 
-    def move_dist(self,disp,adjust_ms=None):
+    def move_dist(self,disp,adjust_ms=None, check_interval = 200):
         """
         disp --> displacement in motor steps
         adjust_ms --> From big easy driver microstepping --> No longer used
@@ -1210,17 +1210,10 @@ class Grid_Handler:
         # Do movement
         for i in range(len(disp)):
             if disp[i] != 0:
-                # We split the movement into multiples of 200 to allow faster movement for endstop checking (corresponds to 0.00012*200 = 0.024 mm)
-                if disp[i]>0:
-                    step_list = [200] * (disp[i]//200)
-                else:
-                    step_list = [-200] * (abs(disp[i])//200)
-                if disp[i] > 0:
-                    step_list += [disp[i]%200]
-                elif disp[i]<0:
-                    step_list += [disp[i]%(-200)]
+                # We split the movement into multiples of 200 (check_interval) to allow faster movement for endstop checking (corresponds to 0.00012*200 = 0.024 mm)
                 moved = 0
-                for j in step_list:
+                sign = int(disp[i]/abs(disp(i)))
+                while abs(moved) < abs(disp[i])-check_interval:
                     # Check endstops
                     if self.has_endstops:  
                         res = self.read_pin(pin_nr=self.endstops[i][direction[i]])  # i contains xyz index direction contains xyz up or down index
@@ -1236,8 +1229,12 @@ class Grid_Handler:
                             # Break for loop overwrite disp and continue
                             disp[i] = moved
                             break
-                    self.motors[i].step(j)
-                    moved += j
+                    print('Moving {}'.format(check_interval))
+                    self.motors[i].step(sign*check_interval)
+                    moved += sign*check_interval
+                # Once the above terminates we still need to move the remainder
+                if disp[i] - moved != 0:
+                    self.motors[i].step(disp[i] - moved)
         # For book keeping undo motor correction
         for i in range(length):
             disp[i] = disp[i]*self.motor_dir[i]
