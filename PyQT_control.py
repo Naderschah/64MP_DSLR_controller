@@ -1063,6 +1063,7 @@ class Grid_Handler:
         if endstops is not None:
             self.has_endstops = True
             self.endstops = [[0,0],[0,0],[0,0]]
+            GPIO.setmode(GPIO.BCM)
             for key in endstops:
                 # Set one as signal sender
                 GPIO.setup(endstops[key][0], GPIO.OUT)
