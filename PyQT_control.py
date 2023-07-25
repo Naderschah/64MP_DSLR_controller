@@ -398,7 +398,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                  'z':[9,10,22,27],
                  'IR':None,
                  # Endstops are connected to normally closed (ie signal travels if not clicked)!
-                 'Endstops': {'x_min':[21,20], 'x_max':[16,12], 'y_min':[1,7],'y_max':[8,25], 'z_min':[24,23],'z_max':[18,15]},
+                 'Endstops': {'x_min':[21], 'x_max':[20], 'y_min':[16],'y_max':[12], 'z_min':[7],'z_max':[8]},
                  }
     endstops = []
     # 1 step at 16 ms to mm travel conversion
@@ -1066,11 +1066,9 @@ class Grid_Handler:
             GPIO.setmode(GPIO.BCM)
             for key in endstops:
                 # Set one as signal sender
-                GPIO.setup(endstops[key][0], GPIO.OUT)
                 # And other as receiver --> Pud Up doesnt seem to be required but why not
-                GPIO.setup(endstops[key][1], GPIO.IN)
+                GPIO.setup(endstops[key], GPIO.IN, pull_up_down=GPIO.PUD_UP)
                 # Pull high so that signal travels
-                GPIO.setup(endstops[key][0], GPIO.HIGH)
                 print('Checking endstop for {}'.format(key))
                 # Check signal is being received
                 time.sleep(0.01)
@@ -1081,21 +1079,13 @@ class Grid_Handler:
                 elif 'z' in key: coord = 2
                 if 'min' in key: pos = 0
                 else: pos = 1 
-                self.endstops[coord][pos] =  endstops[key][1]
+                self.endstops[coord][pos] =  endstops[key]
                 time.sleep(2)
             for key in endstops:
-                if self.read_pin(endstops[key][1]) == 1:
+                if GPIO.input(endstops[key]) == 0:
                     # If the above is zero there is no signal through the set up, so raise exception for operator to check if endstop is triggered (and then untrigger) or fix hardware problem
-                    raise Exception('Endstop does not provide signal, check whats going on')
-            print('Starting endstop thread')
-            ## Boolean the thread will modify to keep track of endstops
-            self.endstop_bool = [[True,True],[True,True],[True,True]]
-            self.thread_x = Thread(target = self.read_endstop_x,)
-            self.thread_y = Thread(target = self.read_endstop_y, )
-            self.thread_z = Thread(target = self.read_endstop_z, )
-            self.thread_x.start()
-            self.thread_y.start()
-            self.thread_z.start()
+                    raise Exception('Endstop triggered')
+            
 
         else:
             self.has_endstops = False
@@ -1129,37 +1119,6 @@ class Grid_Handler:
                     break
         if (varied/counter > threshhold): print(varied, counter)
         return (varied/counter > threshhold)
-
-
-    # Couldnt figure out how to pass argument to thread so this
-    def read_endstop_x(self):
-        """Threaded function to keep knowledge of endstop pin state"""
-        # Iterate axis then max min
-        axis = 0
-        while True:
-            for pos in range(len(self.endstops[axis])):
-                self.endstop_bool[axis][pos] = self.read_pin(self.endstops[axis][pos])
-        return
-
-    def read_endstop_y(self):
-        """Threaded function to keep knowledge of endstop pin state"""
-        # Iterate axis then max min
-        axis = 1
-        while True:
-            for pos in range(len(self.endstops[axis])):
-                self.endstop_bool[axis][pos] = self.read_pin(self.endstops[axis][pos])
-        return
-
-    def read_endstop_z(self):
-        """Threaded function to keep knowledge of endstop pin state"""
-        # Iterate axis then max min
-        axis = 2
-        while True:
-            for pos in range(len(self.endstops[axis])):
-                self.endstop_bool[axis][pos] = self.read_pin(self.endstops[axis][pos])
-        return
-
-
 
     
     def set_gridbounds(self,bounds):
@@ -1242,9 +1201,8 @@ class Grid_Handler:
                 while abs(moved) < abs(disp[i])-check_interval:
                     # Check endstops
                     if self.has_endstops:  
-                        res = self.endstop_bool[i]
-                        # Endstop hit - just check both
-                        if any([not i for i in res]):
+                        # Endstop hit == 1 - just check both
+                        if any([GPIO.input(self.endstops[i][j] for j in range(2))]):
                             if direction[i] == 0: # minimum
                                 # Make current axis zero
                                 self.make_zeropoint(axis=i) 
