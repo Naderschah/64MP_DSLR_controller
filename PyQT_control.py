@@ -1070,7 +1070,7 @@ class Grid_Handler:
                 # And other as receiver --> Pud Up doesnt seem to be required but why not
                 GPIO.setup(endstops[key][1], GPIO.IN, pull_up_down=GPIO.PUD_UP)
                 # Pull low just in case
-                #GPIO.setup(endstops[key][1], GPIO.LOW)
+                GPIO.setup(endstops[key][1], GPIO.LOW)
                 # Pull high so that signal travels
                 GPIO.setup(endstops[key][0], GPIO.HIGH)
                 print('Checking endstop for {}'.format(key))
@@ -1086,20 +1086,29 @@ class Grid_Handler:
                 if 'min' in key: pos = 0
                 else: pos = 1 
                 self.endstops[coord][pos] =  endstops[key][1]
-            print('Starting endstop thread')
-            # Boolean the thread will modify to keep track of endstops
+            #print('Starting endstop thread')
+            ## Boolean the thread will modify to keep track of endstops
             self.endstop_bool = [[True,True],[True,True],[True,True]]
-            self.thread_x = Thread(target = self.read_endstop_x,)
-            self.thread_y = Thread(target = self.read_endstop_y, )
-            self.thread_z = Thread(target = self.read_endstop_z, )
-            self.thread_x.start()
-            self.thread_y.start()
-            self.thread_z.start()
+            #self.thread_x = Thread(target = self.read_endstop_x,)
+            #self.thread_y = Thread(target = self.read_endstop_y, )
+            #self.thread_z = Thread(target = self.read_endstop_z, )
+            #self.thread_x.start()
+            #self.thread_y.start()
+            #self.thread_z.start()
+            GPIO.add_event_detect(self.endstops[coord][pos], GPIO.FALLING, callback=self.change_xmin, bouncetime=200)
+            GPIO.add_event_detect(self.endstops[coord][pos], GPIO.RISING, callback=self.release_xmin, bouncetime=200)
 
         else:
             self.has_endstops = False
 
         return
+
+    def change_xmin(self):
+        # False as in no signal os switch hit - remnant from how originally implemented checking
+        self.endstop_bool[0][0] = False
+    def release_xmin(self):
+        # When the xmin trigger is no longer pressed
+        self.endstop_bool[0][0] = True
 
     def read_pin(self,pin_nr, check_for=0.05, assure=2, threshhold=0.05):
         """Reads GPIO pin of pin_nr in BCM numbering
