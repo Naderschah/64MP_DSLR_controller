@@ -1076,7 +1076,7 @@ class Grid_Handler:
                 print('Checking endstop for {}'.format(key))
                 # Check signal is being received
                 time.sleep(0.01)
-                if self.read_pin(endstops[key][1]) == 0:
+                if self.read_pin(endstops[key][1]) == 1:
                     # If the above is zero there is no signal through the set up, so raise exception for operator to check if endstop is triggered (and then untrigger) or fix hardware problem
                     raise Exception('Endstop does not provide signal, check whats going on')
                 # Add reading endstops to class and quickly parse which position of the array it goes
