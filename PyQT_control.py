@@ -535,7 +535,30 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     @QtCore.pyqtSlot()
     def start_imaging(self): # TODO: Add thing to adjust exposure if brightness too low (if below 50% increase exp so that mean 50%)
         """Starts automatic imaging chain"""
-        # Save the grid in case we want to restart or something fails
+        # Initiate grid if doesnt exist
+        if not hasattr(self,'grid'):
+            self.create_grid_controler()
+        
+        if self.grid.has_endstops:
+            # endstop routine
+            self.start_imaging_endstop()
+        else:
+            # No endstop routine
+            self.start_imaging_no_endstop()
+        
+    def start_imaging_endstop(self):
+        # Basic constants
+        px_size = 1.55*1e-3 
+        im_y_len = 4056*px_size # mm width
+        im_z_len = 3040*px_size
+        overlap = 0.6 # May be too much
+        m=2
+        overlap_coeff = (1-overlap)/self.step_mm * m
+
+        # Mark imaging for rsync 
+        os.system('echo "True" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
+        
+    def start_imaging_no_endstop(self):
         print('Do you want to use the gridpoint as the maximum coordinate? Otherwise the current positon will be the zeropoint (back bottom left, when facing the camera) and the dimensions will be asked')
         while True:
             res = input('y/n: ')
@@ -545,8 +568,6 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             elif res.lower() =='N'.lower():
                 ask = False
                 break
-        if not hasattr(self,'grid'):
-            self.create_grid_controler()
         if ask: 
             self.grid.pos=[0]*self.grid.n_motors
             m = float(input('What is the magnification: '))
@@ -1183,7 +1204,7 @@ class Grid_Handler:
         # Save last state 
         self.last_pos = self.pos
         # Do movement
-        found_endstop =  False
+        found_endstop = [ [False, False], [False, False], [False, False]]
         for i in range(len(disp)):
             if disp[i] != 0:
                 # We split the movement into multiples of 200 (check_interval) to allow faster movement for endstop checking (corresponds to 0.00012*200 = 0.024 mm)
@@ -1199,14 +1220,14 @@ class Grid_Handler:
                         if GPIO.input(self.endstops[i][0]):
                             self.make_zeropoint(axis=i) 
                             print('Made zeropoint based on endstop')
-                            found_endstop = True
+                            found_endstop[i] = [True, 'min']
                             # Break while loop overwrite disp and continue
                             disp[i] = moved
                             break
                         elif GPIO.input(self.endstops[i][1]):
                             self.make_endstop(axis=i)
                             print('Made max point based on endstop')
-                            found_endstop = True
+                            found_endstop[i] = [True, 'max']
                             # Break while loop overwrite disp and continue
                             disp[i] = moved
                             break
