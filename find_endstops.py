@@ -21,6 +21,7 @@ if res.lower() == 'y':
     while True:
         # Move 
         found_endstop = grid.move_dist([-1000])
+        input('type now ', found_endstop)
         print('left move')
         print(found_endstop)
         if found_endstop[0] == [True, 'min']:

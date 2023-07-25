@@ -1261,10 +1261,6 @@ class Grid_Handler:
                 while abs(moved) < abs(disp[i])-check_interval:
                     # Check endstops
                     if self.has_endstops:
-                        print('Status zeropoint: {}'.format(GPIO.input(self.endstops[i][0])))
-                        print('Pin {}'.format(self.endstops[i][0]))
-                        print('Status max point: {}'.format(GPIO.input(self.endstops[i][1])))
-                        print('Pin {}'.format(self.endstops[i][1]))
                         if GPIO.input(self.endstops[i][0]):
                             self.make_zeropoint(axis=i) 
                             print('Made zeropoint based on endstop')
