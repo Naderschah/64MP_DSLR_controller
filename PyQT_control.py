@@ -1202,7 +1202,7 @@ class Grid_Handler:
                     # Check endstops
                     if self.has_endstops:  
                         # Endstop hit == 1 - just check both
-                        if any([GPIO.input(self.endstops[i][j] for j in range(2))]):
+                        if any([GPIO.input(self.endstops[i][j]) for j in range(2)]):
                             if direction[i] == 0: # minimum
                                 # Make current axis zero
                                 self.make_zeropoint(axis=i) 
