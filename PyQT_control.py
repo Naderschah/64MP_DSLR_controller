@@ -1182,35 +1182,6 @@ class Grid_Handler:
             self.has_endstops = False
 
         return
-
-    def read_pin(self,pin_nr, check_for=0.05, assure=2, threshhold=0.05):
-        """Reads GPIO pin of pin_nr in BCM numbering
-        check_for time in seconds for which signal mustnt fluctuate
-
-        Pin wont consistently show 0 but does consistently show 1 so if varies for more than check_for it is probably an endstop
-
-        So we do assure time to check it is actually touching
-        """
-        # var to track how often it varied, and counter for total checks
-        varied = 0
-        counter = 0
-        start_t = time.time()
-        while time.time()-start_t < assure:
-            start_c = time.time()
-            while time.time()-start_c < check_for:
-                new = GPIO.input(pin_nr)
-                # If its expected
-                if new == 1: 
-                    counter +=1
-                    break
-                # Record variation
-                else: 
-                    varied += 1
-                    counter +=1
-                    break
-        if (varied/counter > threshhold): print(varied, counter)
-        return (varied/counter > threshhold)
-
     
     def set_gridbounds(self,bounds):
         self.gridbounds = bounds
@@ -1283,7 +1254,7 @@ class Grid_Handler:
         # Do movement
         found_endstop = [ [False, False], [False, False], [False, False]]
         for i in range(len(disp)):
-            if disp[i] != 0:
+            if disp[i] != 0 or disp[i] != 0.0:
                 # We split the movement into multiples of 200 (check_interval) to allow faster movement for endstop checking (corresponds to 0.00012*200 = 0.024 mm)
                 moved = 0
                 sign = int(disp[i]/abs(disp[i]))
@@ -1315,7 +1286,7 @@ class Grid_Handler:
                     self.motors[i].step(sign*check_interval*self.motor_dir[i])
                     moved += sign*check_interval*self.motor_dir[i]
                 # Once the above terminates we still need to move the remainder
-                if disp[i] - moved != 0 and not found_endstop:
+                if disp[i] - moved != 0 and not any([i[0] for i in found_endstop]):
                     self.motors[i].step(disp[i] - moved)
         # For book keeping undo motor correction
         for i in range(length):
@@ -1327,6 +1298,7 @@ class Grid_Handler:
         # Save new coordinate
         with open(os.path.join(os.environ['HOME'], 'grid'),'w') as f:
             f.write(json.dumps({'pos':self.pos, 'gridbounds':self.gridbounds, 'zeropoint': self.zeropoint}))
+        if any([i[0] for i in found_endstop]) : print('Completed finding endstop in move')
         return found_endstop
 
 
