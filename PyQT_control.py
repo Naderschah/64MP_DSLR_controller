@@ -398,7 +398,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                  'z':[17,4,3,2], 
                  'IR':None,
                  # Endstops are connected to normally closed (ie signal travels if not clicked)!
-                 'Endstops': {'x_min':21, 'x_max':20, 'y_min':16,'y_max':12, 'z_min':8,'z_max':7},
+                 'Endstops': [[21,20],[16,12],[8,7]],
                  }
     endstops = []
     # 1 step at 16 ms to mm travel conversion
@@ -1062,26 +1062,19 @@ class Grid_Handler:
         # FIXME: Add saving of gridbounts and check it complies with current pos --> If zeropoint negative on load (only load so that imaging doesnt get changed coordinate systems) make it zero and move pos and gridbound accordingly
         if endstops is not None:
             self.has_endstops = True
-            self.endstops = [[0,0],[0,0],[0,0]]
+            self.endstops = endstops
             GPIO.setmode(GPIO.BCM)
             for key in endstops:
-                # Set one as signal sender
-                # And other as receiver --> Pud Up doesnt seem to be required but why not
-                GPIO.setup(endstops[key], GPIO.IN, pull_up_down=GPIO.PUD_UP)
-                # Pull high so that signal travels
-                print('Checking endstop for {}'.format(key))
-                # Check signal is being received
+                GPIO.setup(endstops[key][0], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+                GPIO.setup(endstops[key][1], GPIO.IN, pull_up_down=GPIO.PUD_UP)
                 time.sleep(0.01)
-                
-                # Add reading endstops to class and quickly parse which position of the array it goes
-                if 'x' in key: coord = 0
-                elif 'y' in key: coord = 1
-                elif 'z' in key: coord = 2
-                if 'min' in key: pos = 0
-                else: pos = 1 
-                self.endstops[coord][pos] =  endstops[key]
-                time.sleep(2)
+            # Check signal is being received
             for key in endstops:
+                print('Checking endstop for {}'.format(key[0]))
+                if GPIO.input(endstops[key]) == 1:
+                    # If the above is zero there is no signal through the set up, so raise exception for operator to check if endstop is triggered (and then untrigger) or fix hardware problem
+                    raise Exception('Endstop triggered')
+                print('Checking endstop for {}'.format(key[0]))
                 if GPIO.input(endstops[key]) == 1:
                     # If the above is zero there is no signal through the set up, so raise exception for operator to check if endstop is triggered (and then untrigger) or fix hardware problem
                     raise Exception('Endstop triggered')
