@@ -72,6 +72,10 @@ def read_pin(pin_nr, check_for=0.05, assure=2, threshhold=0.05):
     return (varied/counter > threshhold)
 
 
-ls = []
+print('Ready')
+
 while True:
-    ls.append(read_pin(16))
+    for key in endstops:
+        if not read_pin(endstops[key][1]):
+            print("pressed {}".format(key))
+    

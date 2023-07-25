@@ -23,6 +23,7 @@ from inputs import get_gamepad
 import math
 from ULN2003Pi import ULN2003
 import json
+from threading import Thread
 
 
 ZoomLevels = (1)
@@ -1084,12 +1085,18 @@ class Grid_Handler:
                 if 'min' in key: pos = 0
                 else: pos = 1 
                 self.endstops[coord][pos] =  endstops[key][1]
+                print('Starting endstop thread')
+                # Boolean the thread will modify to keep track of endstops
+                self.endstop_bool = [[True,True],[True,True],[True,True]]
+                self.thread = Thread(target = self.read_endstops, args =())
+                self.thread.start()
+
         else:
             self.has_endstops = False
 
         return
 
-    def read_pin(self,pin_nr, check_for=0.05, assure=2, threshhold=0.05):
+    def read_pin(self,pin_nr, check_for=0.05, assure=1, threshhold=0.05):
         """Reads GPIO pin of pin_nr in BCM numbering
         check_for time in seconds for which signal mustnt fluctuate
 
@@ -1116,25 +1123,15 @@ class Grid_Handler:
                     break
         return (varied/counter > threshhold)
 
-    def read_pin_(self,pin_nr, check_for=0.05):
-        """Reads GPIO pin of pin_nr in BCM numbering
-        check_for time in seconds for which signal mustnt fluctuate
+    def read_endstops(self,*args):
+        """Threaded function to keep knowledge of endstop pin state"""
+        # Iterate axis then max min
+        while True:
+            for axis in range(len(self.endstops)):
+                for pos in range(len(self.endstops[axis])):
+                    self.endstop_bool[axis][pos] = self.read_pin(self.endstops[axis][pos])
+        return
 
-        Pin wont consistently show 0 (noise) but does consistently show 1 so if goes 0 return as endstop --> will see if this leads to odd behavior
-
-        So we do assure time to check it is actually touching
-        """
-        start_c = time.time()
-        while time.time()-start_c < check_for:
-            new = GPIO.input(pin_nr)
-            # If its expected
-            if new == 1: 
-                break
-            # Record variation
-            else: 
-                return False
-        return True
-                
 
     
     def set_gridbounds(self,bounds):
@@ -1208,24 +1205,27 @@ class Grid_Handler:
             # Get direction so we know which endstop to use, the ULN driver automatically implies direction
             direction = [0 if i<0 else 1 for i in disp]
         # Do movement
+        found_endstop =  False
         for i in range(len(disp)):
             if disp[i] != 0:
                 # We split the movement into multiples of 200 (check_interval) to allow faster movement for endstop checking (corresponds to 0.00012*200 = 0.024 mm)
                 moved = 0
-                sign = int(disp[i]/abs(disp(i)))
+                sign = int(disp[i]/abs(disp[i]))
                 while abs(moved) < abs(disp[i])-check_interval:
                     # Check endstops
                     if self.has_endstops:  
-                        res = self.read_pin(pin_nr=self.endstops[i][direction[i]])  # i contains xyz index direction contains xyz up or down index
-                        # Endstop hit
-                        if not res:
+                        res = self.endstop_bool[i]
+                        # Endstop hit - just check both
+                        if any([not i for i in res]):
                             if direction[i] == 0: # minimum
                                 # Make current axis zero
                                 self.make_zeropoint(axis=i) 
                                 print('Made zeropoint based on endstop')
+                                found_endstop  = True
                             if direction[i] == 1: # maximum
                                 self.make_endstop(axis=i)
                                 print('Made max point< based on endstop')
+                                found_endstop = False
                             # Break for loop overwrite disp and continue
                             disp[i] = moved
                             break
@@ -1245,7 +1245,7 @@ class Grid_Handler:
         # Save new coordinate
         with open(os.path.join(os.environ['HOME'], 'grid'),'w') as f:
             f.write(json.dumps({'pos':self.pos, 'gridbounds':self.gridbounds, 'zeropoint': self.zeropoint}))
-        return
+        return found_endstop
 
 
     def move_dist_old(self,disp, adjust_ms=True):
@@ -1345,6 +1345,7 @@ class Grid_Handler:
         if gpio_pins['z'] is not None:
             pins += gpio_pins['z']
         for i in pins: GPIO.output(i,0)
+        if self.has_endstops: self.thread.stop()
         return
         
 
