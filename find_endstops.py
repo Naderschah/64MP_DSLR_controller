@@ -24,7 +24,7 @@ if res.lower() == 'y':
         input('type now ', found_endstop)
         print('left move')
         print(found_endstop)
-        if found_endstop[0] == [True, 'min']:
+        if found_endstop[0][0]:
             break
     print('Found X min')
 
@@ -32,7 +32,7 @@ if res.lower() == 'y':
     while True:
         # Move 
         found_endstop = grid.move_dist([1000])
-        if found_endstop[0]==[True, 'max']:
+        if found_endstop[0][0]:
             break
     print('Found X max')
 
@@ -41,7 +41,7 @@ if res.lower() == 'y':
     while True:
         # Move 
         found_endstop = grid.move_dist([0,-1000])
-        if found_endstop[1]==[True, 'min']:
+        if found_endstop[1][0]:
             break
     print('Found Y min')
 
@@ -49,7 +49,7 @@ if res.lower() == 'y':
     while True:
         # Move 
         found_endstop = grid.move_dist([0,1000])
-        if found_endstop[1]==[True, 'max']:
+        if found_endstop[1][0]:
             break
     print('Found Y max')
 
@@ -59,7 +59,7 @@ if res.lower() == 'y':
     while True:
         # Move 
         found_endstop = grid.move_dist([0,0,-1000])
-        if found_endstop[2]==[True, 'min']:
+        if found_endstop[2][0]:
             break
     print('Found Z min')
 
@@ -67,7 +67,7 @@ if res.lower() == 'y':
     while True:
         # Move 
         found_endstop = grid.move_dist([0,0,1000])
-        if found_endstop[2]==[True, 'max']:
+        if found_endstop[2][0]:
             break
     print('Found Z max')
 
