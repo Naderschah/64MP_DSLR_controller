@@ -1298,8 +1298,10 @@ class Grid_Handler:
                             self.make_zeropoint(axis=i) 
                             print('Made zeropoint based on endstop')
                             found_endstop[i] = [True, 'min']
+                            print('Set found endstop var, ', found_endstop)
                             # Break while loop overwrite disp and continue
                             disp[i] = moved
+                            print('Updated disp to ', disp)
                             break
                         elif GPIO.input(self.endstops[i][1]):
                             self.make_endstop(axis=i)
