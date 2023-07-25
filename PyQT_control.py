@@ -1082,7 +1082,7 @@ class Grid_Handler:
                 self.endstops[coord][pos] =  endstops[key]
                 time.sleep(2)
             for key in endstops:
-                if GPIO.input(endstops[key]) == 0:
+                if GPIO.input(endstops[key]) == 1:
                     # If the above is zero there is no signal through the set up, so raise exception for operator to check if endstop is triggered (and then untrigger) or fix hardware problem
                     raise Exception('Endstop triggered')
             
