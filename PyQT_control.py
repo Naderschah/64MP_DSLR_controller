@@ -549,15 +549,91 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     def start_imaging_endstop(self):
         # Basic constants
         px_size = 1.55*1e-3 
-        im_y_len = 4056*px_size # mm width
-        im_z_len = 3040*px_size
+        im_y_len = 3040*px_size # mm width
+        im_z_len = 4056*px_size
         overlap = 0.6 # May be too much
         m=2
         overlap_coeff = (1-overlap)/self.step_mm * m
 
+        self.hide()
+
         # Mark imaging for rsync 
         os.system('echo "True" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
         
+        print('Creating Paths')
+        # Change to img directory
+        self.make_img_dir()
+
+        # HDR
+        if self.checkbox_HDR.isChecked():
+            self.img_config['HDR'] = True
+
+        print('Starting imaging with HDR={}'.format(self.img_config['HDR']))
+        self.start_camera()
+
+        # Check image brightness
+        print('Adjusting exposure')
+        self.adjust_exp()
+
+        if self.pos != [0,0,0]:
+            # TODO: Thread this inside grid
+            self.grid.move_to_coord([0,0,0])
+
+        coord_arr = []
+        # Iterate max possible coordinate
+        
+        def make_list(z_step, gridbound,curr=0):
+            """Function to sample grid space"""
+            z_coord = []
+            while True:
+                if curr > gridbound:
+                    z_coord.append(gridbound)
+                    break
+                z_coord.append(curr)
+                curr+=z_step
+            return z_coord
+
+        z_coord = make_list(z_step= int(1*overlap_coeff*im_z_len),gridbound=self.grid.gridbounds[2],curr=0)
+        y_coord = make_list(z_step= int(1*overlap_coeff*im_y_len),gridbound=self.grid.gridbounds[1],curr=0)
+        x_coord = make_list(z_step= int(1*self.img_config['step_size']),gridbound=self.grid.gridbounds[0],curr=0)
+        start = time.time()
+        count=0
+        for i in z_coord:
+            for j in y_coord:
+                for k in x_coord:
+                    sys.stdout.flush()
+                    print('Moving to {} / {}mm'.format([k,j,i],[f*self.step_mm for f in [k,j,i]]))
+                    self.grid.move_to_coord([k,j,i])
+                    time.sleep(0.01)
+                    self.make_image()
+                    count +=1
+                    # Print progress # TODO: Estimate wrong, firs generate total grid size
+                    perc = count/np.prod(self.grid.gridbounds)
+                    # Adjust x step
+                    perc = perc/self.img_config['step_size']
+                    # Adjust y step
+                    perc = perc/((1-overlap)*im_y_len/self.step_mm)
+                    # Adjust z step
+                    perc = perc/((1-overlap)*im_z_len/self.step_mm)
+                    now = time.time()
+                    print('Completed {:.1} in {:.2}s, time left ~{:.0}m:{:.0}s'.format(perc,now-start, ((now-start)/perc)//60, ((now-start)/perc)%60))
+                # Invert coordinates
+                x_coord = x_coord[::-1]
+            y_coord = y_coord[::-1] 
+
+        
+        print('-------------------------\nCompleted imaging routine\n\n')
+            
+        self.grid.disable_all(gpio_pins=self.gpio_pins)
+        # Release Camera
+        self.camera.stop()
+        self.camera.close()
+        del self.camera
+        self.show()
+        # Make marker so that rsync knows when to stop copying
+        os.system('echo "False" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
+        return
+
     def start_imaging_no_endstop(self):
         print('Do you want to use the gridpoint as the maximum coordinate? Otherwise the current positon will be the zeropoint (back bottom left, when facing the camera) and the dimensions will be asked')
         while True:
@@ -661,6 +737,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                 z_coord.append(curr)
                 curr+=z_step
             return z_coord
+        # FIXME: Why is curr not pos?
         z_coord = make_list(z_step= int(1*overlap_coeff*im_z_len),gridbound=self.grid.gridbounds[2],curr=30407)
         y_coord = make_list(z_step= int(1*overlap_coeff*im_y_len),gridbound=self.grid.gridbounds[1],curr=80665)
         x_coord = make_list(z_step= int(1*self.img_config['step_size']),gridbound=self.grid.gridbounds[0],curr=36000)
