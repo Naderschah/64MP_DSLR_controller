@@ -1086,14 +1086,14 @@ class Grid_Handler:
                 else: pos = 1 
                 self.endstops[coord][pos] =  endstops[key][1]
                 print('Starting endstop thread')
-                # Boolean the thread will modify to keep track of endstops
-                self.endstop_bool = [[True,True],[True,True],[True,True]]
-                self.thread_x = Thread(target = self.read_endstop_x,)
-                self.thread_y = Thread(target = self.read_endstop_y, )
-                self.thread_z = Thread(target = self.read_endstop_z, )
-                self.thread_x.start()
-                self.thread_y.start()
-                self.thread_z.start()
+            # Boolean the thread will modify to keep track of endstops
+            self.endstop_bool = [[True,True],[True,True],[True,True]]
+            self.thread_x = Thread(target = self.read_endstop_x,)
+            self.thread_y = Thread(target = self.read_endstop_y, )
+            self.thread_z = Thread(target = self.read_endstop_z, )
+            self.thread_x.start()
+            self.thread_y.start()
+            self.thread_z.start()
 
         else:
             self.has_endstops = False
