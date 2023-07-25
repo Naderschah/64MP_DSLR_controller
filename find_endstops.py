@@ -13,62 +13,80 @@ grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']), motor_y=ULN2003.ULN
                     # if -1 invert motor direction
                     motor_dir = motor_dir, endstops = gpio_pins['Endstops'])
 
-input('Press enter to start finding endstops')
-# X-Axis
-# Find minimum
-while True:
-    # Move 
-    found_endstop = grid.move_dist([-1000])
-    if found_endstop:
-        break
-print('Found X min')
+res = input('Press Y to start finding endstops, press N to move each motor 100 steps back and forth in order xyz')
 
-# Find maximum
-while True:
-    # Move 
-    found_endstop = grid.move_dist([1000])
-    if found_endstop:
-        break
-print('Found X max')
+if res.lower() == 'y':
+    # X-Axis
+    # Find minimum
+    while True:
+        # Move 
+        found_endstop = grid.move_dist([-1000])
+        if found_endstop:
+            break
+    print('Found X min')
 
-# Y-Axis
-# Find minimum
-while True:
-    # Move 
-    found_endstop = grid.move_dist([0,-1000])
-    if found_endstop:
-        break
-print('Found Y min')
+    # Find maximum
+    while True:
+        # Move 
+        found_endstop = grid.move_dist([1000])
+        if found_endstop:
+            break
+    print('Found X max')
 
-# Find maximum
-while True:
-    # Move 
-    found_endstop = grid.move_dist([0,1000])
-    if found_endstop:
-        break
-print('Found Y max')
+    # Y-Axis
+    # Find minimum
+    while True:
+        # Move 
+        found_endstop = grid.move_dist([0,-1000])
+        if found_endstop:
+            break
+    print('Found Y min')
 
-
-# Z-Axis
-# Find minimum
-while True:
-    # Move 
-    found_endstop = grid.move_dist([0,0,-1000])
-    if found_endstop:
-        break
-print('Found Z min')
-
-# Find maximum
-while True:
-    # Move 
-    found_endstop = grid.move_dist([0,0,1000])
-    if found_endstop:
-        break
-print('Found Z max')
+    # Find maximum
+    while True:
+        # Move 
+        found_endstop = grid.move_dist([0,1000])
+        if found_endstop:
+            break
+    print('Found Y max')
 
 
-print('Found all endstops')
-print('Gridbounds:')
-print(grid.gridbounds)
-print('Zeropoint')
-print(grid.zeropoint)
+    # Z-Axis
+    # Find minimum
+    while True:
+        # Move 
+        found_endstop = grid.move_dist([0,0,-1000])
+        if found_endstop:
+            break
+    print('Found Z min')
+
+    # Find maximum
+    while True:
+        # Move 
+        found_endstop = grid.move_dist([0,0,1000])
+        if found_endstop:
+            break
+    print('Found Z max')
+
+
+    print('Found all endstops')
+    print('Gridbounds:')
+    print(grid.gridbounds)
+    print('Zeropoint')
+    print(grid.zeropoint)
+
+elif res.lower() == 'n':
+    print("moving x")
+    grid.move_dist([100])
+    print('moving back')
+    grid.move_dist([-100])
+    print("moving y")
+    grid.move_dist([0,100])
+    print('moving back')
+    grid.move_dist([0,-100])
+    print("moving z")
+    grid.move_dist([0,0,100])
+    print('moving back')
+    grid.move_dist([0,0,-100])
+else:
+    print('Goodbye')
