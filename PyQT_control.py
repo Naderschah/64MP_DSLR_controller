@@ -1088,9 +1088,9 @@ class Grid_Handler:
                 print('Starting endstop thread')
                 # Boolean the thread will modify to keep track of endstops
                 self.endstop_bool = [[True,True],[True,True],[True,True]]
-                self.thread_x = Thread(target = self.read_endstops, args =(0))
-                self.thread_y = Thread(target = self.read_endstops, args =(1))
-                self.thread_z = Thread(target = self.read_endstops, args =(2))
+                self.thread_x = Thread(target = self.read_endstop, args =(0))
+                self.thread_y = Thread(target = self.read_endstop, args =(1))
+                self.thread_z = Thread(target = self.read_endstop, args =(2))
                 self.thread_x.start()
                 self.thread_y.start()
                 self.thread_z.start()
