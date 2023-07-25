@@ -1073,7 +1073,7 @@ class Grid_Handler:
                 GPIO.setup(endstops[key][0], GPIO.HIGH)
                 print('Checking endstop for {}'.format(key))
                 # Check signal is being received
-                time.sleep(1)
+                time.sleep(0.1)
                 if self.read_pin(endstops[key][1]) == 0:
                     # If the above is zero there is no signal through the set up, so raise exception for operator to check if endstop is triggered (and then untrigger) or fix hardware problem
                     raise Exception('Endstop does not provide signal, check whats going on')
@@ -1211,20 +1211,28 @@ class Grid_Handler:
         for i in range(len(disp)):
             if disp[i] != 0:
                 # We split the movement into multiples of 200 to allow faster movement for endstop checking (corresponds to 0.00012*200 = 0.024 mm)
-                step_list = [200] * disp[i]//200
-                step_list += [disp[i]%200]
+                if disp[i]>0:
+                    step_list = [200] * (disp[i]//200)
+                else:
+                    step_list = [-200] * (abs(disp[i])//200)
+                if disp[i] > 0:
+                    step_list += [disp[i]%200]
+                elif disp[i]<0:
+                    step_list += [disp[i]%(-200)]
                 moved = 0
                 for j in step_list:
                     # Check endstops
                     if self.has_endstops:  
-                        res = self.read_pin(pin_nr=self.endstop[i][direction[i]])  # i contains xyz index direction contains xyz up or down index
+                        res = self.read_pin(pin_nr=self.endstops[i][direction[i]])  # i contains xyz index direction contains xyz up or down index
                         # Endstop hit
                         if not res:
                             if direction[i] == 0: # minimum
                                 # Make current axis zero
                                 self.make_zeropoint(axis=i) 
+                                print('Made zeropoint based on endstop')
                             if direction[i] == 1: # maximum
                                 self.make_endstop(axis=i)
+                                print('Made max point< based on endstop')
                             # Break for loop overwrite disp and continue
                             disp[i] = moved
                             break
@@ -1239,7 +1247,7 @@ class Grid_Handler:
             self.tot_move[i] = self.tot_move[i]+disp[i]
         # Save new coordinate
         with open(os.path.join(os.environ['HOME'], 'grid'),'w') as f:
-            f.write(json.dumps({'pos':self.pos, 'gridbounds':self.gridbound, 'zeropoint': self.zeropoint}))
+            f.write(json.dumps({'pos':self.pos, 'gridbounds':self.gridbounds, 'zeropoint': self.zeropoint}))
         return
 
 
@@ -1648,9 +1656,6 @@ class XboxController(object): # Add way to turn off
             self.cmd_running = False
 
         return
-
-
-
 
 
 
