@@ -392,7 +392,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     img_dir = None
     grid = None
     gamepad = None
-    motor_dir = [-1,1,1]
+    motor_dir = [1,1,1]
     gpio_pins = {'x': [19,5,0,11],
                  'y':[9,10,22,27],
                  'z':[17,4,3,2], 
@@ -1215,11 +1215,11 @@ class Grid_Handler:
                             # Break for loop overwrite disp and continue
                             disp[i] = moved
                             break
-                    print('Moving {}'.format(check_interval))
+                    print('Moving {}'.format(sign*check_interval))
                     self.motors[i].step(sign*check_interval)
                     moved += sign*check_interval
                 # Once the above terminates we still need to move the remainder
-                if disp[i] - moved != 0:
+                if disp[i] - moved != 0 and not found_endstop:
                     self.motors[i].step(disp[i] - moved)
         # For book keeping undo motor correction
         for i in range(length):
