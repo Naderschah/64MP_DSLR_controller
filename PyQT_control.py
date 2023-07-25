@@ -1149,8 +1149,8 @@ class Grid_Handler:
             if 'zeropoint' in cont: 
                 # Check if any zeropoint not zero and undo
                 if sum([i<0 for i in cont['zeropoint']]+[i>0 for i in cont['zeropoint']])>0:
-                    if 'gridbounds' in cont: cont['gridbounds'] = [cont['gridbounds'][i] - cont['zeropoint'][i] for i in range(cont['gridbounds'])]
-                    cont['pos'] = [cont['pos'][i] - cont['zeropoint'][i] for i in cont['pos']]
+                    if 'gridbounds' in cont: cont['gridbounds'] = [cont['gridbounds'][i] - cont['zeropoint'][i] for i in range(len(cont['gridbounds']))]
+                    cont['pos'] = [cont['pos'][i] - cont['zeropoint'][i] for i in range(len(cont['pos']))]
                     self.zeropoint = [0,0,0]
             if 'gridbounds' in cont: self.gridbounds = cont['gridbounds']
             self.pos = cont['pos']
