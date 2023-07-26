@@ -44,9 +44,6 @@ if do_all or do_x:
     while not found_endstop[0][0]:
         # Move 
         found_endstop = grid.move_dist([-1000])
-        print('left move')
-        print(found_endstop) 
-        time.sleep(1)
         if found_endstop[0][0] and found_endstop[0][1]=='min' :
             break
         elif found_endstop[0][0] and found_endstop[0][1]=='max':
