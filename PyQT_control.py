@@ -1261,7 +1261,7 @@ class Grid_Handler:
                 while abs(moved) < abs(disp[i])-check_interval:
                     # Check endstops
                     if self.has_endstops:
-                        if GPIO.input(self.endstops[i][0]):
+                        if GPIO.input(self.endstops[i][0]) and disp[i]<0:
                             self.make_zeropoint(axis=i) 
                             print('Made zeropoint based on endstop')
                             found_endstop[i] = [True, 'min']
@@ -1270,7 +1270,7 @@ class Grid_Handler:
                             disp[i] = moved
                             print('Updated disp to ', disp)
                             break
-                        elif GPIO.input(self.endstops[i][1]):
+                        elif GPIO.input(self.endstops[i][1]) and disp[i]>0:
                             self.make_endstop(axis=i)
                             print('Made max point based on endstop')
                             found_endstop[i] = [True, 'max']

@@ -28,13 +28,10 @@ if res.lower() == 'y':
         print('left move')
         print(found_endstop) 
         time.sleep(1)
-        if found_endstop[0][0]:
-            print([type(i) for i in found_endstop])
-            print(found_endstop)
-            print(found_endstop[0][1]=='min')
-            sys.exit(0)
-            if found_endstop[0][1]=='min':
-                break
+        if found_endstop[0][0] and found_endstop[0][1]=='min' :
+            break
+        elif found_endstop[0][0] and found_endstop[0][1]=='max':
+            raise Exception('Coordinate grid wrong!')
     print('Found X min')
 
     # Find maximum
@@ -43,6 +40,8 @@ if res.lower() == 'y':
         found_endstop = grid.move_dist([1000])
         if found_endstop[0][0] and found_endstop[0][1]=='max':
             break
+        elif found_endstop[0][0] and found_endstop[0][1]=='min':
+            raise Exception('Coordinate grid wrong!')
     print('Found X max')
 
     # Y-Axis
@@ -52,6 +51,8 @@ if res.lower() == 'y':
         found_endstop = grid.move_dist([0,-1000])
         if found_endstop[1][0] and found_endstop[1][1]=='min':
             break
+        elif found_endstop[1][0] and found_endstop[1][1]=='max':
+            raise Exception('Coordinate grid wrong!')
     print('Found Y min')
 
     # Find maximum
@@ -60,6 +61,8 @@ if res.lower() == 'y':
         found_endstop = grid.move_dist([0,1000])
         if found_endstop[1][0] and found_endstop[1][1]=='max':
             break
+        elif found_endstop[1][0] and found_endstop[1][1]=='min':
+            raise Exception('Coordinate grid wrong!')
     print('Found Y max')
 
 
@@ -70,6 +73,8 @@ if res.lower() == 'y':
         found_endstop = grid.move_dist([0,0,-1000])
         if found_endstop[2][0] and found_endstop[2][1]=='min':
             break
+        elif found_endstop[2][0] and found_endstop[2][1]=='max':
+            raise Exception('Coordinate grid wrong!')
     print('Found Z min')
 
     # Find maximum
@@ -78,6 +83,8 @@ if res.lower() == 'y':
         found_endstop = grid.move_dist([0,0,1000])
         if found_endstop[2][0] and found_endstop[0][1]=='max':
             break
+        elif found_endstop[2][0] and found_endstop[2][1]=='min':
+            raise Exception('Coordinate grid wrong!')
     print('Found Z max')
 
 
