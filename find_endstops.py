@@ -16,11 +16,30 @@ grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']), motor_y=ULN2003.ULN
                     # if -1 invert motor direction
                     motor_dir = motor_dir, endstops = gpio_pins['Endstops'])
 
-res = input('Press Y to start finding endstops, press N to move each motor 100 steps back and forth in order xyz')
+res = input('Press Y to start finding endstops, press N to move each motor 100 steps back and forth in order xyz, press xy and or z to select which axes to find endstops for')
 
-if res.lower() == 'y':
-    # X-Axis
-    # Find minimum I DONT UNDERSTAND WHY THIS GETS STUCK IN AN INFINITE LOOP
+do_all = False
+do_x = False
+do_y = False
+do_z = False
+do_move = False
+
+if res == 'Y':
+    do_all = True
+elif res.lower() == 'N':
+    do_move = True
+else:
+    if 'x' in res:
+        do_x = True
+    if 'y' in res:
+        do_y = True
+    if 'z' in res:
+        do_z = True
+
+
+
+
+if do_all or do_x:
     found_endstop = [[False]]
     while not found_endstop[0][0]:
         # Move 
@@ -43,7 +62,7 @@ if res.lower() == 'y':
         elif found_endstop[0][0] and found_endstop[0][1]=='min':
             raise Exception('Coordinate grid wrong!')
     print('Found X max')
-
+if  do_all or do_y:
     # Y-Axis
     # Find minimum
     while True:
@@ -65,7 +84,7 @@ if res.lower() == 'y':
             raise Exception('Coordinate grid wrong!')
     print('Found Y max')
 
-
+if do_all or do_z:
     # Z-Axis
     # Find minimum
     while True:
@@ -94,7 +113,7 @@ if res.lower() == 'y':
     print('Zeropoint')
     print(grid.zeropoint)
 
-elif res.lower() == 'n':
+if do_move:
     print("moving x")
     grid.move_dist([100])
     print('moving back')
@@ -107,5 +126,5 @@ elif res.lower() == 'n':
     grid.move_dist([0,0,100])
     print('moving back')
     grid.move_dist([0,0,-100])
-else:
-    print('Goodbye')
+
+print('Goodbye')
