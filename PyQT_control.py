@@ -1159,6 +1159,11 @@ class Grid_Handler:
                     self.zeropoint = [0,0,0]
             if 'gridbounds' in cont: self.gridbounds = cont['gridbounds']
             self.pos = cont['pos']
+            # Save zeroed grid
+            with open(os.path.join(os.environ['HOME'], 'grid_backup'),'w') as f:
+                f.write(json.dumps({'pos':self.pos, 'gridbounds':self.gridbounds, 'zeropoint': self.zeropoint}))
+            with open(os.path.join(os.environ['HOME'], 'grid'),'w') as f:
+                f.write(json.dumps({'pos':self.pos, 'gridbounds':self.gridbounds, 'zeropoint': self.zeropoint}))
         # Set up endstops
         # TODO: Add checking of endstops at each move, if finds endstop define as new end/start point --> recreate coord system to always be relative to starting point, but also have find endstops just in case
         # FIXME: In move_dist in the check for < 0 add conditional to if endstops present, so that one can go below 0 when they are there and working ---> Very last thing to do!
@@ -1285,9 +1290,9 @@ class Grid_Handler:
             self.pos[i] = self.pos[i]+disp[i]
             self.tot_move[i] = self.tot_move[i]+disp[i]
         # Save new coordinate -> In two files, so that if one is broken the other can be used -> travel error will depend on step size
-        with open(os.path.join(os.environ['HOME'], 'grid'),'w') as f:
-            f.write(json.dumps({'pos':self.pos, 'gridbounds':self.gridbounds, 'zeropoint': self.zeropoint}))
         with open(os.path.join(os.environ['HOME'], 'grid_backup'),'w') as f:
+            f.write(json.dumps({'pos':self.pos, 'gridbounds':self.gridbounds, 'zeropoint': self.zeropoint}))
+        with open(os.path.join(os.environ['HOME'], 'grid'),'w') as f:
             f.write(json.dumps({'pos':self.pos, 'gridbounds':self.gridbounds, 'zeropoint': self.zeropoint}))
         if any([i[0] for i in found_endstop]) : print('Completed finding endstop in move')
         return found_endstop
