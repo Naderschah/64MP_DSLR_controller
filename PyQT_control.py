@@ -1166,18 +1166,6 @@ class Grid_Handler:
                 GPIO.setup(key[0], GPIO.IN, pull_up_down=GPIO.PUD_UP)
                 GPIO.setup(key[1], GPIO.IN, pull_up_down=GPIO.PUD_UP)
                 time.sleep(0.01)
-            # Check signal is being received
-            for key in endstops:
-                print('Checking endstop for {}'.format(key[0]))
-                if GPIO.input(key[0]) == 1:
-                    # If the above is zero there is no signal through the set up, so raise exception for operator to check if endstop is triggered (and then untrigger) or fix hardware problem
-                    raise Exception('Endstop triggered')
-                print('Checking endstop for {}'.format(key[0]))
-                if GPIO.input(key[1]) == 1:
-                    # If the above is zero there is no signal through the set up, so raise exception for operator to check if endstop is triggered (and then untrigger) or fix hardware problem
-                    raise Exception('Endstop triggered')
-            
-
         else:
             self.has_endstops = False
 
