@@ -1200,7 +1200,7 @@ class Grid_Handler:
         Set zeropoint for axis
         """
         if self.has_endstops:
-            self.zeropoint = self.pos
+            self.zeropoint[axis] = self.pos[axis]
         else:
             # In case max point was set prior to zero point
             if self.gridbounds[axis] != 0:
@@ -1253,7 +1253,7 @@ class Grid_Handler:
         found_endstop = [ [False, False], [False, False], [False, False]]
         for i in range(len(disp)):
             if disp[i] != 0 or disp[i] != 0.0:
-                # We split the movement into multiples of 200 (check_interval) to allow faster movement for endstop checking (corresponds to 0.00012*200 = 0.024 mm)
+                # We split the movement into multiples of 200 (check_interval)
                 moved = 0
                 sign = int(disp[i]/abs(disp[i]))
                 while abs(moved) < abs(disp[i])-check_interval:
@@ -1276,11 +1276,10 @@ class Grid_Handler:
                             disp[i] = moved
                             break
                         
-                    print('Moving {}'.format(sign*check_interval))
                     self.motors[i].step(sign*check_interval*self.motor_dir[i])
                     moved += sign*check_interval*self.motor_dir[i]
                 # Once the above terminates we still need to move the remainder
-                if disp[i] - moved != 0 and not any([i[0] for i in found_endstop]):
+                if disp[i] - moved != 0 and not found_endstop[i][0]:
                     self.motors[i].step(disp[i] - moved)
         # For book keeping undo motor correction
         for i in range(length):
