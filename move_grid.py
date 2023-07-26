@@ -14,7 +14,7 @@ def gen_grid_handler():
                      'z':[17,4,3,2], 
                      'IR':None,
                      # Endstops are connected to normally closed (ie signal travels if not clicked)!
-                     'Endstops': [[20,21],[16,12],[8,7]],
+                     'Endstops': [[20,21],[16,12],[7,8]],
                      }
     grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']), motor_y=ULN2003.ULN2003(gpio_pins['y']), motor_z = ULN2003.ULN2003(gpio_pins['z']), 
                         # if -1 invert motor direction
