@@ -125,9 +125,25 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         
         # Allow toggle of gpio 4 - IR
         os.system('gpio -g mode 4 out')
+        self.tuning = Picamera2.load_tuning_file("/usr/share/libcamera/ipa/raspberrypi/imx477.json")
 
-        logging.info('Create Camera object')
-        self.tuning = Picamera2.load_tuning_file(os.path.abspath(str(Path.home())+"/Camera/imx477_tuning_file_bare.json"))
+        self.tuning['algorithms'][0]['rpi.black_level']['black_level'] = 0
+        self.tuning['algorithms'][4]['rpi.geq']['offset'] = 0
+        self.tuning['algorithms'][4]['rpi.geq']['slope'] = 0
+        # luminance 0 disables algorithms effect
+        self.tuning['algorithms'][8]['rpi.alsc']["luminance_strength"] = 0
+        # Reduce load on isp
+        self.tuning['algorithms'][8]['rpi.alsc']["n_iter"] = 1
+        # Disable gamma curve
+        self.tuning['algorithms'][9]['rpi.contrast']["ce_enable"] = 0
+        # Tuning file sometimes has sharpen and ccm swapped 
+        if 'rpi.ccm' in self.tuning['algorithms'][10]: index = 10 #TODO : Make all independent of index
+        elif 'rpi.ccm' in self.tuning['algorithms'][11]: index = 11
+
+        # Disable color correction matrix for all color temperatures
+        for i in range(len(self.tuning['algorithms'][index]['rpi.ccm']['ccms'])):
+            self.tuning['algorithms'][index]['rpi.ccm']['ccms'][i]['ccm'] = [1,0,0,0,1,0,0,0,1]
+
         self.camera = Picamera2(tuning=self.tuning)
         
         if self.menu_item_count_exp == None:
