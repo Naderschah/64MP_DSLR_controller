@@ -1144,8 +1144,13 @@ class Grid_Handler:
         self.motors = [self.x, self.y, self.z]
         # Load gridbound and pos
         if os.path.isfile(os.path.join(os.environ['HOME'], 'grid')):
-            with open(os.path.join(os.environ['HOME'], 'grid'), 'r') as f:
-                cont = json.loads(f.read())
+            try:
+                with open(os.path.join(os.environ['HOME'], 'grid_backup'), 'r') as f:
+                    cont = json.loads(f.read())
+            except:
+                print('Grid file corrupted attempting second grid')
+                with open(os.path.join(os.environ['HOME'], 'grid'), 'r') as f:
+                    cont = json.loads(f.read())
             if 'zeropoint' in cont: 
                 # Check if any zeropoint not zero and undo
                 if sum([i<0 for i in cont['zeropoint']]+[i>0 for i in cont['zeropoint']])>0:
@@ -1279,8 +1284,10 @@ class Grid_Handler:
         for i in range(len(disp)):
             self.pos[i] = self.pos[i]+disp[i]
             self.tot_move[i] = self.tot_move[i]+disp[i]
-        # Save new coordinate
+        # Save new coordinate -> In two files, so that if one is broken the other can be used -> travel error will depend on step size
         with open(os.path.join(os.environ['HOME'], 'grid'),'w') as f:
+            f.write(json.dumps({'pos':self.pos, 'gridbounds':self.gridbounds, 'zeropoint': self.zeropoint}))
+        with open(os.path.join(os.environ['HOME'], 'grid_backup'),'w') as f:
             f.write(json.dumps({'pos':self.pos, 'gridbounds':self.gridbounds, 'zeropoint': self.zeropoint}))
         if any([i[0] for i in found_endstop]) : print('Completed finding endstop in move')
         return found_endstop
