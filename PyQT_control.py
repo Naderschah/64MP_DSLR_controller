@@ -25,7 +25,6 @@ from ULN2003Pi import ULN2003
 import json
 from threading import Thread
 
-
 ZoomLevels = (1)
 
 DEBUG = False
@@ -297,7 +296,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
             cfg = self.camera.create_still_configuration(raw={})
             # Hope dng works
             self.fname = dt.datetime.now().strftime('%m%d%Y-%H:%M:%S')
-            self.camera.switch_mode_and_capture_file(cfg, str(Path.home())+'/Images/{}.png'.format(self.fname),
+            self.camera.switch_mode_and_capture_file(cfg, '/media/micro/Drive/Images/{}.png'.format(self.fname),
                                                  signal_function=self.qpcamera.signal_done)
         else:
             # Take HDR image
@@ -331,7 +330,10 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.camera.set_controls(self.mod_controls)
         self.camera.start()
         # Take image
-        self.camera.switch_mode_and_capture_file(cfg, str(Path.home())+'/Images/{}_{}.png'.format(self.fname, HDR_counter),
+                self.camera.switch_mode_and_capture_file(cfg, '/media/micro/Drive/Images/{}_{}.png'.format(self.fname, HDR_counter),
+                                                signal_function=self.qpcamera.signal_done)
+
+        self.camera.switch_mode_and_capture_file(cfg, '/media/micro/Drive/Images/{}_{}.png'.format(self.fname, HDR_counter),
                                                 signal_function=self.qpcamera.signal_done)
         
 
@@ -351,7 +353,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
             #                                                             self.custom_controls['AnalogueGain'],'"EO Ultra Compact Objective"',
             #                                                             str(Path.home())+'/Images/{}.png'.format(self.fname))
             cmd = ['exiftool', '-Exposure={}'.format(self.custom_controls['ExposureTime']), '-ISO={}'.format(self.custom_controls['AnalogueGain']), 
-                   '-Lens={}'.format('EO_ULC'), '-overwrite_original', str(Path.home())+'/Images/{}.png'.format(self.fname)]
+                   '-Lens={}'.format('EO_ULC'), '-overwrite_original', '/media/micro/Drive/Images/{}.png'.format(self.fname)]
             #threading.Thread(target=subprocess.run, args=(cmd)).start()
             subprocess.run(cmd)
         
@@ -367,7 +369,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
             #                                                             str(Path.home())+'/Images/{}_{}.png'.format(self.fname, self.HDR_counter-1))
             if not hasattr(self, 'mod_controls'): self.mod_controls = self.custom_controls # TODO: Remove when iso comp fixed
             cmd = ['exiftool', '-Exposure={}'.format(self.mod_controls['ExposureTime']), '-ISO={}'.format(self.mod_controls['AnalogueGain']), 
-                   '-Lens={}'.format('EO_ULC'), '-overwrite_original', str(Path.home())+'/Images/{}_{}.png'.format(self.fname, self.HDR_counter-1)]
+                   '-Lens={}'.format('EO_ULC'), '-overwrite_original', '/media/micro/Drive/Images/{}_{}.png'.format(self.fname, self.HDR_counter-1)]
             #threading.Thread(target=subprocess.run, args=(cmd)).start()
             subprocess.run(cmd)
             if self.HDR_counter == 3:
@@ -538,11 +540,11 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     
     def make_img_dir(self):
         # Establish dir name and make img collection dir
-        dirs = os.listdir(os.path.join(str(Path.home()),'Images'))
+        dirs = os.listdir('/media/micro/Drive/Images')
         dirs = [i for i in dirs if 'img' in i]
-        self.img_dir = os.path.join(str(Path.home()),'Images','img_'+str(len(dirs)))
+        self.img_dir = os.path.join('/media/micro/Drive/Images','img_'+str(len(dirs)))
         if os.path.isdir(self.img_dir): # In case this already exists just do this
-            self.img_dir = os.path.join(str(Path.home()),'Images','img_{}'.format(dt.datetime.now().strftime('%Y%m%d-%h%M')))
+            self.img_dir = os.path.join('/media/micro/Drive/Images','img_{}'.format(dt.datetime.now().strftime('%Y%m%d-%h%M')))
         os.mkdir(self.img_dir) 
         os.chdir(self.img_dir)
         print('Changed directory to {}'.format(self.img_dir))
@@ -610,7 +612,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             return z_coord
 
         z_coord = make_list(z_step= int(1*overlap_coeff*im_z_len),gridbound=self.grid.gridbounds[2],curr=0)
-        y_coord = make_list(z_step= int(1*overlap_coeff*im_y_len),gridbound=self.grid.gridbounds[1],curr=0)
+        y_coord = mak e_list(z_step= int(1*overlap_coeff*im_y_len),gridbound=self.grid.gridbounds[1],curr=0)
         x_coord = make_list(z_step= int(1*self.img_config['step_size']),gridbound=self.grid.gridbounds[0],curr=0)
         start = time.time()
         count=0
