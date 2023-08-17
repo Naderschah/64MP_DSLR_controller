@@ -330,9 +330,6 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         self.camera.set_controls(self.mod_controls)
         self.camera.start()
         # Take image
-                self.camera.switch_mode_and_capture_file(cfg, '/media/micro/Drive/Images/{}_{}.png'.format(self.fname, HDR_counter),
-                                                signal_function=self.qpcamera.signal_done)
-
         self.camera.switch_mode_and_capture_file(cfg, '/media/micro/Drive/Images/{}_{}.png'.format(self.fname, HDR_counter),
                                                 signal_function=self.qpcamera.signal_done)
         
@@ -411,12 +408,12 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
     grid = None
     gamepad = None
     motor_dir = [1,1,1]
-    gpio_pins = {'x': [19,5,0,11],
-                 'y':[9,10,22,27],
+    gpio_pins = {'x':[9,10,22,27],
+                 'y': [19,5,0,11],
                  'z':[17,4,3,2], 
                  'IR':None,
                  # Endstops are connected to normally closed (ie signal travels if not clicked)!
-                 'Endstops': [[20,21],[16,12],[7,8]],
+                 'Endstops': [[16,12],[20,21],[7,8]],
                  }
     endstops = []
     # 1 step at 16 ms to mm travel conversion
@@ -612,7 +609,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             return z_coord
 
         z_coord = make_list(z_step= int(1*overlap_coeff*im_z_len),gridbound=self.grid.gridbounds[2],curr=0)
-        y_coord = mak e_list(z_step= int(1*overlap_coeff*im_y_len),gridbound=self.grid.gridbounds[1],curr=0)
+        y_coord = make_list(z_step= int(1*overlap_coeff*im_y_len),gridbound=self.grid.gridbounds[1],curr=0)
         x_coord = make_list(z_step= int(1*self.img_config['step_size']),gridbound=self.grid.gridbounds[0],curr=0)
         start = time.time()
         count=0
@@ -851,7 +848,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def start_camera(self):
         # Start Camera
-        self.tuning = Picamera2.load_tuning_file(os.path.abspath(str(Path.home())+"/Camera/imx477_tuning_file_bare.json"))
+        self.tuning = Picamera2.load_tuning_file(os.path.abspath(str(Path.home())+"/PiCamera_DSLR_like_controller/imx477_tuning_file_bare.json"))
         self.camera = Picamera2(tuning=self.tuning)
         self.camera.set_controls(self.camera_config)
         cfg = self.camera.create_still_configuration(raw={})
