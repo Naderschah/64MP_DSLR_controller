@@ -124,7 +124,7 @@ class Viewfinder(QtWidgets.QMainWindow, Ui_Viewfinder):
         
         # Allow toggle of gpio 4 - IR
         os.system('gpio -g mode 4 out')
-        self.tuning = Picamera2.load_tuning_file("/usr/share/libcamera/ipa/raspberrypi/imx477.json")
+        self.tuning = Picamera2.load_tuning_file("/usr/share/libcamera/ipa/rpi/vc4/imx477.json")
 
         self.tuning['algorithms'][0]['rpi.black_level']['black_level'] = 0
         self.tuning['algorithms'][4]['rpi.geq']['offset'] = 0
@@ -566,9 +566,15 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         px_size = 1.55*1e-3 
         im_y_len = 3040*px_size # mm width
         im_z_len = 4056*px_size
-        overlap = 0.6 # May be too much
         m=2
-        overlap_coeff = (1-overlap)/self.step_mm * m
+        effective_steps_per_mm_in_image = self.step_mm/m # steps/mm
+        steps_to_move_entire_image_y = im_y_len * effective_steps_per_mm_in_image # Steps
+        steps_to_move_entire_image_z = im_z_len * effective_steps_per_mm_in_image # Steps
+        # Move only half of that 
+        steps_to_move_half_image_y = steps_to_move_entire_image_y // 2
+        steps_to_move_half_image_z = steps_to_move_entire_image_z // 2
+
+
 
         self.hide()
 
@@ -586,9 +592,12 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         print('Starting imaging with HDR={}'.format(self.img_config['HDR']))
         self.start_camera()
 
-        # Check image brightness
-        print('Adjusting exposure')
+        # Check image brightness - move to center check then move to start 
+        print(' Moving to center of image to adjust exposure')
+        self.grid.move_to_coord([i/2 for i in self.grid.gridbounds])
         self.adjust_exp()
+        self.grid.move_to_coord([0,0,0])
+
 
         if self.pos != [0,0,0]:
             # TODO: Thread this inside grid
@@ -608,10 +617,11 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                 curr+=z_step
             return z_coord
 
-        z_coord = make_list(z_step= int(1*overlap_coeff*im_z_len),gridbound=self.grid.gridbounds[2],curr=0)
-        y_coord = make_list(z_step= int(1*overlap_coeff*im_y_len),gridbound=self.grid.gridbounds[1],curr=0)
-        x_coord = make_list(z_step= int(1*self.img_config['step_size']),gridbound=self.grid.gridbounds[0],curr=0)
+        z_coord = make_list(z_step= int(steps_to_move_half_image_z),gridbound=self.grid.gridbounds[2],curr=0)
+        y_coord = make_list(z_step= int(steps_to_move_half_image_y),gridbound=self.grid.gridbounds[1],curr=0)
+        x_coord = make_list(z_step= int(self.img_config['step_size']),gridbound=self.grid.gridbounds[0],curr=0)
         start = time.time()
+        tot = len(z_coord)*len(y_coord)*len(x_coord)
         count=0
         for i in z_coord:
             for j in y_coord:
@@ -623,15 +633,9 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                     self.make_image()
                     count +=1
                     # Print progress # TODO: Estimate wrong, firs generate total grid size
-                    perc = count/np.prod(self.grid.gridbounds)
-                    # Adjust x step
-                    perc = perc/self.img_config['step_size']
-                    # Adjust y step
-                    perc = perc/((1-overlap)*im_y_len/self.step_mm)
-                    # Adjust z step
-                    perc = perc/((1-overlap)*im_z_len/self.step_mm)
+                    perc = count/tot
                     now = time.time()
-                    print('Completed {:.1} in {:.2}s, time left ~{:.0}m:{:.0}s'.format(perc,now-start, ((now-start)/perc)//60, ((now-start)/perc)%60))
+                    print('Completed {:.1}\% in {:.0}m {:.0}s, time left ~{:.0}m:{:.0}s'.format(perc*100,((now-start))//60, ((now-start))%60, ((now-start)/perc)//60, ((now-start)/perc)%60))
                 # Invert coordinates
                 x_coord = x_coord[::-1]
             y_coord = y_coord[::-1] 
@@ -802,7 +806,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         # Make marker so that rsync knows when to stop copying
         os.system('echo "False" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
     
-    def adjust_exp(self,brightness = 0.2):
+    def adjust_exp(self,brightness = 0.6):
         """It happened a lot that the images were underexposed so we will first check
         brightness -> mean of image/max val should be above this value
         Assumes nothing in focus 
@@ -867,13 +871,13 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.IR_filter(True)
         if self.img_config['HDR']: 
             mod_controls = self.camera_config.copy()
-            for i in [self.camera_config['ExposureTime']*i for i in (0.5,0.75,1,1.25,1.5)]:
+            for i in [self.camera_config['ExposureTime']*i for i in (0.5,1,1.5,2)]:
                 # Change exp time
                 print(i)
                 mod_controls['ExposureTime'] = int(i)
                 self.camera.set_controls(mod_controls)
                 time.sleep(1)
-                self.take_im(filename+'_exp{}mus.dng'.format(i))
+                self.take_im(filename+'_exp{}mus.dng'.format(mod_controls['ExposureTime']))
         else:
             self.take_im(filename+'_NoIR.dng')
         return
