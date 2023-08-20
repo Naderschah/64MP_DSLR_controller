@@ -89,6 +89,33 @@ def images_to_data(im_path,custom_debayer=CUSTOM_DEBAYER,extra=False):
                 return arr
     else:
         return np.asarray(Image.open(im_path))
+    
+def im_to_dat_with_gamma(im_path, gamma= (2.222, 4.5) ):
+    """Returns image data with gamma"""
+    im = rawpy.imread(im_path)
+    return im.postprocess(demosaic_algorithm=rawpy.DemosaicAlgorithm(11),half_size=False, 
+                                # 3color no brightness adjustment (default is False -> ie auto brightness)
+                                four_color_rgb=False,no_auto_bright=True,
+                                # If using dcb demosaicing
+                                dcb_iterations=0, dcb_enhance=False, 
+                                # Denoising
+                                fbdd_noise_reduction=rawpy.FBDDNoiseReductionMode(0),noise_thr=None,
+                                # Color
+                                median_filter_passes=0,use_camera_wb=False,use_auto_wb=False, user_wb=None,
+                                # sRGB output and output bits per sample : 8 is default
+                                output_color=rawpy.ColorSpace(1),output_bps=16,
+                                # Black levels for the sensor are predefined and cant be modified i think
+                                user_flip=None, user_black=None,
+                                # Adjust maximum threshholds only applied if value is nonzero default was 0.75
+                                # https://www.libraw.org/docs/API-datastruct.html
+                                user_sat=None, auto_bright_thr=None, adjust_maximum_thr=0, bright=1.0,
+                                # Ignore default is Clip
+                                highlight_mode=rawpy.HighlightMode(1), 
+                                # Exp shift 1 is do nothing, None should achieve the same but to be sure, preserve 1 is full preservation
+                                exp_shift=1, exp_preserve_highlights=1.0,
+                                # V_out = gamma[0]*V_in^gamma 
+                                gamma=gamma, chromatic_aberration=(1,1),bad_pixels_path=None
+                                )
   
 
 def master_bias(img_dir,out_dir):
