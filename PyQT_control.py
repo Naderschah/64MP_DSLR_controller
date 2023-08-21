@@ -24,6 +24,7 @@ import math
 from ULN2003Pi import ULN2003
 import json
 from threading import Thread
+import psutil
 
 ZoomLevels = (1)
 
@@ -594,10 +595,13 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Check image brightness - move to center check then move to start 
         print(' Moving to center of image to adjust exposure')
+        print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
         self.grid.move_to_coord([i//2 for i in self.grid.gridbounds])
         print('Current coordinates ', self.grid.pos)
+        print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
         self.adjust_exp()
         print('Adjusted Exposures')
+        print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
         #self.grid.move_to_coord([0,0,0])
 
         coord_arr = []
@@ -613,14 +617,22 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                 z_coord.append(curr)
                 curr+=z_step
             return z_coord
-
+        print('Making z')
+        print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
         z_coord = make_list(z_step= int(steps_to_move_half_image_z),gridbound=self.grid.gridbounds[2],curr=0)
+        print('Making y')
+        print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
         y_coord = make_list(z_step= int(steps_to_move_half_image_y),gridbound=self.grid.gridbounds[1],curr=0)
+        print('Making x')
+        print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
         x_coord = make_list(z_step= int(self.img_config['step_size']),gridbound=self.grid.gridbounds[0],curr=0)
+        print('Taking time and generating total length')
+        print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
         start = time.time()
         tot = len(z_coord)*len(y_coord)*len(x_coord)
         count=0
         print('Created lists')
+        print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
         for i in z_coord:
             for j in y_coord:
                 for k in x_coord:
