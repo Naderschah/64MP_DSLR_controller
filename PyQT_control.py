@@ -594,14 +594,11 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Check image brightness - move to center check then move to start 
         print(' Moving to center of image to adjust exposure')
-        self.grid.move_to_coord([i/2 for i in self.grid.gridbounds])
+        self.grid.move_to_coord([i//2 for i in self.grid.gridbounds])
+        print('Current coordinates ', self.grid.pos)
         self.adjust_exp()
-        self.grid.move_to_coord([0,0,0])
-
-
-        if self.pos != [0,0,0]:
-            # TODO: Thread this inside grid
-            self.grid.move_to_coord([0,0,0])
+        print('Adjusted Exposures')
+        #self.grid.move_to_coord([0,0,0])
 
         coord_arr = []
         # Iterate max possible coordinate
@@ -623,6 +620,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         start = time.time()
         tot = len(z_coord)*len(y_coord)*len(x_coord)
         count=0
+        print('Created lists')
         for i in z_coord:
             for j in y_coord:
                 for k in x_coord:
@@ -826,6 +824,8 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
                 time.sleep(1)
         print('Final Exp {}'.format(self.camera_config['ExposureTime']))
         print('Final ISO {}'.format(self.camera_config['AnalogueGain']))
+        del arr, max_val
+        return None
 
     def make_grid(self):
         tot_grid = []
