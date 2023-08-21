@@ -568,7 +568,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
         im_y_len = 3040*px_size # mm width
         im_z_len = 4056*px_size
         m=2
-        effective_steps_per_mm_in_image = self.step_mm/m # steps/mm
+        effective_steps_per_mm_in_image = 1/(m*self.step_mm) # steps/mm step_mm is actualy mm per step
         steps_to_move_entire_image_y = im_y_len * effective_steps_per_mm_in_image # Steps
         steps_to_move_entire_image_z = im_z_len * effective_steps_per_mm_in_image # Steps
         # Move only half of that 
