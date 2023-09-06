@@ -69,26 +69,52 @@ function GetImageData(path, bps, debayer="No")
     end
 end
 
-function GetImageDataPy(path, bps, debayer="No", save="")
+function GetImageDataPy(path, bps=16, debayer="No", save="", gamma=(2.222, 4.5))
     # If save is given a string it iwll save it using the jld2 format
     # Use python rawpy as LibRaw causes mamory leak
     rawpy = pyimport("rawpy") 
     im_1 = rawpy.imread(path)
-    im_ = im_1.raw_image_visible
-    im_1.close()
-    h,w = size(im_)
+    if debayer == "No"
+        im_ = im_1.raw_image_visible
+        im_1.close()
+        h,w = size(im_)
 
-    w = Int(w/2)
-    h = Int(h/2)
-    ret = zeros(h,w,3)
-    # Create final array
-    @inbounds ret[:,:,1] .= im_[2:2:end,2:2:end]./(2^bps-1) #(reshape(im[color_index .== 1]./(2^bps-1), (w,h,1)))
-    @inbounds ret[:,:,3] .= im_[1:2:end,1:2:end]./(2^bps-1) #(reshape(im[color_index .== 3]./(2^bps-1), (w,h,1)))
-    @inbounds ret[:,:,2] .= (im_[1:2:end,2:2:end]./2 + im_[2:2:end,1:2:end]./2)./(2^bps-1) #reshape((im[color_index .== 2] ./2 + im[color_index .== 4]./2)./(2^bps-1), (w,h,1))
-    if save !=""
-        save_object(save, ret)
+        w = Int(w/2)
+        h = Int(h/2)
+        ret = zeros(h,w,3)
+        # Create final array
+        @inbounds ret[:,:,1] .= im_[2:2:end,2:2:end]./(2^bps-1) #(reshape(im[color_index .== 1]./(2^bps-1), (w,h,1)))
+        @inbounds ret[:,:,3] .= im_[1:2:end,1:2:end]./(2^bps-1) #(reshape(im[color_index .== 3]./(2^bps-1), (w,h,1)))
+        @inbounds ret[:,:,2] .= (im_[1:2:end,2:2:end]./2 + im_[2:2:end,1:2:end]./2)./(2^bps-1) #reshape((im[color_index .== 2] ./2 + im[color_index .== 4]./2)./(2^bps-1), (w,h,1))
+        if save !=""
+            save_object(save, ret)
+        end
+        return ret
+    else
+        return im_1.postprocess(demosaic_algorithm=rawpy.DemosaicAlgorithm(11),half_size=false, 
+                                # 3color no brightness adjustment (default is false -> ie auto brightness)
+                                four_color_rgb=false,no_auto_bright=true,
+                                # If using dcb demosaicing
+                                dcb_iterations=0, dcb_enhance=false, 
+                                # Denoising
+                                fbdd_noise_reduction=rawpy.FBDDNoiseReductionMode(0),noise_thr=nothing,
+                                # Color
+                                median_filter_passes=0,use_camera_wb=false,use_auto_wb=false, user_wb=nothing,
+                                # sRGB output and output bits per sample : 8 is default
+                                output_color=rawpy.ColorSpace(1),output_bps=bps,
+                                # Black levels for the sensor are predefined and cant be modified i think
+                                user_flip=nothing, user_black=nothing,
+                                # Adjust maximum threshholds only applied if value is nonzero default was 0.75
+                                # https://www.libraw.org/docs/API-datastruct.html
+                                user_sat=nothing, auto_bright_thr=nothing, adjust_maximum_thr=0, bright=1.0,
+                                # Ignore default is Clip
+                                highlight_mode=rawpy.HighlightMode(1), 
+                                # Exp shift 1 is do nothing, nothing should achieve the same but to be sure, preserve 1 is full preservation
+                                exp_shift=1, exp_preserve_highlights=1.0,
+                                # V_out = gamma[0]*V_in^gamma 
+                                gamma=gamma, chromatic_aberration=(1,1),bad_pixels_path=nothing
+                                )
     end
-    return ret
 end
 
 function NoDebayer(im,bps)
@@ -122,7 +148,7 @@ function ComputeFocusMap(image, grey_project)
         "individual" => throw("individual laplacian transform to be implemented")
         _ => throw("Projection $grey_project not implemented")
     end
-    return @fastmath LoG(grey(image))
+    return @fastmath abs.(LoG(grey(image)))
 end
 
 function MakeFocusedImage(work_dir,im_path, y, z, bps) #map_dir, im_save_path,depth_save_path, raw_dir
@@ -191,9 +217,10 @@ function LoG(image)
     #=
     Laplacian of Gaussian 1.4\sigma --> less sensitive to noise 
     =#
+    L_kernel = [[0,1,0] [1,-4,1] [0,1,0]]
     LoG_kernel = [[0,1,1,2,2,2,1,1,0] [1,2,4,5,5,5,4,2,1] [1,4,5,3,0,3,5,4,1] [2,5,3,-12,-24,-12,3,5,2] [2,5,0,-24,-40,-24,0,5,2] [2,5,3,-12,-24,-12,3,5,2] [1,4,5,3,0,3,5,4,1] [1,2,4,5,5,5,4,2,1] [0,1,1,2,2,2,1,1,0] ]
     # We index so that the 1 overshoot in each direction remains consistent
-    return DSP.conv([[0,1,0] [1,-4,1] [0,1,0]], image)[5:end-4,5:end-4]
+    return DSP.conv(LoG_kernel, image)[5:end-4,5:end-4]
 end
 
 function Grey_Project_Average(image)
