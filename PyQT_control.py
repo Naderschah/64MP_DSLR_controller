@@ -883,7 +883,7 @@ class Configurator(QtWidgets.QMainWindow, Ui_MainWindow):
             self.IR_filter(True)
         if self.img_config['HDR']: 
             mod_controls = self.camera_config.copy()
-            for i in [self.camera_config['ExposureTime']*i for i in (0.5,1,1.5,2)]:
+            for i in [self.camera_config['ExposureTime']*i for i in (0.3,1,2)]:
                 # Change exp time
                 print(i)
                 mod_controls['ExposureTime'] = int(i)
