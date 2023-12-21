@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "stdio.h": "c",
+        "composite.h": "c",
+        "compare.h": "c",
+        "stdlib.h": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "chrono": "c"
+    },
+    "julia.environmentPath": "/home/felix/PiCamera_DSLR_like_controller"
+}
