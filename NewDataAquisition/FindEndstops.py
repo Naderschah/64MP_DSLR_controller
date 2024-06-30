@@ -37,7 +37,7 @@ else:
         do_z = True
 
 # found_endstop is a variable of grid that is returned on each grid move
-found_endstop = [False]
+found_endstop = [[False]]
 if do_all or do_x:
     while not found_endstop[0][0]:
         # Move 
