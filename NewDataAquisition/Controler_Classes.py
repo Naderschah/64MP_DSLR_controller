@@ -16,6 +16,7 @@ class Grid_Handler:
     """
     # The displacement is measured in ms so the grid is step size dependent
     # Keep track of bounds
+
     n_motors = 3
     gridbounds = [0]*n_motors
     zeropoint = [0]*n_motors

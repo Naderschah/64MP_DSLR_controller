@@ -2,6 +2,8 @@ import RPi.GPIO as GPIO
 import json
 import time
 
+GPIO.setmode(GPIO.BCM)
+
 with open('Pinout.json','r') as f: 
     gpio_pins = json.load(f)
 print("This assumes motor direction and endstop pins align, test the motor direction first")
