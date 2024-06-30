@@ -152,9 +152,9 @@ class Grid_Handler:
                         # Break while loop overwrite disp and continue
                         disp[i] = moved
                         break
-                    
-                    self.motors[i].step(sign*check_interval*self.motor_dir[i])
-                    moved += sign*check_interval*self.motor_dir[i]
+                    else:
+                        self.motors[i].step(sign*check_interval*self.motor_dir[i])
+                        moved += sign*check_interval*self.motor_dir[i]
                 # Once the above terminates we still need to move the remainder
                 if disp[i] - moved != 0 and not found_endstop[i][0]:
                     self.motors[i].step(disp[i] - moved)
