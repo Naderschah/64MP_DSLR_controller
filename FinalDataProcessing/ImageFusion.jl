@@ -10,7 +10,7 @@ include("ScalingFunctions.jl")
 import .ScalingFunctions
 
 # Merten Kautz van Reeth image fusion
-function MKR(fnames, pp::Main.Datastructures.ProcessingParameters)
+function MKR(fnames, pp::Main.Datastructures.ProcessingParameters, epsilon=1e-10)
 
     # N Images
     N = size(fnames,1)
@@ -28,7 +28,12 @@ function MKR(fnames, pp::Main.Datastructures.ProcessingParameters)
         img = ScalingFunctions.removeBlackpoint(img, pp.blackpoint)
         # Scale 0 to 1
         img = img ./ typemax(eltype(img))
-
+        if any(isnan.(img))
+            println("Nan in $(fnames[x]). NaN percentage $(sum(isnan.(img))/length(img))")
+            println("Replacing nans with 0s")
+            # Replace nans with 0s
+            replace!(img, NaN=>0)
+        end
         # Compute Contrast
         Weight_mat[:,:,:,x] = pp.ContrastFunction(img, pp)
         # Generate image Pyramid
@@ -39,14 +44,23 @@ function MKR(fnames, pp::Main.Datastructures.ProcessingParameters)
         println("Added image $(fnames[x])")
 
     end
+    # If nans restart with higher epsilon
+    if any(isnan.(Weight_mat))
+        println("Nan in weight matrix")
+        return Weight_mat
+    end
     # Scale weight matrix such that it is in the range 0 to 1 and each pixel adds up to 1
-    Weight_mat = ScalingFunctions.ScaleWeightMatrix(Weight_mat)
+    Weight_mat = ScalingFunctions.ScaleWeightMatrix(Weight_mat, epsilon)
 
     # Create pyramid weight matrix
     Threads.@threads for i = 1:N
         tmp = MKR_functions.Gaussian_Pyramid(Weight_mat[:,:,:,i])
         for l in (1:nlev)
             pyr_Weight[l][:,:,:,i] = tmp[l]
+            if any(isnan.(pyr_Weight[l][:,:,:,i]))
+                println("Nan in pyramid weight matrix")
+                return pyr_Weight[l]
+            end
         end
     end
     # Free weight matrix memory

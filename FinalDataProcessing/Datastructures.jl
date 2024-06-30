@@ -1,6 +1,6 @@
 
 module Datastructures
-
+export ProcessingParameters, ImagingGrid, ImagingParameters
 
 mutable struct ProcessingParameters
     precision::DataType
@@ -33,7 +33,7 @@ struct ImagingParameters
     bps::Int64
     im_width::Int64
     im_height::Int64
-    offset::Array{Int64,2}
+    offset::Vector{Int64}
 end
 
 end # module

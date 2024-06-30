@@ -1,8 +1,14 @@
 # Functions regarding image loading, file name parsing, data saving will be located here
+
+
 module IO_dp
 
-include("Datastructures.jl")
+include("./Datastructures.jl")
 import .Datastructures
+
+include("./ImagePlacement.jl")
+
+export GenerateFileName, GenerateFinalFileName, FixPath, GrabIdentifiers, GetFocusedIdentifiers, GetFocusedImageGrid, LoadDNGLibRaw, RowColumnIndexNaming
 
 # Generate pre focus file naming patterns
 function GenerateFileName(x,y,z,exp)
@@ -49,7 +55,7 @@ function GrabIdentifiers(image_directory)
 end
 
 function GetFocusedIdentifiers(ImagingParams::Datastructures.ProcessingParameters)
-    files = readdir(ImagingParams.path)
+    files = readdir(ImagingParams.save_path)
     f_y_z_exp = [split(i, "_") for i in files]
     f_y_z = [ endswith(i[end], ".png") ? [i[1],parse(Int, String(split(i[2],"=")[2])), parse(Int, String(split(i[3], "=")[2]))] : ["F", -1, -1] for i in f_y_z_exp]
     y = unique([i[2] for i in f_y_z])
@@ -65,23 +71,25 @@ function GetFocusedIdentifiers(ImagingParams::Datastructures.ProcessingParameter
     return y, z
 end
 
-function GetFocusedImageGrid(ImagingParams::Datastructures.ProcessingParameters,fnamefunc=fnameFocused)
+function GetFocusedImageGrid(ImagingParams::Datastructures.ProcessingParameters,fnamefunc=GenerateFinalFileName, exp="NoIR")
     #=
     Here we jsut make an array of the image names to be loaded
     =#
-    x, y = GetIdentifiers(ImagingParams)
+    x, y = GetFocusedIdentifiers(ImagingParams)
     x = reverse(x)
     y = reverse(y)
     img_name_grid = Array{String}(undef,length(y), length(x))
     img_pos_grid = Array{Float64}(undef,length(y), length(x), 2)
     for i in eachindex(x)
         for j in eachindex(y)
-            img_name_grid[j,i]  = fnamefunc(x[i],y[j],ImagingParams.exposure)
-            img_pos_grid[j,i,:] = GeneratePxCoordinates([x[i],y[j]], ImagingParams)
+            img_name_grid[j,i]  = fnamefunc(x[i],y[j],exp)
+            # Below doesnt work ause needs imagingparams not processing
+            #img_pos_grid[j,i,:] = GeneratePxCoordinates([x[i],y[j]], ImagingParams)
         end
     end
-    return img_name_grid[end:-1:1,end:-1:1], img_pos_grid[end:-1:1,end:-1:1,:]
+    return img_name_grid[end:-1:1,end:-1:1]#, img_pos_grid[end:-1:1,end:-1:1,:]
 end
+
 
 
 # Load DNG images
@@ -107,4 +115,32 @@ function LoadDNGLibRaw(path, size=(3,3040,4056))
     return img
 end
 
+
+function RowColumnIndexNaming(ImagingParams::Datastructures.ProcessingParameters, img_name_grid=nothing)
+    #=
+    Function for Fiji MIST, renames from  y z coordinates to row column
+
+    We use save path as this runs after focus stacking
+    =#
+    # We get the formated frid for names
+    if isnothing(img_name_grid)
+        img_name_grid = GetFocusedImageGrid(ImagingParams)
+    end
+    # And generate the names for the files
+    new_names = Array{String}(undef, size(img_name_grid))
+    for i in 1:size(img_name_grid,1)
+        for j in 1:size(img_name_grid,2)
+            #Move file to new name
+            new_name = "r$(i)_c$(j).png"
+            if isfile(ImagingParams.save_path*img_name_grid[i,j])
+                mv(ImagingParams.save_path*img_name_grid[i,j], ImagingParams.save_path*new_name)
+                println("Moving $(ImagingParams.save_path*img_name_grid[i,j]) to $(ImagingParams.save_path*new_name)")
+            end
+        end
+    end
+    return img_name_grid
+end
+
 end # module
+
+

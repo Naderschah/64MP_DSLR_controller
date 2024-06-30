@@ -4,9 +4,11 @@ module ImageCombining
 
 include("Datastructures.jl")
 import .Datastructures
+# For MKR
+include("ScalingFunctions.jl")
+import .ScalingFunctions
 
-
-function CentralAlign(IP:Datastructures.ImagingParameters)
+function CentralAlign(IP::Main.Datastructures.ImagingParameters)
 
     # Get grid of images
     img_name_grid, img_pos_grid = GetImageGrid(IP)
@@ -57,7 +59,78 @@ function CentralAlign(IP:Datastructures.ImagingParameters)
 end
 
 
+# Uses predefined positional parameters
+# Can be computed naivly or from the MIST algorithm
+# Overlaps images based on MKR for the overlapping portions
+function MKR_combine(IP::Main.Datastructures.ImagingParameters, source_directory, img_name_grid, global_y_pos, global_x_pos)
+    # For each image corner there will ideally be maximally 4 overlapping images
+    # However as the neighboring images may also be shifted into this regime there may be up to 8
+    # We will ignore the data from the extra 4 if this occurs
 
+    # Do some scaling
+    global_y_pos = Int.(round.(global_y_pos .- minimum(global_y_pos) .+ 1))
+    global_x_pos = Int.(round.(global_x_pos .- minimum(global_x_pos) .+ 1))
+
+    # Create the final image array 
+    stitched_img_height = Int(maximum(global_y_pos) + IP.im_height + 1)
+    stitched_img_width = Int(maximum(global_x_pos) + IP.img_width + 1)
+    # Undefined so that we use less ram
+    I = Array{float32}(undef, stitched_img_height, stitched_img_width, 3, 4)
+    # We do also need a contrast array
+    C = Array{float16}(undef, stitched_img_height, stitched_img_width, 3, 4)
+    # We populate alternating so first image gets first layer second gets second then this repeats in teh first row
+    # Second row gets 3 and 4 and then third row gets 1 and 2 and so on
+    row_bool = true
+    column_bool = true
+    img_index = 0
+    for row in 1:axes(img_name_grid, 1)
+        row_bool != row_bool
+        column_counter = 0
+        for column in 1:axes(img_name_grid, 2)
+            column_bool != column_bool
+            # Load image
+            img =1  # TODO Completed image loading function with orientation etc
+            # Figure out which level the image goes to 
+            if      row_bool && !column_bool    img_index = 1
+            elseif  !row_bool && !column_bool   img_index = 2
+            elseif  row_bool && column_bool     img_index = 3
+            else                                img_index = 4
+            end
+
+            # Compute final coordinates
+            f_x = global_x_pos[row, column]
+            f_y = global_y_pos[row, column]
+            # Assign to final array
+            I[f_x+1:f_x+size(img)[1], f_y+1:f_y+size(img)[2], 1:end, img_index] .= img[1:end, 1:end, 1:end]
+            # Assign to contrast TODO What metrics use here
+            C[f_x+1:f_x+size(img)[1], f_y+1:f_y+size(img)[2], 1:end, img_index] .= 1 #TODO Completed contrast function
+        end
+    end
+    # Create Laplacian pyramid (also so that we save some ram)
+    I = MKR_functions.Laplacian_Pyramid(img, nlev)
+    # We now have the populated array with contrasts assigned, we now normalize the contrast, keeping in mind that we reset zero values
+    Ctmp = C .== 0
+    C = ScalingFunctions.ScaleWeightMatrix(C)
+    C[Ctmp] = 0
+    Ctmp = 0
+
+    # TODO Create empty pyramid arrays
+    Threads.@threads for i = 1:axes(I, 4)
+        tmp = MKR_functions.Gaussian_Pyramid(Weight_mat[:,:,:,i])
+        for l in (1:nlev)
+            pyr_Weight[l][:,:,:,i] = tmp[l]
+        end
+    end
+    # Combine images
+
+    
+end
+
+
+
+function GIST_combine
+
+end 
 
 
 

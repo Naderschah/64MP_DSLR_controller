@@ -1079,7 +1079,7 @@ function assemble_stitched_image(source_directory, img_name_grid, global_y_img_p
     # the result is the images with higher ccf values overwrite those with lower values
     assemble_ordering = sortperm(collect(Iterators.flatten(tile_weights))) # TODO : THis doesnt work dims missing also output wrong
     fusion_method = lowercase(fusion_method)
-    # TODO Image loding non grey
+    
     if fusion_method == "overlay"
         I = zeros(FixedPointNumbers.N0f16, (stitched_img_height, stitched_img_width, 3))
         # Assemble images so that the lower the image numbers get priority over higher image numbers
@@ -1359,8 +1359,8 @@ imaging_params = ProcessingParameters(20, 60, 60, 10)
 
 
 
-path = "/home/felix/rapid_storage_2/Leaf/"
-save_path = "/home/felix/rapid_storage_2/Leaf/combined/"
+path = "/home/felix/rapid_storage_2/SmallWasp/"
+save_path = "/home/felix/rapid_storage_2/SmallWasp/combined/"
 
 # TODO: Broccoli
 # Ok so this partially fails due to the color problems, there might be some rotation in the images, but this cant solve it

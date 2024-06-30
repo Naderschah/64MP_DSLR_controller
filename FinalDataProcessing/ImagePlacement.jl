@@ -1,12 +1,11 @@
 # Code here pertains to locating the images based on the step sizes magnification etc, in the final image
 
-module ImagePlacement
 
 include("Datastructures.jl")
 import .Datastructures
 
 
-function GeneratePxCoordinates(pos, ImagingParams::Datastructures.ImagingParameters)
+function GeneratePxCoordinates(pos, ImagingParams)
     #Function to determine the expected position of images
     return pos .* ImagingParams.steps_per_mm ./ (ImagingParams.px_size/ImagingParams.magnification)
 end
@@ -29,5 +28,3 @@ end
 
 
 
-
-end

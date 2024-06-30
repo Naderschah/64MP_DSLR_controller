@@ -31,6 +31,8 @@ For image combining into a larger image, the MIST algorithm was partially implem
 
 Both scripts work with some caveats, for the first one wants to reduce background in the image as much as possible, for the second some preprocessing kernels often help the algorithm align the images
 
+I will be moving away from julia as I find all of the ways to organize my code to be rather aggitating, there is no nice way to group functions logically, for more info see [this](https://discourse.julialang.org/t/how-to-structure-project-in-julia/99458).
+
 
 ## Taken Images
 

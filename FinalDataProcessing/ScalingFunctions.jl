@@ -21,10 +21,11 @@ function removeBlackpoint(img, blackpoint)
 end
 
 
-function ScaleWeightMatrix(W_mat)
-    # Set zero point
+function ScaleWeightMatrix(W_mat,epsilon=1e-10)
+    # Set zero point plus epsilon
     for i in 1:3
         W_mat[:,:,i,:] .-= minimum(W_mat[:,:,i,:])
+        W_mat[:,:,i,:] .+= epsilon
     end
     # And scale 0 to 1 such that each pixel sums to 1
     N = size(W_mat,4)
