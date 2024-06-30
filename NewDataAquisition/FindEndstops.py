@@ -41,7 +41,7 @@ found_endstop = [[False]]
 if do_all or do_x:
     while not found_endstop[0][0]:
         # Move 
-        found_endstop = grid.move_dist([-1000],ignore_endstop=False)
+        found_endstop = grid.move_dist([-1000,0,0],ignore_endstop=False)
         if found_endstop[0][0] and found_endstop[0][1]=='min' :
             break
         elif found_endstop[0][0] and found_endstop[0][1]=='max':
@@ -51,7 +51,7 @@ if do_all or do_x:
     # Find maximum
     while True:
         # Move 
-        found_endstop = grid.move_dist([1000],ignore_endstop=False)
+        found_endstop = grid.move_dist([1000,0,0],ignore_endstop=False)
         if found_endstop[0][0] and found_endstop[0][1]=='max':
             break
         elif found_endstop[0][0] and found_endstop[0][1]=='min':
@@ -62,7 +62,7 @@ if  do_all or do_y:
     # Find minimum
     while True:
         # Move 
-        found_endstop = grid.move_dist([0,-1000],ignore_endstop=False)
+        found_endstop = grid.move_dist([0,-1000,0],ignore_endstop=False)
         if found_endstop[1][0] and found_endstop[1][1]=='min':
             break
         elif found_endstop[1][0] and found_endstop[1][1]=='max':
@@ -72,7 +72,7 @@ if  do_all or do_y:
     # Find maximum
     while True:
         # Move 
-        found_endstop = grid.move_dist([0,1000],ignore_endstop=False)
+        found_endstop = grid.move_dist([0,1000,0],ignore_endstop=False)
         if found_endstop[1][0] and found_endstop[1][1]=='max':
             break
         elif found_endstop[1][0] and found_endstop[1][1]=='min':
