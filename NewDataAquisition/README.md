@@ -10,10 +10,10 @@ The following scripts can be found here:
     - This will first ask the user to trigger each endstop manually to assure all function and are assigned to the correct axis (skippable by command line option)
     - Then it will make all axis move to their extremes and determine the grid endstops
 
-- CheckCamera TODO
+- CheckCamera 
     - Launches a GUI (taken from the old scripts) to determine exposure and ISO required
 
-- DoImaging TODO
+- DoImaging 
     - Starts the imaging routine
     - Sources metadata from file
     - Has command line options for fraction of grid to observe - TODO: How are these most easily defined?
@@ -39,5 +39,7 @@ The following scripts can be found here:
     - Allows moving motors through simple commands
     - Usefull for determining desired movement direction and moving the stage to a different position
 
+
+TODO: On grid off, move to start of step sequence to continue microstepping from there, record steps taken
 
 

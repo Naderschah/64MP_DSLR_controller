@@ -15,7 +15,7 @@ Iteration when imaging goes as: x,y,z
 
 Image processing interprets y as left to right in image
 And z as right to left
-TODO: Above statement might be wrong
+TODO: Above statement might be wrong -> but easy enough to change interface
 
 Accelerometer: Not yet implemented order is [SDA,SCL] for I2C
 TODO: Implement accelerometer
@@ -27,8 +27,8 @@ pinout = {
     'y': [17,27,22,10], # In J4: 0,2,3,12
     'z': [13,19,26,24], # In J4, 23,24,25,5
     'motor_dir': [1,1,1],
-    'Endstops': [[25,23],[8,7],[12,16]], #TODO: Check, relative to motor spin
-    # In J4: [[4,6],[10,11],[26,27]]
+    'Endstops': [[25,23],[8,7],[16,12]], 
+    # In J4: [[4,6],[10,11],[27,26]]
     "Accelerometer": [2,3] # In J4: 8,9 -> SDA1,SCL1
 }
 
