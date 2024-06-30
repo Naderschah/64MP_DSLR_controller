@@ -14,7 +14,8 @@ TODO: Order of grid move might be switched around
 """
 from Controler_Classes import Grid_Handler, Camera_Handler
 from ULN2003Pi import ULN2003
-import time, json
+import time, json, sys, os
+from pathlib import Path
 
 # Initiate all the controller classs
 with open('./Pinout.json', 'r') as f:
@@ -29,20 +30,46 @@ grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']),
 
 # Keep all control structures enabled to allow easy grid alignment
 cam = Camera_Handler(disable_tuning=False, disable_autoexposure=True)
-
+res = input("Have the endstops been calibrated? [Y/N]")
+if res.lower() != 'y':
+    print("Please calibrate and come back")
+    sys.exit(0)
 print("Moving to 0,0,z_max")
 grid.move_dist([0,0,grid.gridbounds[2]])
 
-cam.start_preview()
+print("Please align subject")
+print("Type 'capture' to take an image and display it")
+print("Type exit to continue with the focus at 0,0,0")
+while True:
+    res = input()
+    if res == 'capture':
+        cam.start()
+        cam.capture_image(str(Path.home())+'/cam_check_capture.png')
+        cam.stop()
+        os.system("feh {}".format(str(Path.home())+'/cam_check_capture.png'))
+    elif res == 'exit':
+        break
+    else:
+        print("Command not recognized")
 
-input("Type something to continue")
 
 cam.stop_preview()
 print("Moving to 0,0,0")
 grid.move_dist([0,0,grid.gridbounds[2]])
 
-cam.start_preview()
-input("Type something to stop")
+print("Please align subject")
+print("Type 'capture' to take an image and display it")
+print("Type exit to terminate script")
+while True:
+    res = input()
+    if res == 'capture':
+        cam.start()
+        cam.capture_image(str(Path.home())+'/cam_check_capture.png')
+        cam.stop()
+        os.system("feh {}".format(str(Path.home())+'/cam_check_capture.png'))
+    elif res == 'exit':
+        break
+    else:
+        print("Command not recognized")
 
-cam.stop_preview()
 grid.disable_all(gpio_pins)
