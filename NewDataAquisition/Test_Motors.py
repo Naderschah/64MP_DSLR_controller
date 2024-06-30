@@ -1,19 +1,22 @@
 from Controler_Classes import Grid_Handler
 from ULN2003Pi import ULN2003
-import json, time, 
+import json, time
 import sys
 
 with open('./Pinout.json', 'r') as f:
     gpio_pins = json.load(f)
 
 #grid ignore for deleted/corrupted/non-existant grid files
-if sys.argv[1].strip() == 'gridignore':
-    grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']), 
+if len(sys.argv)>1:
+    if sys.argv[1].strip() == 'gridignore':
+        grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']), 
                     motor_y=ULN2003.ULN2003(gpio_pins['y']), 
                     motor_z=ULN2003.ULN2003(gpio_pins['z']), 
                     motor_dir = gpio_pins['motor_dir'], 
                     endstops = gpio_pins['Endstops'],
                     ingore_gridfile=True)
+    else:
+        print("Invalid option")
 else:
     grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']), 
                     motor_y=ULN2003.ULN2003(gpio_pins['y']), 
