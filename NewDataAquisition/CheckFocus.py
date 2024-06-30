@@ -45,4 +45,4 @@ cam.start_preview()
 input("Type something to stop")
 
 cam.stop_preview()
-grid.disable_all()
+grid.disable_all(gpio_pins)

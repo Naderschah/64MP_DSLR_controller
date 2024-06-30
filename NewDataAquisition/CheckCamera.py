@@ -59,6 +59,6 @@ while True:
         print("Error:")
         print(e)
 
-grid.disable_all()
+grid.disable_all(gpio_pins)
 cam.stop_preview()
 cam.stop()

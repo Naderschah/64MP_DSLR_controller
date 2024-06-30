@@ -14,30 +14,36 @@ for key in endstops:
     GPIO.setup(key, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     time.sleep(0.001)
 
-for i in gpio_pins["Endstops"]:
+for i in range(len(gpio_pins["Endstops"])):
 
     print('Testing {}'.format({0:'x',1:'y',2:'z'}[i]))
     print('Press min')
-    while True:
-        for q in endstops:
-            if GPIO.input(q): 
+    cond = True
+    while cond:
+        for q in range(len(endstops)):
+            if GPIO.input(endstops[q]): 
                 print('Pressed {} {}'.format({0:'x',1:'y',2:'z'}[q//2], ['min', 'max'][q%2]))
             if GPIO.input(gpio_pins['Endstops'][i][0]):
                 print("Endstop correct")
+                cond = False
                 break
             else:
                 pass
+        time.sleep(1)
     
     print('Press max')
-    while True:
-        for q in endstops:
-            if GPIO.input(q): 
+    cond = True
+    while cond:
+        for q in range(len(endstops)):
+            if GPIO.input(endstops[q]): 
                 print('Pressed {} {}'.format({0:'x',1:'y',2:'z'}[q//2], ['min', 'max'][q%2]))
             if GPIO.input(gpio_pins['Endstops'][i][1]):
                 print("Endstop correct")
+                cond=False
                 break
             else:
                 pass
+        time.sleep(1)
     
 
     

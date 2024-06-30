@@ -26,7 +26,7 @@ while True:
         move = [0,0,0]
         move[axes] = steps
         print('Moving')
-        grid.move_dist(steps)
+        grid.move_dist(move)
     
     except Exception as e:
         print("Invalid Command")
@@ -34,4 +34,4 @@ while True:
         print(e)
 
 
-grid.disable_all()
+grid.disable_all(gpio_pins)

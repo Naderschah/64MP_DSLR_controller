@@ -24,13 +24,11 @@ class Grid_Handler:
     pos = [0]*n_motors
     tot_move = [0]*n_motors
     last_pos = [0]*n_motors
-    dx = 1
     pos = None
     # Bool to check if zeropoint set
     zero_made = False
-    def __init__(self,motor_x,motor_y,motor_z,motor_dir,dx, endstops,ingore_gridfile) -> None:
+    def __init__(self,motor_x,motor_y,motor_z,motor_dir, endstops,ingore_gridfile) -> None:
         
-        self.dx = dx
         self.motor_dir= motor_dir
         # Motors
         self.x = motor_x
