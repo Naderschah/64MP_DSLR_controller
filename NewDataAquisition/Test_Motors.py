@@ -1,6 +1,7 @@
 from Controler_Classes import Grid_Handler
 from ULN2003Pi import ULN2003
-import json, time, import sys
+import json, time, 
+import sys
 
 with open('./Pinout.json', 'r') as f:
     gpio_pins = json.load(f)
