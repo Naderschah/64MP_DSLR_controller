@@ -40,15 +40,15 @@ while True:
         command = input()
         if command == 'exit':
             break
-        if command.startswith('x','y','z'):
+        if command.startswith(('x','y','z')):
             axes = {'x':0,'y':1,'z':2}[command[0]]
             steps = int(command[1:]) 
             move = [0,0,0]
             move[axes] = steps
             print('Moving')
-            grid.move_dist(steps)
+            grid.move_dist(move)
             print_grid(grid)
-        elif command.startswith('e','i'):
+        elif command.startswith(('e','i')):
             to_run = {'e':cam.set_exp, 'i':cam.set_iso}[command[0]]
             val = int(command[1:])
             to_run(val)
@@ -66,5 +66,3 @@ while True:
         print(e)
 
 grid.disable_all(gpio_pins)
-cam.stop_preview()
-cam.stop()
