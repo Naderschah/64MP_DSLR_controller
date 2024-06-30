@@ -1,16 +1,25 @@
 from Controler_Classes import Grid_Handler
 from ULN2003Pi import ULN2003
-import json, time
+import json, time, import sys
 
 with open('./Pinout.json', 'r') as f:
     gpio_pins = json.load(f)
 
-grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']), 
+#grid ignore for deleted/corrupted/non-existant grid files
+if sys.argv[1].strip() == 'gridignore':
+    grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']), 
                     motor_y=ULN2003.ULN2003(gpio_pins['y']), 
                     motor_z=ULN2003.ULN2003(gpio_pins['z']), 
                     motor_dir = gpio_pins['motor_dir'], 
                     endstops = gpio_pins['Endstops'],
                     ingore_gridfile=True)
+else:
+    grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']), 
+                    motor_y=ULN2003.ULN2003(gpio_pins['y']), 
+                    motor_z=ULN2003.ULN2003(gpio_pins['z']), 
+                    motor_dir = gpio_pins['motor_dir'], 
+                    endstops = gpio_pins['Endstops'],
+                    ingore_gridfile=False)
 print("Set up Grid Controller")
 
 print("Movement commands are formated as: <Motor><Steps>, where <Motor>=x,y,z and steps is some number")
@@ -27,6 +36,7 @@ while True:
         move[axes] = steps
         print('Moving')
         grid.move_dist(move)
+        print('Done')
     
     except Exception as e:
         print("Invalid Command")

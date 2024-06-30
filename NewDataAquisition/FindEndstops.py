@@ -100,6 +100,7 @@ if do_all or do_z:
         elif found_endstop[2][0] and found_endstop[2][1]=='min':
             raise Exception('Coordinate grid wrong!')
     print('Found Z max')
+    # TODO: Idk why but around here it gets stuck in a loop where it states it found the endstop
 
 
     print('Found all endstops')
