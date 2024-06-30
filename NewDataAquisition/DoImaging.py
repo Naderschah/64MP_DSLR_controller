@@ -121,6 +121,8 @@ print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
 coord_arr = [np.arange(0,grid.gridbounds[i], steps[i]) for i in range(len(3))]
 # And again 
 print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
+# Start camera for imaging
+cam.start()
 
 for e in exposure:
     for i in coord_arr[2]:

@@ -200,7 +200,7 @@ class Camera_Handler:
                         "AwbEnable":False,  # Auto White Balance
                         "ExposureValue":0, # No exposure Val compensation --> Shouldnt be required as AeEnable:False
                         "NoiseReductionMode": controls.draft.NoiseReductionModeEnum.Off}
-    camera = None # Set by configure_and_start
+    camera = None # Set by configure
     iso = None
     exp = None
     still_config = None
@@ -211,7 +211,7 @@ class Camera_Handler:
         # Also initiates the self.camera object
         self.disable_algos(disable_tuning)
 
-        self.configure_and_start(disable_autoexposure)
+        self.configure(disable_autoexposure)
         self.disable_autoexposure = disable_autoexposure
         return
 
@@ -239,7 +239,7 @@ class Camera_Handler:
         
         return
 
-    def configure_and_start(self,disable_autoexposure):
+    def configure(self,disable_autoexposure):
         # Start camera with tuning file
         self.camera = Picamera2(tuning=self.tuning)
         # Retrieve relevant configuration options
@@ -251,7 +251,6 @@ class Camera_Handler:
         #And set custom controls (stop and start so that the next frame indeed has the correct controls)
         self.camera.stop()
         self.camera.set_controls(self.custom_controls)
-        self.camera.start()
 
     def set_iso(self,iso):
         self.camera.set_controls({'AnalogueGain':iso})
@@ -268,16 +267,19 @@ class Camera_Handler:
         return
     
     def start_preview(self,res=(720,480)):
+        self.camera.stop()
         self.camera.configure(self.camera.create_preview_configuration(queue=False ,main={"size":res})) 
         if self.disable_autoexposure:
             self.camera.set_controls(self.custom_controls)
-        self.camera.stop()
         self.camera.start_preview(Preview.QT) # Should be non blocking
-        self.camera.start()
+        #self.camera.start()
 
     def stop_preview(self,):
         self.camera.stop_preview()
         self.camera.stop()
+        self.camera.start()
+    
+    def start(self):
         self.camera.start()
     
     def stop(self):
