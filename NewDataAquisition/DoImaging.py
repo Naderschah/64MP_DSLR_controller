@@ -98,7 +98,7 @@ os.system('echo "True" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.t
 dirs = os.listdir('/media/micro/3677421f-5daf-4ea7-ba33-31b09d11edcf/Images')
 dirname = 'img'
 count = 0 
-while dirname+'_'+str(count) in dirname:
+while dirname+'_'+str(count) in dirs:
     count += 1
 dirname = dirname+'_'+str(count)
 dir = '/media/micro/3677421f-5daf-4ea7-ba33-31b09d11edcf/Images/'+dirname
