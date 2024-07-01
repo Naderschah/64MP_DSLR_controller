@@ -167,9 +167,9 @@ class Grid_Handler:
         for i in range(3):
             disp[i] = disp[i]*self.motor_dir[i]
         # Save new pos and tot move
-        for i in range(len(disp)):
-            self.pos[i] = self.pos[i]+disp[i]
-            self.tot_move[i] = self.tot_move[i]+disp[i]
+        for i in range(len(disp)): # Explicit conversion from numpy to python
+            self.pos[i] = (self.pos[i]+disp[i]).item()
+            self.tot_move[i] = self.tot_move[i]+disp[i].item()
         # Save new coordinate -> In two files, so that if one is broken the other can be used -> travel error will depend on step size
         with open(os.path.join(os.environ['HOME'], 'grid_backup'),'w') as f:
             f.write(json.dumps({'pos':self.pos, 'gridbounds':self.gridbounds, 'zeropoint': self.zeropoint}))
