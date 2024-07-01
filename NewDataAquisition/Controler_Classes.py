@@ -180,7 +180,7 @@ class Grid_Handler:
         """
         # Get coord difference
         disp = [coord[i]-self.pos[i] for i in range(len(coord))]
-        self.move_dist(disp, adjust_ms=False)
+        self.move_dist(disp)
         return
 
     def disable_all(self,gpio_pins):
