@@ -17,11 +17,11 @@ using Images
 println("Loaded")
 
 path = "/Images/Felt/"
-save_path = "/SaveSpot/Felt"
+save_path = "/SaveSpot/Felt/"
 blackpoint = [0,0,0]
 contrast_precision = Float32 
-width = 4056
-height = 3040
+width = 480#4056
+height = 640#3040
 debug = false
 pp = Datastructures.ProcessingParameters(contrast_precision, ContrastFunctions.LoG, GreyProjectors.lstar, blackpoint, path, save_path,width, height, debug)
 

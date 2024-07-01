@@ -13,9 +13,9 @@ export GenerateFileName, GenerateFinalFileName, FixPath, GrabIdentifiers, GetFoc
 # Generate pre focus file naming patterns
 function GenerateFileName(x,y,z,exp)
     if typeof(exp) == Int
-        return "$(x)_$(y)_$(z)_exp$(exp)mus.dng"
+        return "$(x)_$(y)_$(z)_exp$(exp)mus.png"
     else
-        return "$(x)_$(y)_$(z)_$(exp).dng"
+        return "$(x)_$(y)_$(z)_exp{e}.png"
     end
 end
 

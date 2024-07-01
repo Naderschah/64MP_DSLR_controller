@@ -47,7 +47,8 @@ function GetIdentifiers(ImagingParams)
 end
 
 function fnameFocused(x,y,e)
-    return "Focused_y=$(x)_z=$(y)_e=$(e).png"
+    #return "FeltFocused_y=$(x)_z=$(y)_e=$(e).png"
+    return "FeltFocused_y=$(x)_z=$(y)_e=NoIR.png"
 end
 
 function GetImageGrid(ImagingParams,fnamefunc=fnameFocused)
@@ -131,8 +132,10 @@ end
 
 
 
+offsets = [0,0]#[274, 133]
 
-IP =ImagingParameters("NoIR", 2, 1.55*10^-3, 0.00012397, 0.5, "/home/felix/rapid_storage_2/SmallWasp/", "/home/felix/rapid_storage_2/SmallWasp/combined/", 16, 4056, 3040)
+IP = ImagingParameters("NoIR", 2, 1.55*10^-3, 0.00012397, 0.2, "/SaveSpot/Felt/","/SaveSpot/Felt/combined/", 16, 480, 640)
+#IP =ImagingParameters("NoIR", 2, 1.55*10^-3, 0.00012397, 0.5, "/home/felix/rapid_storage_2/SmallWasp/", "/home/felix/rapid_storage_2/SmallWasp/combined/", 16, 4056, 3040)
 # White balance spec
 wb =false
 wb_bins = 2^16 # If this is 256 then UInt8 is used else UInt16
@@ -141,7 +144,6 @@ hist = false
 me_bins = 2^16
 hist_spec_column = []
 # Perspective is the problem
-offsets = [230,90]#[274, 133]
 
 # Determine working dtypes
 working_dtype = (256 >= wb_bins) ? UInt8  : UInt16
@@ -190,6 +192,7 @@ for j= 1:size(img_name_grid)[2]
     println("Loading $(IP.path)$(img_name_grid[i,j])")
     try
         img = load("$(IP.path)$(img_name_grid[i,j])")
+        println(size(img))
         # Do white balance
         if wb
             # Convert to something i can use
@@ -220,8 +223,10 @@ for j= 1:size(img_name_grid)[2]
         f_y = trunc(Int, img_pos_grid[i,j,2] - (i-1)*offsets[1])# + (j-1)*secondary_offsets[1])
 
         f_array[f_x+1:f_x+size(img)[1], f_y+1:f_y+size(img)[2], 1:end] .= img[1:end, 1:end, 1:end]
-    catch
+    catch e
         println("   Failed to load or process $(IP.path)$(img_name_grid[i,j]) : Skipping")
+        println(" Error: ",typeof(e))
+        println(" Error: ",e.message)
     end
     #save("$(IP.save_path)$(i)_$j.png",f_array)
 end

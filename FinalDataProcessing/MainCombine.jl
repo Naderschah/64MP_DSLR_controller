@@ -5,9 +5,9 @@ import .ImageCombining
 
 
 
-offsets = [230,128]#[274, 133]
+offsets = [0,0]
 # Create data struct
-IP = Datastructures.ImagingParameters("NoIR", 2, 1.55*10^-3, 0.00012397, 0.5, "/home/felix/rapid_storage_2/BananaPeal/", "/home/felix/rapid_storage_2/BananaPeal/combined/", 16, 4056, 3040,offsets)
+IP = Datastructures.ImagingParameters("NoIR", 2, 1.55*10^-3, 0.00012397, 0.2, "/SaveSpot/Felt/","/SaveSpot/Felt/combined/", 16, 480, 640,offsets)
 # Do alignment
 f_im = ImageCombining.CentralAlign(IP)
 # Save image

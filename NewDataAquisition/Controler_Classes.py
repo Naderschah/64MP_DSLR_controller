@@ -255,7 +255,7 @@ class Camera_Handler:
                 self.still_config[key] = self.custom_controls[key] 
         #And set custom controls (stop and start so that the next frame indeed has the correct controls)
         self.camera.stop()
-        self.camera.set_controls(self.custom_controls)
+        self.camera.set_controls(self.still_config)
 
     def set_iso(self,iso):
         self.camera.set_controls({'AnalogueGain':iso})

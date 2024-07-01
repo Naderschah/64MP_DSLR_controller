@@ -113,7 +113,7 @@ im_z_len =  res[1]*px_size
 
 effective_steps_per_mm_in_image = 1/(magnification*mm_per_step)
 # Steps to move overlap distance
-steps = [i*px_size * effective_steps_per_mm_in_image * overlap for i in res]
+steps = [i*px_size * effective_steps_per_mm_in_image * (1-overlap) for i in res]
 steps = [step_size_x, *steps]
 # Quick memory check 
 print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
