@@ -50,6 +50,8 @@ class Grid_Handler:
             self.zeropoint = self.load_from_json('zeropoint',cont)
             self.gridbounds = self.load_from_json('gridbounds',cont)
             self.pos = self.load_from_json('pos',cont)
+            for i in range(len(self.pos)):
+                self.pos[i] = int(self.pos[i])
         elif not ingore_gridfile:
             print('No grid file found, recalibration required')
             sys.exit(0)
@@ -72,7 +74,7 @@ class Grid_Handler:
 
     def load_from_json(self, name, json_):
         var_ = None
-        if 'gridbounds' in json_: 
+        if name in json_: 
             var_ = json_[name]
         else: 
             print("No {} found in file, recalibration required, exiting".format(name))
@@ -80,10 +82,13 @@ class Grid_Handler:
         return var_
         
     def set_gridbounds(self,bounds):
-        self.gridbounds = bounds
+        for i in range(len(self.gridbounds)):
+            self.gridbounds[i] = int(bounds[i])
     
     def set_pos(self,pos):
-        self.pos = pos
+        for i in range(len(self.pos)):
+            self.pos[i] = int(pos[i])
+        return
 
     def reset_grid(self,axis=None):
         """Resets the grid
