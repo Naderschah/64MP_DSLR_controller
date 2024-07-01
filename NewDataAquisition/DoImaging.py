@@ -61,11 +61,11 @@ for i in cmd_line_opts:
     elif i.startswith('iso'):
         iso = int(i.split('=')[1])
     elif i.startswith("grid_x"):
-        grid.gridbounds[0] = int(i.split('=')[1])
+        grid.gridbounds[0] = int(i.split('=')[1])//mm_per_step
     elif i.startswith("grid_y"):
-        grid.gridbounds[1] = int(i.split('=')[1])
+        grid.gridbounds[1] = int(i.split('=')[1])//mm_per_step
     elif i.startswith("grid_z"):
-        grid.gridbounds[2] = int(i.split('=')[1])
+        grid.gridbounds[2] = int(i.split('=')[1])//mm_per_step
     elif i.startswith("overlap"):
         overlap = int(i.split('=')[1])
     elif i.startswith("mag"):
