@@ -135,7 +135,7 @@ for e in exposure:
             for k in coord_arr[0]:
                 grid.move_to_coord([k,j,i])
                 time.sleep(0.01) 
-                cam.capture_image('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{e}.dng')
+                cam.capture_image('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{e}.png')
             coord_arr[0] = coord_arr[0][::-1]
         coord_arr[1] = coord_arr[1][::-1]
     coord_arr[2] = coord_arr[2][::-1]
