@@ -94,7 +94,6 @@ if do_all or do_z:
     # Find maximum
     while True:
         # Move 
-        print('Doing z max move')
         found_endstop = grid.move_dist([0,0,1000],ignore_endstop=False)
         if found_endstop[2][0] and found_endstop[2][1]=='max':
             print("Found endstop for z max")
