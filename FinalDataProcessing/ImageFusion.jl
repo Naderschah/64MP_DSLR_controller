@@ -1,5 +1,6 @@
 module ImageFusion
 
+import Images
 include("Datastructures.jl")
 import .Datastructures
 include("MKR_functions.jl")
@@ -23,7 +24,15 @@ function MKR(fnames, pp::Main.Datastructures.ProcessingParameters, epsilon=1e-10
     Threads.@threads for x in eachindex(fnames)
 
         # Load image
-        img = IO_dp.LoadDNGLibRaw(pp.path*fnames[x], (3,pp.height,pp.width))
+        if fnames[x][end-3:end] == ".dng"
+            img = IO_dp.LoadDNGLibRaw(pp.path*fnames[x], (3,pp.height,pp.width))
+        elseif fnames[x][end-3:end] == ".png"
+            img = Images.channelview(Images.load(pp.path*fnames[x]))
+            img = Images.permutedims(img, (3, 1, 2))
+        else
+            println("Image format not known")
+        end
+
         # Remove blackpoint
         img = ScalingFunctions.removeBlackpoint(img, pp.blackpoint)
         # Scale 0 to 1

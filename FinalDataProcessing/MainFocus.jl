@@ -16,8 +16,8 @@ using Images
 
 println("Loaded")
 
-path = "/media/felix/3677421f-5daf-4ea7-ba33-31b09d11edcf/Images/SmallWasp/"
-save_path = "/mnt/rapid_storage_2/SmallWasp/"
+path = "/Images/Felt/"
+save_path = "/SaveSpot/Felt"
 blackpoint = [0,0,0]
 contrast_precision = Float32 
 width = 4056
