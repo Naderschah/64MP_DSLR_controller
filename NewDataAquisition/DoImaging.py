@@ -67,7 +67,7 @@ for i in cmd_line_opts:
     elif i.startswith("grid_z"):
         grid.gridbounds[2] = int(i.split('=')[1])//mm_per_step
     elif i.startswith("overlap"):
-        overlap = int(i.split('=')[1])
+        overlap = float(i.split('=')[1])
     elif i.startswith("mag"):
         magnification = int(i.split('=')[1])
     elif i.startswith("res_x"):
@@ -95,13 +95,13 @@ print("Initiated Camera and Motor Objects")
 os.system('echo "True" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
 
 # Make the imaging directory and move there
-dirs = os.listdir('/media/micro/Drive/Images')
+dirs = os.listdir('/media/micro/3677421f-5daf-4ea7-ba33-31b09d11edcf/Images')
 dirname = 'img'
 count = 0 
 while dirname+'_'+str(count) in dirname:
     count += 1
 dirname = dirname+'_'+str(count)
-dir = '/media/micro/Drive/Images/'+dirname
+dir = '/media/micro/3677421f-5daf-4ea7-ba33-31b09d11edcf/Images/'+dirname
 os.mkdir(dir)
 os.chdir(dir)
 print('Changed directory to {}'.format(dir))
