@@ -35,7 +35,7 @@ if res.lower() != 'y':
     print("Please calibrate and come back")
     sys.exit(0)
 print("Moving to 0,0,z_max")
-grid.move_dist([0,0,grid.gridbounds[2]])
+grid.move_to_coord([0,0,grid.gridbounds[2]])
 
 print("Please align subject")
 print("Type 'capture' to take an image and display it")
@@ -55,7 +55,7 @@ while True:
 
 cam.stop_preview()
 print("Moving to 0,0,0")
-grid.move_dist([0,0,grid.gridbounds[2]])
+grid.move_to_coord([0,0,0])
 
 print("Please align subject")
 print("Type 'capture' to take an image and display it")
