@@ -118,7 +118,7 @@ steps = [step_size_x, *steps]
 # Quick memory check 
 print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
 # Generate array holding 
-coord_arr = [np.arange(0,grid.gridbounds[i], steps[i]) for i in range(3)]
+coord_arr = [np.arange(0,grid.gridbounds[i], steps[i]).astype(int) for i in range(3)]
 # And again 
 print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
 # Quick print for imager
