@@ -17,7 +17,6 @@ function MKR(fnames, pp::Main.Datastructures.ProcessingParameters, epsilon=1e-10
     N = size(fnames,1)
     # Number of pyramid levels
     nlev = floor(log(min(pp.height ,pp.width)) / log(2))
-
     # Prealocate data structures
     pyr, pyr_Weight, Weight_mat = MKR_functions.GenerateEmptyPyramids(pp.width, pp.height, nlev, N)
 
@@ -31,7 +30,6 @@ function MKR(fnames, pp::Main.Datastructures.ProcessingParameters, epsilon=1e-10
         else
             println("Image format not known")
         end
-
         # Remove blackpoint
         img = ScalingFunctions.removeBlackpoint(img, pp.blackpoint)
         # Scale 0 to 1

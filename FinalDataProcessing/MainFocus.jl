@@ -58,18 +58,23 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,tst::Bool=f
             fail_count = 1
             start = time()
             while fail_count <= 4
-                println("Doing image $(counter) from $(total)")
-                println("Focused Name: $(final_name)")
+                println("Processing image $(counter) out of $(total)")
+                println("Current Focus Name: $(final_name)")
+                
                 # Generate file names
                 fnames = [IO_dp.GenerateFileName(xi,yi,zi,ei) for xi in ImagingGrid.x]
                 # Run stacking for yze postion
+                println("Starting MKR fusion")
                 image = ImageFusion.MKR(fnames, parameters, epsilons[fail_count])
                 # Save Image check for nans
                 if any(isnan.(image))
-                    printstyled("Image $(final_name) has NaNs restarting\n", color=:red)
+                  printstyled("Warning: Image $(final_name) contains NaNs. Retrying...\n", color=:red)
                     fail_count += 1
                 else
-                    Images.save("$(save_path)$(final_name)", image)
+                    # Save the image and mark as successful if no NaNs found
+                    savepath = joinpath(save_path, final_name)
+                    Images.save(savepath, image)
+                    println("Image $(final_name) saved successfully.")
                     success = true
                     break
                 end

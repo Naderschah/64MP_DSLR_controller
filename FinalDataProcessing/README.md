@@ -14,5 +14,4 @@ The second uses the MIST algorithm to combine these into a large image.
 All of the files still need to be populated
 
 TODO:
-- Figure out why png loaded images are black and white
 - Figure out how i stitched images
