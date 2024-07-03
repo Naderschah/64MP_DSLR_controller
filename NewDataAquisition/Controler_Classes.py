@@ -250,12 +250,14 @@ class Camera_Handler:
         # Retrieve relevant configuration options
         self.still_config = self.camera.create_still_configuration(raw={})
         # Overwrite with custom control attriubtes
-        self.camera.switch_mode(self.still_config)
+        
         if disable_autoexposure:
             self.camera.set_controls(self.custom_controls)
             #for key in self.custom_controls:
             #    self.still_config[key] = self.custom_controls[key] 
         #And set custom controls (stop and start so that the next frame indeed has the correct controls)
+        self.camera.start()
+        self.camera.switch_mode(self.still_config)
         self.camera.stop()
         
 
