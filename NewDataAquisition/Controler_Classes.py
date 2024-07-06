@@ -267,11 +267,13 @@ class Camera_Handler:
         
 
     def set_iso(self,iso):
+        iso = int(iso)
         self.camera.set_controls({'AnalogueGain':iso})
         self.iso = iso
         return iso
 
     def set_exp(self,exp):
+        exp = int(exp)
         self.camera.set_controls({'ExposureTime':exp})
         self.exp = exp
         return exp
