@@ -29,7 +29,7 @@ grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']),
                     ingore_gridfile=False)
 
 # Keep all control structures enabled to allow easy grid alignment
-cam = Camera_Handler(disable_tuning=False, disable_autoexposure=True)
+cam = Camera_Handler(disable_tuning=False, disable_autoexposure=False)
 res = input("Have the endstops been calibrated? [Y/N]")
 if res.lower() != 'y':
     print("Please calibrate and come back")
