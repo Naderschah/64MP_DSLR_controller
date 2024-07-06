@@ -103,7 +103,8 @@ while dirname+'_'+str(count) in dirs:
 dirname = dirname+'_'+str(count)
 dir = '/media/micro/3677421f-5daf-4ea7-ba33-31b09d11edcf/Images/'+dirname
 os.mkdir(dir)
-
+os.chdir(dir)
+print('Changed directory to {}'.format(dir))
 
 # Make imaging array, first grab camera data  TODO Grab what possible from the camera
 px_size = 1.55*1e-3 
@@ -128,8 +129,6 @@ for i in coord_arr:
 # Start camera for imaging
 cam.start()
 
-os.chdir(dir)
-print('Changed directory to {}'.format(dir))
 
 for e in exposure:
     for i in coord_arr[2]:
