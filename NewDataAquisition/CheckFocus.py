@@ -34,12 +34,14 @@ res = input("Have the endstops been calibrated? [Y/N]")
 if res.lower() != 'y':
     print("Please calibrate and come back")
     sys.exit(0)
-print("Moving to x_max,0,0")
-grid.move_to_coord([grid.gridbounds[0],0,0])
+
+print("Moving to 0,0,0")
+grid.move_to_coord([0,0,0])
 
 print("Please align subject")
 print("Type 'capture' to take an image and display it")
-print("Type exit to continue with the focus at 0,0,0")
+print("Type exit to continue with the focus at x_max,0,0")
+print("Type exitnow to terminate now")
 while True:
     res = input()
     if res == 'capture':
@@ -49,13 +51,17 @@ while True:
         #os.system("feh {}".format(str(Path.home())+'/cam_check_capture.png'))
     elif res == 'exit':
         break
+    elif res == 'exitnow':
+        sys.exit(0)
     else:
         print("Command not recognized")
 
 
 cam.stop_preview()
-print("Moving to 0,0,0")
-grid.move_to_coord([0,0,0])
+print("Moving to x_max,0,0")
+
+grid.move_to_coord([grid.gridbounds[0],0,0])
+
 
 print("Please align subject")
 print("Type 'capture' to take an image and display it")
