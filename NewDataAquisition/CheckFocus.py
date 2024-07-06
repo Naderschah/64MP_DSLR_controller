@@ -48,7 +48,7 @@ while True:
         cam.start()
         cam.capture_image(str(Path.home())+'/cam_check_capture.png')
         cam.stop()
-        #os.system("feh {}".format(str(Path.home())+'/cam_check_capture.png'))
+        os.system("feh {}".format(str(Path.home())+'/cam_check_capture.png'))
     elif res == 'exit':
         break
     elif res == 'exitnow':
