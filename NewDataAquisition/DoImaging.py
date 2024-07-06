@@ -36,7 +36,7 @@ grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']),
                     ingore_gridfile=False)
 
 # Keep all control structures enabled to allow easy grid alignment
-cam = Camera_Handler(disable_tuning=False, disable_autoexposure=True)
+cam = Camera_Handler(disable_tuning=True, disable_autoexposure=True)
 
 
 ## Command line parsing
@@ -61,11 +61,11 @@ for i in cmd_line_opts:
     elif i.startswith('iso'):
         iso = int(i.split('=')[1])
     elif i.startswith("grid_x"):
-        grid.gridbounds[0] = int(i.split('=')[1])//mm_per_step
+        grid.gridbounds[0] = float(i.split('=')[1])//mm_per_step
     elif i.startswith("grid_y"):
-        grid.gridbounds[1] = int(i.split('=')[1])//mm_per_step
+        grid.gridbounds[1] = float(i.split('=')[1])//mm_per_step
     elif i.startswith("grid_z"):
-        grid.gridbounds[2] = int(i.split('=')[1])//mm_per_step
+        grid.gridbounds[2] = float(i.split('=')[1])//mm_per_step
     elif i.startswith("overlap"):
         overlap = float(i.split('=')[1])
     elif i.startswith("mag"):
