@@ -79,8 +79,7 @@ for i in cmd_line_opts:
 if exposure is None:
     print("Specify the exposure time in ms")
     sys.exit(0)
-else:
-    cam.set_exp(exposure)
+    
 if iso is None:
     print("Specify the iso")
     sys.exit(0)
@@ -131,6 +130,7 @@ cam.start()
 
 
 for e in exposure:
+    cam.set_exp(e)
     for i in coord_arr[2]:
         for j in coord_arr[1]:
             for k in coord_arr[0]:
