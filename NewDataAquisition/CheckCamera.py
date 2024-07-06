@@ -26,7 +26,7 @@ grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']),
                     endstops = gpio_pins['Endstops'],
                     ingore_gridfile=False)
 
-cam = Camera_Handler(disable_tuning=True, disable_autoexposure=True)
+cam = Camera_Handler(disable_tuning=True, disable_autoexposure=True, low_res=True)
 
 
 print("Movement commands are formated as: <Motor><Steps>, where <Motor>=x,y,z and steps is some number")
