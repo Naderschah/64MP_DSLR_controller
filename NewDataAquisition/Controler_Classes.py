@@ -294,6 +294,7 @@ class Camera_Handler:
         self.camera.start()
     
     def start(self):
+        print("Starting camera")
         self.camera.start()
     
     def stop(self):
