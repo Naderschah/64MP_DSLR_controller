@@ -211,12 +211,12 @@ class Camera_Handler:
     still_config = None
 
 
-    def __init__(self, disable_tuning=True, disable_autoexposure=True):
+    def __init__(self, disable_tuning=True, disable_autoexposure=True,low_res=False):
         # We start by disabling most of the algorithms done to change the image
         # Also initiates the self.camera object
         self.disable_algos(disable_tuning)
 
-        self.configure(disable_autoexposure)
+        self.configure(disable_autoexposure,low_res)
         self.disable_autoexposure = disable_autoexposure
         return
 
@@ -244,11 +244,16 @@ class Camera_Handler:
         
         return
 
-    def configure(self,disable_autoexposure):
+    def configure(self,disable_autoexposure,low_res=False):
         # Start camera with tuning file
         self.camera = Picamera2(tuning=self.tuning)
         # Retrieve relevant configuration options
         self.still_config = self.camera.create_still_configuration(raw={})
+        if not low_res:
+            config = self.still_config
+        else:
+            config = self.camera.create_preview_configuration(queue=False ,main={"size":(720,480)})
+
         # Overwrite with custom control attriubtes
         
         if disable_autoexposure:
@@ -257,7 +262,7 @@ class Camera_Handler:
             #    self.still_config[key] = self.custom_controls[key] 
         #And set custom controls (stop and start so that the next frame indeed has the correct controls)
         self.camera.start()
-        self.camera.switch_mode(self.still_config)
+        self.camera.switch_mode(config)
         self.camera.stop()
         
 
