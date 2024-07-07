@@ -166,7 +166,7 @@ cam.start()
 # Imaging time is e
 # Overhead is?
 
-max_dist = [np.max(i)[0] for i in coord_arr]
+max_dist = [np.max(i) for i in coord_arr]
 move_multiplier = [1, len(coord_arr[2]),len(coord_arr[2])*len(coord_arr[1])]
 tot_move_dist_for_axis = [max_dist[i]*move_multiplier[i] for i in range(len(max_dist))]
 time_estimate_steps = [tot_move_dist_for_axis[i]/90 for i in range(len(exposure))]
