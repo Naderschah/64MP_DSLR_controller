@@ -147,7 +147,22 @@ print("Camera image width and height in mm: {}, {}".format(im_y_len, im_z_len))
 cam.start()
 
 
+# Time estimate
+
+# Steps per second: 100Hz -> Call it 90 with all the sleep and checking
+# Imaging time is e
+# Overhead is?
+
+max_dist = [np.max(i)[0] for i in coord_arr]
+move_multiplier = [1, len(coord_arr[2]),len(coord_arr[2])*len(coord_arr[1])]
+tot_move_dist_for_axis = [max_dist[i]*move_multiplier[i] for i in range(len(max_dist))]
+time_estimate_steps = [tot_move_dist_for_axis[i]/90 for i in range(len(exposure))]
+tot_time = sum(time_estimate_steps) + sum([len(coord_arr[2])*len(coord_arr[1])*e for e in exposure])*1e-6
+
+print("Assumed total time is {}".format(tot_time))
+
 for e in exposure:
+    print("Exposure: {}".format(e))
     cam.set_exp(e)
     for i in coord_arr[2]:
         for j in coord_arr[1]:
@@ -155,6 +170,7 @@ for e in exposure:
                 grid.move_to_coord([k,j,i])
                 time.sleep(0.01) 
                 cam.capture_image('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.png'.format(e))
+                print([k,j,i])
             coord_arr[0] = coord_arr[0][::-1]
         coord_arr[1] = coord_arr[1][::-1]
     coord_arr[2] = coord_arr[2][::-1]
@@ -162,7 +178,7 @@ for e in exposure:
 t_diff = time.time()-start
 h = t_diff // 3600
 m = (t_diff-3600*h) // 60
-s = t_diff -3600*h - m*60
+s = (t_diff -3600*h - m*60) //1
 print("Completed in {}:{}:{}".format(h,m,int(s)))
 os.system('echo "False" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
 
