@@ -36,7 +36,7 @@ function CentralAlign(IP::Main.Datastructures.ImagingParameters,offsets)
             # Format for combination
             img = permutedims(Images.channelview(img), (2,3,1))
             # Orient correctly
-            img = img[end:-1:1, 1:end, 1:end]
+            img = img[end:-1:1, 1:end, 1:end] # TODO Has to go
             # Offset
             off = trunc.(Int, IP.overlap .* size(img) .*2 )
             # Crop and combine              ORIGINAL

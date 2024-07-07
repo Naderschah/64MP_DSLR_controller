@@ -12,11 +12,7 @@ export GenerateFileName, GenerateFinalFileName, FixPath, GrabIdentifiers, GetFoc
 
 # Generate pre focus file naming patterns
 function GenerateFileName(x,y,z,exp)
-    if typeof(exp) == Int
-        return "$(x)_$(y)_$(z)_exp$(exp)mus.png"
-    else
-        return "$(x)_$(y)_$(z)_exp{e}.png"
-    end
+    return "$(x)_$(y)_$(z)_exp$(exp).png"
 end
 
 function GenerateFinalFileName(x,y,e)
@@ -37,12 +33,10 @@ function GrabIdentifiers(image_directory)
     files = readdir(image_directory)
     x_y_z_exp = [split(i, "_") for i in files]
     x_y_z = [[parse(Int, String(i[1])),parse(Int, String(i[2])), parse(Int, String(i[3]))] for i in x_y_z_exp]
+    
     exp = []
-    try
-        exp = unique([parse(Int, String(split(i[4], ".")[1])[4:end-3]) for i in x_y_z_exp])
-    catch # For one exposure
-        exp = ["NoIR"]
-    end
+    exp = unique([parse(Int, String(split(i[4], ".")[1])[4:end]) for i in x_y_z_exp])
+
     x = unique([i[1] for i in x_y_z])
     y = unique([i[2] for i in x_y_z])
     z = unique([i[3] for i in x_y_z])
@@ -50,7 +44,7 @@ function GrabIdentifiers(image_directory)
     x = sort(x)
     y = sort(y)
     z = sort(z)
-    
+
     return Datastructures.ImagingGrid(x,y,z,exp)
 end
 

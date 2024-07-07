@@ -48,7 +48,7 @@ end
 
 function fnameFocused(x,y,e)
     #return "FeltFocused_y=$(x)_z=$(y)_e=$(e).png"
-    return "FeltFocused_y=$(x)_z=$(y)_e=NoIR.png"
+    return "FeltFocused_y=$(x)_z=$(y)_e=$(e).png"
 end
 
 function GetImageGrid(ImagingParams,fnamefunc=fnameFocused)

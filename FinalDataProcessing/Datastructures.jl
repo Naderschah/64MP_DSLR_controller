@@ -18,7 +18,7 @@ mutable struct ImagingGrid
     x::Array{Int64,1}
     y::Array{Int64,1}
     z::Array{Int64,1}
-    exp::Array{String,1}
+    exp::Array{Int64,1}
 end
 
 

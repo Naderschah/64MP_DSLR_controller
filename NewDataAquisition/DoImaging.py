@@ -24,7 +24,7 @@ As command line options the following need to be provided
 
 
 """
-from Controler_Classes import Grid_Handler, Camera_Handler
+from Controler_Classes import Grid_Handler, Camera_Handler, Accelerometer
 from ULN2003Pi import ULN2003
 import time, json, sys, os
 import numpy as np
@@ -47,6 +47,7 @@ grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']),
 # Keep all control structures enabled to allow easy grid alignment
 cam = Camera_Handler(disable_tuning=True, disable_autoexposure=True)
 
+acc = Accelerometer()
 
 ## Command line parsing
 cmd_line_opts = sys.argv[1:]
@@ -161,19 +162,22 @@ tot_time = sum(time_estimate_steps) + sum([len(coord_arr[2])*len(coord_arr[1])*e
 
 print("Assumed total time is {}".format(tot_time))
 
-for e in exposure:
-    print("Exposure: {}".format(e))
-    cam.set_exp(e)
-    for i in coord_arr[2]:
-        for j in coord_arr[1]:
-            for k in coord_arr[0]:
-                grid.move_to_coord([k,j,i])
-                time.sleep(0.01) 
-                cam.capture_image('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.png'.format(e))
-                print([k,j,i])
-            coord_arr[0] = coord_arr[0][::-1]
-        coord_arr[1] = coord_arr[1][::-1]
-    coord_arr[2] = coord_arr[2][::-1]
+with open(dir+'/meta.txt') as f:
+    for e in exposure:
+        print("Exposure: {}".format(e))
+        cam.set_exp(e)
+        for i in coord_arr[2]:
+            for j in coord_arr[1]:
+                for k in coord_arr[0]:
+                    grid.move_to_coord([k,j,i])
+                    time.sleep(0.01) 
+                    f.write("{},{},{}:{}".format(k,j,i,sum(acc.get())))
+                    cam.capture_image('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.png'.format(e))
+                    print([k,j,i])
+                    f.write("{},{},{}:{}".format(k,j,i,sum(acc.get())))
+                coord_arr[0] = coord_arr[0][::-1]
+            coord_arr[1] = coord_arr[1][::-1]
+        coord_arr[2] = coord_arr[2][::-1]
 
 t_diff = time.time()-start
 h = t_diff // 3600

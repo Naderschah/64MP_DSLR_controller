@@ -7,6 +7,12 @@ from picamera2 import Picamera2, Preview
 from libcamera import controls
 from tabulate import tabulate
 
+# Accelerometer
+import board
+import busio
+import adafruit_adxl34x
+
+
 class Grid_Handler:
     """
     Class to keep track of the imaging grid
@@ -300,6 +306,21 @@ class Camera_Handler:
     
     def stop(self):
         self.camera.stop()
+
+
+
+class Accelerometer:
+    data_range = 0 # +- 2g
+    data_rate = 0 # 0.10 Hz
+    def __init__(self):
+        i2c = busio.I2C(board.SCL, board.SDA)
+        self.accel = adafruit_adxl34x.ADXL345(i2c)
+        return
+    
+    def get(self):
+        return self.accel.acceleration
+
+
 
     
 

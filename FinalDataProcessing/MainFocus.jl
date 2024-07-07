@@ -16,7 +16,7 @@ using Images
 
 println("Loaded")
 
-path = "/Images/img_1/"
+path = "/Images/img_3/"
 save_path = "/SaveSpot/Tnut/"
 blackpoint = [0,0,0]
 contrast_precision = Float32 
