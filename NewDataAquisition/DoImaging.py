@@ -174,22 +174,25 @@ tot_time = sum(time_estimate_steps) + sum([len(coord_arr[2])*len(coord_arr[1])*e
 
 print("Assumed total time is {}".format(tot_time))
 
-with open(dir+'/meta.txt') as f:
-    for e in exposure:
-        print("Exposure: {}".format(e))
-        cam.set_exp(e)
-        for i in coord_arr[2]:
-            for j in coord_arr[1]:
-                for k in coord_arr[0]:
-                    grid.move_to_coord([k,j,i])
-                    time.sleep(0.01) 
-                    f.write("{},{},{}:{}".format(k,j,i,sum(acc.get())))
-                    cam.capture_image('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.png'.format(e))
-                    print([k,j,i])
-                    f.write("{},{},{}:{}".format(k,j,i,sum(acc.get())))
-                coord_arr[0] = coord_arr[0][::-1]
-            coord_arr[1] = coord_arr[1][::-1]
-        coord_arr[2] = coord_arr[2][::-1]
+with open(dir+'/timing.txt', 'w') as t:
+    with open(dir+'/meta.txt', 'w') as f:
+        for e in exposure:
+            print("Exposure: {}".format(e))
+            cam.set_exp(e)
+            for i in coord_arr[2]:
+                for j in coord_arr[1]:
+                    start = time.time()
+                    for k in coord_arr[0]:
+                        grid.move_to_coord([k,j,i])
+                        time.sleep(0.01) 
+                        f.write("{},{},{}:{}".format(k,j,i,sum(acc.get())))
+                        cam.capture_image('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.png'.format(e))
+                        print([k,j,i])
+                        f.write("{},{},{}:{}".format(k,j,i,sum(acc.get())))
+                    coord_arr[0] = coord_arr[0][::-1]
+                    t.write("{}".format(time.time()-start))
+                coord_arr[1] = coord_arr[1][::-1]
+            coord_arr[2] = coord_arr[2][::-1]
 
 t_diff = time.time()-start
 h = t_diff // 3600
