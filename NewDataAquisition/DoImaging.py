@@ -64,6 +64,8 @@ mm_per_step=motor_deg_per_step*stage_mm_per_deg
 print("mm per motor step {}".format(mm_per_step))
 step_size_x = 200
 
+imging_bounds = grid.gridbounds
+
 for i in cmd_line_opts:
     if i.startswith('exp'):
         arg = i.split('=')[1]
@@ -75,11 +77,11 @@ for i in cmd_line_opts:
     elif i.startswith('iso'):
         iso = int(i.split('=')[1])
     elif i.startswith("grid_x"):
-        grid.gridbounds[0] = float(i.split('=')[1])//mm_per_step
+        imging_bounds[0] = float(i.split('=')[1])//mm_per_step
     elif i.startswith("grid_y"):
-        grid.gridbounds[1] = float(i.split('=')[1])//mm_per_step
+        imging_bounds[1] = float(i.split('=')[1])//mm_per_step
     elif i.startswith("grid_z"):
-        grid.gridbounds[2] = float(i.split('=')[1])//mm_per_step
+        imging_bounds[2] = float(i.split('=')[1])//mm_per_step
     elif i.startswith("overlap"):
         overlap = float(i.split('=')[1])
     elif i.startswith("mag"):
@@ -131,7 +133,7 @@ steps = [step_size_x, *steps]
 # Quick memory check 
 print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
 # Generate array holding 
-coord_arr = [np.append(np.arange(0,grid.gridbounds[i], steps[i]), grid.gridbounds[i]).astype(int) for i in range(3)]
+coord_arr = [np.append(np.arange(0,imging_bounds[i], steps[i]), imging_bounds[i]).astype(int) for i in range(3)]
 # And again 
 print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
 # Quick print for imager
