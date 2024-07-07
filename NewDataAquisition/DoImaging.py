@@ -189,4 +189,4 @@ print("Completed in {}:{}:{}".format(h,m,int(s)))
 os.system('echo "False" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
 
 grid.disable_all(gpio_pins)
-cam.stop()
+cam.stop() 
