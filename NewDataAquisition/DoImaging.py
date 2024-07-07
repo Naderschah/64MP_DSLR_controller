@@ -60,6 +60,7 @@ res = [3040, 4056]
 motor_deg_per_step = 1/64/64*360
 stage_mm_per_deg = 0.5/360
 mm_per_step=motor_deg_per_step*stage_mm_per_deg
+print("mm per motor step {}".format(mm_per_step))
 step_size_x = 200
 
 for i in cmd_line_opts:
@@ -129,13 +130,18 @@ steps = [step_size_x, *steps]
 # Quick memory check 
 print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
 # Generate array holding 
-coord_arr = [np.arange(0,grid.gridbounds[i], steps[i]).astype(int) for i in range(3)]
+coord_arr = [np.arange(0,grid.gridbounds[i], steps[i]).append(grid.gridbounds[i]).astype(int) for i in range(3)]
 # And again 
 print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
 # Quick print for imager
 print("Image stop length per axis:")
 for i in coord_arr:
-    print(len(i))
+    print(str(len(i))+": {}".format(i))
+
+print("Imge stop length per axis in mm:")
+for i in coord_arr:
+    print(str(len(i))+": {}".format([j*mm_per_step for j in i]))
+print("Camera image width and height in mm: {}, {}".format(im_y_len, im_z_len))
 
 # Start camera for imaging
 cam.start()
@@ -148,7 +154,7 @@ for e in exposure:
             for k in coord_arr[0]:
                 grid.move_to_coord([k,j,i])
                 time.sleep(0.01) 
-                cam.capture_image('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{e}.png')
+                cam.capture_image('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.png'.format(e))
             coord_arr[0] = coord_arr[0][::-1]
         coord_arr[1] = coord_arr[1][::-1]
     coord_arr[2] = coord_arr[2][::-1]
