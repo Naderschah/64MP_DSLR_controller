@@ -56,7 +56,7 @@ exposure = None
 iso = None
 overlap = 0.2
 magnification = 2
-res = [3040, 4056]
+res = [4056,3040]
 # Compute mm per step 
 motor_deg_per_step = 1/64/64*360
 stage_mm_per_deg = 0.5/360
