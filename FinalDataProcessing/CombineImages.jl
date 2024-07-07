@@ -139,8 +139,8 @@ function GenerateFinalArray(ImagingParams, img_name_grid)
     im_width, im_height = size(img_name_grid) .+ 1
     println("im_width : $(im_width)") # TODO
     println("im_height: $(im_height)")
-    f_height = 10000#.im_height * (1-ImagingParams.overlap) * (im_height+1) # TODO +1 tmp shouldnt be required
-    f_width = 10000#.im_width * (1-ImagingParams.overlap) * (im_width+1) # TODO +1 tmp shouldnt be required
+    f_height = 20000#.im_height * (1-ImagingParams.overlap) * (im_height+1) # TODO +1 tmp shouldnt be required
+    f_width = 20000#.im_width * (1-ImagingParams.overlap) * (im_width+1) # TODO +1 tmp shouldnt be required
     f_height = trunc(Int,f_height)+10
     f_width = trunc(Int,f_width)+10
     final_array = zeros(f_height,f_width,3)

@@ -13,6 +13,15 @@ As command line options the following need to be provided
  <ident>=<val>
 
  TODO Enable res changes in camera
+ TODO Rework bounds finding, make it so that the input is the minimal area covered
+        Also check that this is within original gridbounds
+ TODO Add time estimate, 100Hz stepping * exp + overhead per im 
+
+
+
+ mm_per_step conversion, the motors are:
+
+
 
 """
 from Controler_Classes import Grid_Handler, Camera_Handler
@@ -47,7 +56,10 @@ iso = None
 overlap = 0.2
 magnification = 2
 res = [3040, 4056]
-mm_per_step=0.00012397
+# Compute mm per step 
+motor_deg_per_step = 1/64/64*360
+stage_mm_per_deg = 0.5/360
+mm_per_step=motor_deg_per_step*stage_mm_per_deg
 step_size_x = 200
 
 for i in cmd_line_opts:
