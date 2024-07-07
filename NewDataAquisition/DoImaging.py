@@ -90,7 +90,17 @@ for i in cmd_line_opts:
         res[0] = int(i.split('=')[1])
     elif i.startswith("res_y"):
         res[1] = int(i.split('=')[1])
-        
+
+for i in range(len(imging_bounds)):
+    if imging_bounds[i] > grid.gridbounds[i]:
+        print("Warning: Imaging bounds larger than gridbounds!")
+        print("Maximum Gridbounds:")
+        print(grid.gridbounds)
+        print("And in millimeters")
+        print([i//mm_per_step for i in grid.gridbounds])
+        sys.exit(0)
+
+
 
 if exposure is None:
     print("Specify the exposure time in ms")
