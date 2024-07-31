@@ -31,6 +31,8 @@ end
 # Get image identifiers from directory
 function GrabIdentifiers(image_directory)
     files = readdir(image_directory)
+    filter!(!=("meta.txt"), files)
+    filter!(!=("tmp"), files)
     x_y_z_exp = [split(i, "_") for i in files]
     x_y_z = [[parse(Int, String(i[1])),parse(Int, String(i[2])), parse(Int, String(i[3]))] for i in x_y_z_exp]
     

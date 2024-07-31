@@ -12,10 +12,11 @@ As command line options the following need to be provided
  Formating is 
  <ident>=<val>
 
- TODO Enable res changes in camera
  TODO Rework bounds finding, make it so that the input is the minimal area covered
         Also check that this is within original gridbounds
+        What does this mean
  TODO Add time estimate, 100Hz stepping * exp + overhead per im 
+        I think i did this and it didnt work, so I guess measure and estimate based on resolution?
 
 
 
@@ -44,10 +45,6 @@ grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']),
                     endstops = gpio_pins['Endstops'],
                     ingore_gridfile=False)
 
-# Keep all control structures enabled to allow easy grid alignment
-cam = Camera_Handler(disable_tuning=True, disable_autoexposure=True)
-
-acc = Accelerometer()
 
 ## Command line parsing
 cmd_line_opts = sys.argv[1:]
@@ -57,6 +54,7 @@ iso = None
 overlap = 0.2
 magnification = 2
 res = [4056,3040]
+px_count = [4056,3040]
 # Compute mm per step 
 motor_deg_per_step = 1/64/64*360
 stage_mm_per_deg = 0.5/360
@@ -90,6 +88,16 @@ for i in cmd_line_opts:
         res[0] = int(i.split('=')[1])
     elif i.startswith("res_y"):
         res[1] = int(i.split('=')[1])
+
+
+# Keep all control structures enabled to allow easy grid alignment
+cam = Camera_Handler(disable_tuning=True, 
+                     disable_autoexposure=True, 
+                     res={"size":(res[0],res[1])})
+
+acc = Accelerometer()
+
+
 
 for i in range(len(imging_bounds)):
     if imging_bounds[i] > grid.gridbounds[i]:
@@ -133,12 +141,12 @@ print('Changed directory to {}'.format(dir))
 
 # Make imaging array, first grab camera data  TODO Grab what possible from the camera
 px_size = 1.55*1e-3 
-im_y_len =  res[0]*px_size # mm width
-im_z_len =  res[1]*px_size
+im_y_len =  px_count[0]*px_size # mm width
+im_z_len =  px_count[1]*px_size
 
 effective_steps_per_mm_in_image = 1/(magnification*mm_per_step)
 # Steps to move overlap distance
-steps = [i*px_size * effective_steps_per_mm_in_image * (1-overlap) for i in res]
+steps = [i*px_size * effective_steps_per_mm_in_image * (1-overlap) for i in px_count]
 steps = [step_size_x, *steps]
 # Quick memory check 
 print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)

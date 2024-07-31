@@ -3,16 +3,59 @@ import .Datastructures
 include("CombineImages.jl")
 import .ImageCombining
 using Images
+include("MIST_reimplementation.jl")
+import .MIST
 
 # Compute mm per step 
 motor_deg_per_step = 1/64/64*360
 stage_mm_per_deg = 0.5/360
 mm_per_step=motor_deg_per_step*stage_mm_per_deg
 
+# Random 
+LoG_kernel = [[0,1,1,2,2,2,1,1,0] [1,2,4,5,5,5,4,2,1] [1,4,5,3,0,3,5,4,1] [2,5,3,-12,-24,-12,3,5,2] [2,5,0,-24,-40,-24,0,5,2] [2,5,3,-12,-24,-12,3,5,2] [1,4,5,3,0,3,5,4,1] [1,2,4,5,5,5,4,2,1] [0,1,1,2,2,2,1,1,0] ]
+
 offsets = [0,0]
-# Create data struct
-IP = Datastructures.ImagingParameters("16000", 2, 1.55*10^-3, mm_per_step, 0.2, "/SaveSpot/Tnut/","/SaveSpot/Tnut/combined/", 16, 480, 640,offsets)
+# Processing Parameters
+IP = Datastructures.ImagingParameters(
+    "16000",                    # Exposure in ms string for some reason
+    2,                          # Magnification (float)
+    1.55*10^-3,                 # Px_size 
+    mm_per_step,                # mm traveled per step of linear stage
+    0.2,                        # Image overlap in x & y 
+    "/SaveSpot/Tnut/",          # Image Path
+    "/SaveSpot/Tnut/combined/", # Save Path
+    16,                         # Bit depth
+    480,                        # Image width      TODO: Why is this the wrong way around
+    640,                        # Image height
+    offsets                     # Offsets to apply in processing
+    )
+
+MP = MIST.MISTParameters(
+    20,         # Percent overlap error
+    IP.overlap, # Estimated Overlap in x
+    IP.overlap, # Estimated overlap in y 
+    10          # Repeatability
+    )
+
+method = "Central" # Choice of MIST, Central
 # Do alignment
-f_im = ImageCombining.CentralAlign(IP,offsets)
+start = time()
+if method == "Central"
+    f_im = ImageCombining.CentralAlign(IP,offsets)
+elseif method == "MIST" # TODO Orientation may become problematic here
+    img_name_grid = MIST.build_img_name_grid(path, [0, 0, 1]) 
+    # TODO Test this, i vaguely recall it generating greyscale instead of color and there being
+    # Some issue with the output dimensions
+    f_im = Stitch(IP.path, 
+               IP.save_path, 
+               img_name_grid, 
+               LoG_kernel, 
+               MIST.nothing_func, # In case some extra processing is to be applied to the image loading
+               MP)
+else
+    println("Method not recognized")
+end
+println("Took $(time()-start) seconds")
+
 # Save image
 Images.save("$(IP.save_path)Central_Align.png",f_im)

@@ -16,7 +16,7 @@ using Images
 
 println("Loaded")
 
-path = "/Images/img_3/"
+path = "/Images/img_6/"
 save_path = "/SaveSpot/Tnut/"
 blackpoint = [0,0,0]
 contrast_precision = Float32 
@@ -47,6 +47,10 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,tst::Bool=f
     # Iterate the imaging grid
     total = length(ImagingGrid.y)*length(ImagingGrid.z)*length(ImagingGrid.exp)
     counter = 0
+    #Temp directory as it uses too much ram and on harddrive since MKR by default sources from the harddrive path
+    if !isdir(joinpath(parameters.path, "tmp")) 
+        mkdir(joinpath(parameters.path, "tmp"))
+    end
     for ei in ImagingGrid.exp
     for yi in ImagingGrid.y
     for zi in ImagingGrid.z
@@ -60,12 +64,23 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,tst::Bool=f
             while fail_count <= 4
                 println("Processing image $(counter) out of $(total)")
                 println("Current Focus Name: $(final_name)")
-                
+                # TODO: Automate below for different amounts of memory to be used
                 # Generate file names
                 fnames = [IO_dp.GenerateFileName(xi,yi,zi,ei) for xi in ImagingGrid.x]
-                # Run stacking for yze postion
+                # Run stacking for yze postion and split them as too much ram is used
                 println("Starting MKR fusion")
-                image = ImageFusion.MKR(fnames, parameters, epsilons[fail_count])
+                image = ImageFusion.MKR(fnames[begin:4:end], parameters, epsilons[fail_count])
+                Images.save(joinpath(parameters.path, "tmp", "im_1.png"), image)
+                image = ImageFusion.MKR(fnames[begin+1:4:end], parameters, epsilons[fail_count])
+                Images.save(joinpath(parameters.path, "tmp", "im_2.png"), image)
+                image = ImageFusion.MKR(fnames[begin+2:4:end], parameters, epsilons[fail_count])
+                Images.save(joinpath(parameters.path, "tmp", "im_3.png"), image)
+                image = ImageFusion.MKR(fnames[begin+3:4:end], parameters, epsilons[fail_count])
+                Images.save(joinpath(parameters.path, "tmp", "im_4.png"), image)
+
+                # And now fuse the remaining three images
+                image = ImageFusion.MKR([joinpath("tmp", "im_1.png"), joinpath("tmp", "im_2.png"),joinpath("tmp", "im_3.png"),joinpath("tmp", "im_4.png") ], parameters, epsilons[fail_count])
+
                 # Save Image check for nans
                 if any(isnan.(image))
                   printstyled("Warning: Image $(final_name) contains NaNs. Retrying...\n", color=:red)
