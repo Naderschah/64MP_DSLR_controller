@@ -26,7 +26,7 @@ As command line options the following need to be provided
 
 
 """
-from Controler_Classes import init_grid, Camera_Handler, Accelerometer
+from Controler_Classes import init_grid, Camera_Handler, Accelerometer, conv_to_mm
 import time, json, sys, os
 import numpy as np
 import psutil
@@ -46,12 +46,9 @@ overlap = 0.2
 magnification = 2
 res = [4056,3040]
 px_count = [4056,3040]
-# Compute mm per step 
-motor_deg_per_step = 1/64/64*360
-stage_mm_per_deg = 0.5/360
-mm_per_step=motor_deg_per_step*stage_mm_per_deg
-print("mm per motor step {}".format(mm_per_step))
+
 step_size_x = 200
+mm_per_step = conv_to_mm(1)
 
 imging_bounds = grid.gridbounds
 

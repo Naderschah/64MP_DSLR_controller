@@ -18,11 +18,11 @@ The following scripts can be found here:
     - Sources metadata from file
     - Has command line options for fraction of grid to observe - TODO: How are these most easily defined?
 
-- CheckFocus TODO: Check if the last two points should be the other way around
+- CheckFocus 
     - Pre Imaging to allow centering of subject
     - Prints current gridbounds and mm conversion
-    - Aligns camera to x=y=0 and max position of z to allow checking of focus point in height
-    - Aligns camera to x=y=z=0 to again check focus point
+    - Aligns camera to zero point of grid and closest to camera, and zero point and furthest from camera
+    - TODO: Should I just use a monitor for this again? Moving back and forth is kinda annoying, but a monitor jsut for this is also kinda annoying
 
 - Pinout.json
     - Contains the pinout for endstops stepper motors etc. 

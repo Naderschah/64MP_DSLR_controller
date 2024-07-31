@@ -35,7 +35,7 @@ print("Type exit to continue with the focus at x_max,0,0")
 print("Type exitnow to terminate now")
 while True:
     res = input()
-    if res == 'capture':
+    if res == 'capture' or res == 'c':
         cam.start()
         cam.capture_image(str(Path.home())+'/cam_check_capture.png')
         cam.stop()
@@ -59,7 +59,7 @@ print("Type 'capture' to take an image and display it")
 print("Type exit to terminate script")
 while True:
     res = input()
-    if res == 'capture':
+    if res == 'capture' or res == 'c':
         cam.start()
         cam.capture_image(str(Path.home())+'/cam_check_capture.png')
         cam.stop()

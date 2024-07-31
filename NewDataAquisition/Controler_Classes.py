@@ -7,6 +7,7 @@ from picamera2 import Picamera2, Preview
 from libcamera import controls
 from tabulate import tabulate
 from ULN2003Pi import ULN2003
+import numpy as np
 
 # Accelerometer
 import board
@@ -339,15 +340,29 @@ def print_grid(grid,mm_per_step=0.00012397): # TODO : Number may be wrong
 
 
 
-def init_grid(pinout_path = './Pinout.json', ingore_gridfile = False):
+def init_grid(pinout_path = './Pinout.json', ingore_gridfile = False, half_step = True):
     with open(pinout_path, 'r') as f:
         gpio_pins = json.load(f)
 
-    grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']), 
-                        motor_y=ULN2003.ULN2003(gpio_pins['y']), 
-                        motor_z=ULN2003.ULN2003(gpio_pins['z']), 
+    grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x'], half_step=half_step), 
+                        motor_y=ULN2003.ULN2003(gpio_pins['y'], half_step=half_step), 
+                        motor_z=ULN2003.ULN2003(gpio_pins['z'], half_step=half_step), 
                         motor_dir = gpio_pins['motor_dir'], 
                         endstops = gpio_pins['Endstops'],
                         ingore_gridfile=ingore_gridfile)
     
     return grid, gpio_pins
+
+def conv_to_mm(to_conv, half_step = True):
+    "Helper function to convert to mm"
+    if half_step:
+        rot_steps = 4096 # Data sheet is relative to half steps apparently -> 32 steps for full revolution in full step, and 1:64 gear ratio
+    else:
+        rot_steps = 2048
+    motor_deg_per_step = 360/rot_steps # degrees/ per steps for full rotation
+    stage_mm_per_deg = 0.5/360
+    mm_per_step=motor_deg_per_step*stage_mm_per_deg
+    if isinstance(to_conv, np.ndarray) or isinstance(to_conv, list):
+        return [i*mm_per_step for i in to_conv]
+    else:
+        return to_conv * mm_per_step
