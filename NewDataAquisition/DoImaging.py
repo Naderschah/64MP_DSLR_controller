@@ -209,5 +209,10 @@ s = (t_diff -3600*h - m*60) //1
 print("Completed in {}:{}:{}".format(h,m,int(s)))
 os.system('echo "False" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
 
+# Add move away from min such that one may safely find endstops on the next run
+print("Moving close to min points")
+grid.move_to_coord([i//8 for i in grid.gridbounds])
+
+
 grid.disable_all(gpio_pins)
 cam.stop() 

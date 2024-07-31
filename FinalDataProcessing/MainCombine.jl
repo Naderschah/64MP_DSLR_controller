@@ -11,9 +11,6 @@ motor_deg_per_step = 1/64/64*360
 stage_mm_per_deg = 0.5/360
 mm_per_step=motor_deg_per_step*stage_mm_per_deg
 
-# Random 
-LoG_kernel = [[0,1,1,2,2,2,1,1,0] [1,2,4,5,5,5,4,2,1] [1,4,5,3,0,3,5,4,1] [2,5,3,-12,-24,-12,3,5,2] [2,5,0,-24,-40,-24,0,5,2] [2,5,3,-12,-24,-12,3,5,2] [1,4,5,3,0,3,5,4,1] [1,2,4,5,5,5,4,2,1] [0,1,1,2,2,2,1,1,0] ]
-
 offsets = [0,0]
 # Processing Parameters
 IP = Datastructures.ImagingParameters(
@@ -29,7 +26,7 @@ IP = Datastructures.ImagingParameters(
     640,                        # Image height
     offsets                     # Offsets to apply in processing
     )
-
+# Below only needed if MIST is used
 MP = MIST.MISTParameters(
     20,         # Percent overlap error
     IP.overlap, # Estimated Overlap in x
@@ -49,7 +46,7 @@ elseif method == "MIST" # TODO Orientation may become problematic here
     f_im = Stitch(IP.path, 
                IP.save_path, 
                img_name_grid, 
-               LoG_kernel, 
+               MIST.LoG_kernel, 
                MIST.nothing_func, # In case some extra processing is to be applied to the image loading
                MP)
 else
