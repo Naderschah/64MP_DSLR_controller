@@ -31,6 +31,7 @@ import time, json, sys, os
 import numpy as np
 import psutil
 from pathlib import Path
+import copy
 
 
 start = time.time()
@@ -50,7 +51,7 @@ sensor_size = [7.564,5.467] # Sensor size in mm not px count
 step_size_x = 200
 mm_per_step = conv_to_mm(1)
 
-imging_bounds = grid.gridbounds
+imging_bounds = copy.deepcopy(grid.gridbounds)
 
 for i in cmd_line_opts:
     if i.startswith('exp'):
