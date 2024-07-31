@@ -4,9 +4,12 @@ The original idea of this project was to generate very high resolution images of
 
 With the final goal of turning these images into very high resolution 3d mappings of the subjects.
 
-The current set up looks like:
+The old set up looks like:
 
 <img src="./imgs/SetUp.jpg" alt="Microscope" width="800"/>
+
+The current set up looks like:
+TODO
 
 ## Image Aquisition
 
@@ -15,23 +18,16 @@ This folder holds the code to control the microscope, a GUI frontend was written
 
 This code may no longer be functional as several untested changes have been made and a significant portion of the code is no longer required.
 
-A full rewrite of this is planned once the new setup will be realized. 
+The main code for image acquisition is now in NewDataAquistion, utilizing scripts instead of a GUI as the GUI added way to much boilerplate code and complicated debugging and changing things quite significantly 
 
 
 ## Data Processing
 
 Most files are older stages of the pipeline trialing different things. A working version of the Software will be provided in the subfolder Final Data Processing. 
 
-While all files have some form of the working code they all aimed at adressing some problem.
-
-The actually in use version of the code are found in FocusStackingMKR/Create_final_single_mkr.jl where the Marten Kautz van Reeth algorithm is implemented in julia and actually produces results. 
-
-For image combining into a larger image, the MIST algorithm was partially implemented in julia, this can be found in MIST_reimplementation.jl
-
-
-Both scripts work with some caveats, for the first one wants to reduce background in the image as much as possible, for the second some preprocessing kernels often help the algorithm align the images
-
-I will be moving away from julia as I find all of the ways to organize my code to be rather aggitating, there is no nice way to group functions logically, for more info see [this](https://discourse.julialang.org/t/how-to-structure-project-in-julia/99458).
+Image stacking is now fully implemented with only two things left to do:
+- RAM usage control, for a large number of x images the code gets killed due to using too much ram, this is solved for now by simply splitting it into 4 batches such that MKR runs 5 times, a dynamic implementation of this (checking for total RAM used at maximum) is going to be added
+- For some reason width and height of the image in the meta data supplied to the code is inverted, I think this is due to the camera being rotated in older setups and I fergot that while writing the code and testing alongside, this si to be changed but effectively only amounts to a renaming
 
 
 ## Taken Images
@@ -57,6 +53,8 @@ Around the entire set up one finds black velvet as it is pretty good at absorbin
 
 
 ## Future Set-up
+
+Outdated: TODO rewrite some time
 
 For the next iteration of the set up the camera will be top mounted, this is mainly since the extension tubes get quite long and ensuring alignment is much easier when gravity is helping. 
 

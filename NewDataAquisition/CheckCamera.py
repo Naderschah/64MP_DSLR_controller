@@ -43,7 +43,7 @@ while True:
             to_run = {'e':cam.set_exp, 'i':cam.set_iso}[command[0]]
             val = int(command[1:])
             to_run(val)
-        elif command == "capture":
+        elif command == "capture" or command == "c":
             cam.start()
             cam.capture_image(str(Path.home())+'/cam_check_capture.png')
             cam.stop()

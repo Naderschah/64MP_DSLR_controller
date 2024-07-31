@@ -7,10 +7,10 @@ include("MIST_reimplementation.jl")
 import .MIST
 
 # Compute mm per step 
-motor_deg_per_step = 1/64/64*360
+rot_steps = 4096 # If half stepped otherwise 2048
+motor_deg_per_step = 360/rot_steps # degrees/ per steps for full rotation
 stage_mm_per_deg = 0.5/360
 mm_per_step=motor_deg_per_step*stage_mm_per_deg
-
 offsets = [0,0]
 # Processing Parameters
 IP = Datastructures.ImagingParameters(

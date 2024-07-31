@@ -353,6 +353,7 @@ def init_grid(pinout_path = './Pinout.json', ingore_gridfile = False, half_step 
     
     return grid, gpio_pins
 
+# Used to handle switch from half to full step or vice versa
 def conv_to_mm(to_conv, half_step = True):
     "Helper function to convert to mm"
     if half_step:

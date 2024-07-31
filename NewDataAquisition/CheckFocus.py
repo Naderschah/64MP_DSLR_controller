@@ -12,7 +12,7 @@ Used to determine subject positioning and camera height
 
 TODO: Order of grid move might be switched around
 """
-from Controler_Classes import init_grid, Camera_Handler
+from Controler_Classes import init_grid, Camera_Handler, conv_to_mm
 import time, json, sys, os
 from pathlib import Path
 

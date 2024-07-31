@@ -129,8 +129,8 @@ print('Changed directory to {}'.format(dir))
 
 # Make imaging array, first grab camera data  TODO Grab what possible from the camera
 px_size = 1.55*1e-3 
-im_y_len =  px_count[0]*px_size # mm width
-im_z_len =  px_count[1]*px_size
+im_y_len =  px_count[0]*px_size/magnification # mm width
+im_z_len =  px_count[1]*px_size/magnification
 
 effective_steps_per_mm_in_image = 1/(magnification*mm_per_step)
 # Steps to move overlap distance
