@@ -45,7 +45,7 @@ iso = None
 overlap = 0.2
 magnification = 2
 res = [4056,3040]
-px_count = [4056,3040]
+sensor_size = [7.564,5.467] # Sensor size in mm not px count
 
 step_size_x = 200
 mm_per_step = conv_to_mm(1)
@@ -127,14 +127,15 @@ os.mkdir(dir)
 os.chdir(dir)
 print('Changed directory to {}'.format(dir))
 
-# Make imaging array, first grab camera data  TODO Grab what possible from the camera
+# Make imaging array, first grab camera data
 px_size = 1.55*1e-3 
-im_y_len =  px_count[0]*px_size/magnification # mm width
-im_z_len =  px_count[1]*px_size/magnification
+im_y_len =  sensor_size[0]/magnification # mm width
+im_z_len =  sensor_size[1]/magnification
+#TODO Use sensor size instead
 
 effective_steps_per_mm_in_image = 1/(magnification*mm_per_step)
 # Steps to move overlap distance
-steps = [i*px_size * effective_steps_per_mm_in_image * (1-overlap) for i in px_count]
+steps = [i* effective_steps_per_mm_in_image * (1-overlap) for i in sensor_size]
 steps = [step_size_x, *steps]
 # Quick memory check 
 print(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
