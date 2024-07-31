@@ -11,7 +11,7 @@ The following scripts can be found here:
     - Then it will make all axis move to their extremes and determine the grid endstops
 
 - CheckCamera 
-    - Launches a GUI (taken from the old scripts) to determine exposure and ISO required
+    - Takes images and opens them using feh to determine exposure and ISO required (no preview as way to slow over ssh)
 
 - DoImaging 
     - Starts the imaging routine
@@ -27,7 +27,7 @@ The following scripts can be found here:
 - Pinout.json
     - Contains the pinout for endstops stepper motors etc. 
 
-- Grid_Classes.py TODO Define camera handler
+- Grid_Classes.py 
     - Defines all objects used for this project
 
 - Test_Endstops.py

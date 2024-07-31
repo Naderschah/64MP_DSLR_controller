@@ -1,29 +1,20 @@
-from Controler_Classes import Grid_Handler
-from ULN2003Pi import ULN2003
+from Controler_Classes import init_grid
 import json, time
 import sys
 
-with open('./Pinout.json', 'r') as f:
-    gpio_pins = json.load(f)
-
+# Defaul val
+ingore_gridfile = False
 #grid ignore for deleted/corrupted/non-existant grid files
 if len(sys.argv)>1:
     if sys.argv[1].strip() == 'gridignore':
-        grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']), 
-                    motor_y=ULN2003.ULN2003(gpio_pins['y']), 
-                    motor_z=ULN2003.ULN2003(gpio_pins['z']), 
-                    motor_dir = gpio_pins['motor_dir'], 
-                    endstops = gpio_pins['Endstops'],
-                    ingore_gridfile=True)
+        ingore_gridfile = True
     else:
         print("Invalid option")
 else:
-    grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']), 
-                    motor_y=ULN2003.ULN2003(gpio_pins['y']), 
-                    motor_z=ULN2003.ULN2003(gpio_pins['z']), 
-                    motor_dir = gpio_pins['motor_dir'], 
-                    endstops = gpio_pins['Endstops'],
-                    ingore_gridfile=False)
+    ingore_gridfile = False
+    
+grid,gpio_pins = init_grid(ingore_gridfile = ingore_gridfile)
+
 print("Set up Grid Controller")
 
 print("Movement commands are formated as: <Motor><Steps>, where <Motor>=x,y,z and steps is some number")

@@ -18,15 +18,15 @@ As command line options the following need to be provided
  TODO Add time estimate, 100Hz stepping * exp + overhead per im 
         I think i did this and it didnt work, so I guess measure and estimate based on resolution?
 
-
+ TODO So turns out the package utilizes half step by default, full step is implemented and supported
+        So switch to that (check the packages source code)
 
  mm_per_step conversion, the motors are:
 
 
 
 """
-from Controler_Classes import Grid_Handler, Camera_Handler, Accelerometer
-from ULN2003Pi import ULN2003
+from Controler_Classes import init_grid, Camera_Handler, Accelerometer
 import time, json, sys, os
 import numpy as np
 import psutil
@@ -35,16 +35,7 @@ from pathlib import Path
 
 start = time.time()
 # Initiate all the controller classs
-with open('./Pinout.json', 'r') as f:
-    gpio_pins = json.load(f)
-
-grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']), 
-                    motor_y=ULN2003.ULN2003(gpio_pins['y']), 
-                    motor_z=ULN2003.ULN2003(gpio_pins['z']), 
-                    motor_dir = gpio_pins['motor_dir'], 
-                    endstops = gpio_pins['Endstops'],
-                    ingore_gridfile=False)
-
+grid,gpio_pins = init_grid()
 
 ## Command line parsing
 cmd_line_opts = sys.argv[1:]

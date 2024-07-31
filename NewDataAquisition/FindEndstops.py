@@ -1,19 +1,9 @@
-from Controler_Classes import Grid_Handler
-from ULN2003Pi import ULN2003
+from Controler_Classes import init_grid
 import RPi.GPIO as GPIO
 import json
 
-# Load pinout
-with open('./Pinout.json', 'r') as f:
-    gpio_pins = json.load(f)
+grid,gpio_pins = init_grid(ingore_gridfile=True)
 
-# Generate Grid Handler
-grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']), 
-                    motor_y=ULN2003.ULN2003(gpio_pins['y']), 
-                    motor_z=ULN2003.ULN2003(gpio_pins['z']), 
-                    motor_dir = gpio_pins['motor_dir'], 
-                    endstops = gpio_pins['Endstops'],
-                    ingore_gridfile=True)
 print("Assure that none of the endstops are currently triggered")
 res = input('Press Y to start finding endstops, press N to move each motor 100 steps back and forth in order xyz, press xy and or z to select which axes to find endstops for')
 

@@ -10,21 +10,12 @@ Camera controls should be added to text based modification of settings as seen i
 
 
 """
-from Controler_Classes import Grid_Handler, Camera_Handler,print_grid
-from ULN2003Pi import ULN2003
+from Controler_Classes import init_grid, Camera_Handler,print_grid
 import time, json, os
 from pathlib import Path
 
 # Initiate all the controller classs
-with open('./Pinout.json', 'r') as f:
-    gpio_pins = json.load(f)
-
-grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']), 
-                    motor_y=ULN2003.ULN2003(gpio_pins['y']), 
-                    motor_z=ULN2003.ULN2003(gpio_pins['z']), 
-                    motor_dir = gpio_pins['motor_dir'], 
-                    endstops = gpio_pins['Endstops'],
-                    ingore_gridfile=False)
+grid,gpio_pins = init_grid()
 
 cam = Camera_Handler(disable_tuning=True, disable_autoexposure=True, low_res=True)
 

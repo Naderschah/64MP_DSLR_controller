@@ -6,6 +6,7 @@ import RPi.GPIO as GPIO
 from picamera2 import Picamera2, Preview
 from libcamera import controls
 from tabulate import tabulate
+from ULN2003Pi import ULN2003
 
 # Accelerometer
 import board
@@ -338,3 +339,15 @@ def print_grid(grid,mm_per_step=0.00012397): # TODO : Number may be wrong
 
 
 
+def init_grid(pinout_path = './Pinout.json', ingore_gridfile = False):
+    with open(pinout_path, 'r') as f:
+        gpio_pins = json.load(f)
+
+    grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']), 
+                        motor_y=ULN2003.ULN2003(gpio_pins['y']), 
+                        motor_z=ULN2003.ULN2003(gpio_pins['z']), 
+                        motor_dir = gpio_pins['motor_dir'], 
+                        endstops = gpio_pins['Endstops'],
+                        ingore_gridfile=ingore_gridfile)
+    
+    return grid, gpio_pins

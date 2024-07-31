@@ -12,21 +12,12 @@ Used to determine subject positioning and camera height
 
 TODO: Order of grid move might be switched around
 """
-from Controler_Classes import Grid_Handler, Camera_Handler
-from ULN2003Pi import ULN2003
+from Controler_Classes import init_grid, Camera_Handler
 import time, json, sys, os
 from pathlib import Path
 
 # Initiate all the controller classs
-with open('./Pinout.json', 'r') as f:
-    gpio_pins = json.load(f)
-
-grid = Grid_Handler(motor_x=ULN2003.ULN2003(gpio_pins['x']), 
-                    motor_y=ULN2003.ULN2003(gpio_pins['y']), 
-                    motor_z=ULN2003.ULN2003(gpio_pins['z']), 
-                    motor_dir = gpio_pins['motor_dir'], 
-                    endstops = gpio_pins['Endstops'],
-                    ingore_gridfile=False)
+grid,gpio_pins = init_grid()
 
 # Keep all control structures enabled to allow easy grid alignment
 cam = Camera_Handler(disable_tuning=False, disable_autoexposure=False,low_res=True)
@@ -79,3 +70,8 @@ while True:
         print("Command not recognized")
 
 grid.disable_all(gpio_pins)
+# Print gridsize for subject alignment
+motor_deg_per_step = 1/64/64*360
+stage_mm_per_deg = 0.5/360
+mm_per_step=motor_deg_per_step*stage_mm_per_deg
+print("Grid size in millimeters is approximately ", [i*mm_per_step for i in grid.gridbounds])
