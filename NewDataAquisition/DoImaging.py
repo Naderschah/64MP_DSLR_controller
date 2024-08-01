@@ -32,6 +32,18 @@ import numpy as np
 import psutil
 from pathlib import Path
 import copy
+import cv2
+
+def compute_contrast(image, kernel_size=9):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
+
+    # Generate LoG kernel
+    blur = cv2.GaussianBlur(gray, (kernel_size, kernel_size), 0)
+    # Change CV_32F to whatever the datatype of the passed or gray image is
+    laplacian = cv2.Laplacian(blur, cv2.CV_32F, ksize=kernel_size)
+    
+    # Calculate max, min, and mean
+    return laplacian.max(), laplacian.min(), laplacian.mean()
 
 
 start = time.time()
@@ -171,26 +183,34 @@ time_estimate_steps = [tot_move_dist_for_axis[i]/90 for i in range(len(exposure)
 tot_time = sum(time_estimate_steps) + sum([len(coord_arr[2])*len(coord_arr[1])*e for e in exposure])*1e-6
 
 print("Assumed total time is {}".format(tot_time))
-
-with open(dir+'/timing.txt', 'w') as t:
-    with open(dir+'/meta.txt', 'w') as f:
-        for e in exposure:
-            print("Exposure: {}".format(e))
-            cam.set_exp(e)
-            for i in coord_arr[2]:
-                for j in coord_arr[1]:
-                    start = time.time()
-                    for k in coord_arr[0]:
-                        grid.move_to_coord([k,j,i])
-                        time.sleep(0.01) 
-                        f.write("{},{},{}:{}\n".format(k,j,i,sum(acc.get())))
-                        cam.capture_image('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.png'.format(e))
-                        print([k,j,i])
-                        t.write("{}\n".format(time.time()-start))
-                        f.write("{},{},{}:{}".format(k,j,i,sum(acc.get())))
-                    coord_arr[0] = coord_arr[0][::-1]
-                coord_arr[1] = coord_arr[1][::-1]
-            coord_arr[2] = coord_arr[2][::-1]
+# TODO: Max accel filter for images
+with open(dir+'/meta.txt', 'a') as f:
+    f.write("x,y,z,accel,time since start, contrast max, contrast min, contrast mean")
+    for e in exposure:
+        print("Exposure: {}".format(e))
+        cam.set_exp(e)
+        for i in coord_arr[2]:
+            for j in coord_arr[1]:
+                start = time.time()
+                for k in coord_arr[0]:
+                    grid.move_to_coord([k,j,i])
+                    print([k,j,i])
+                    time.sleep(0.01) 
+                    _accel = acc.get() # Take accel just before and jsut after
+                    img = cam.capture_array()# Return image for contrast profiling
+                    _accel = (acc.get()+_accel)/2 # Take accel just before and jsut after
+                    # Wait till previous image saved
+                    cam.wait_for_thread()
+                    # start seperate thread to save image 
+                    # --> Note deepcopy to avoid the new img overwriting the old
+                    cam.threaded_save('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.png'.format(e), copy.deepcopy(img))
+                    # Doing this instead of threading adds ~12 min for 12000 images, io more important 
+                    res = compute_contrast(img, kernel_size=9) 
+                    f.write("{},{},{},{},{},{},{},{}\n".format(k,j,i,_accel,time.time()-start, res[0],res[1],res[2]))
+                    f.flush() #Just in case
+                coord_arr[0] = coord_arr[0][::-1]
+            coord_arr[1] = coord_arr[1][::-1]
+        coord_arr[2] = coord_arr[2][::-1]
 
 t_diff = time.time()-start
 h = t_diff // 3600

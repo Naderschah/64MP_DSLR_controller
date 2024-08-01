@@ -8,6 +8,8 @@ from libcamera import controls
 from tabulate import tabulate
 from ULN2003Pi import ULN2003
 import numpy as np
+from PIL import Image
+import threading
 
 # Accelerometer
 import board
@@ -229,6 +231,9 @@ class Camera_Handler:
                        res=res)
         
         self.disable_autoexposure = disable_autoexposure
+
+        # Create dummy thread
+        self.thread  = threading.Thread(self.dummy_thread,args=(), daemon=True)
         return
 
     def disable_algos(self,disable_tuning):
@@ -292,6 +297,29 @@ class Camera_Handler:
     def capture_image(self,path):
         self.camera.capture_file(path)
         return
+    
+    def capture_array(self):
+        img = self.camera.capture_array() # Returns (3040, 4056, 3)
+        #Image.fromarray(img).save(path)
+        return img
+    
+    def dummy_thread(self):
+        return
+
+    def threaded_save(self,path, img):
+        self.thread = threading.Thread(target=self.save, args=(path, img), daemon=True)
+        return
+    
+    def wait_for_thread(self):
+        start= time.time()
+        self.thread.join()
+        print("Waited {} seconds for thread to finish".format(time.time()-start))
+        return
+
+    def save(self,path, img):
+        Image.fromarray(img).save(path)
+        return
+    
     
     def start_preview(self,res=(720,480)):
         self.camera.stop()
