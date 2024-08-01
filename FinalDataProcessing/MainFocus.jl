@@ -27,17 +27,12 @@ debug = false
 #TODO: When loading the intermediaries the dimensions of the loaded image are inverted -> Why?
 pp = Datastructures.ProcessingParameters(contrast_precision, ContrastFunctions.LoG, GreyProjectors.lstar, blackpoint, path, save_path,width, height, debug)
 
-# To determine RAM limits check ram usage, 
-# for different number of images loaded of a certain resolution
-# Enter the maximum number before it crashes here
-# TODO: Actually compute theoretical RAM use for N images of size WxH for each datatype present and add some overhead to do this dynamically
-
-# 401 images in total for Mag 2 and 200 steps in X
-# 50 images uses about 70 GB vsz in total at max (between images) and minimum 50GB
-# batch of 50 takes 1.5 hrs per img
-# batch of 35 takes 1 hrs per img
-# Swap allocation really slows this down
+# 10 images works great, 30 min per set for 4k
 max_images = 10
+
+# TODO: Implement GenerateImageIgnoreList from IO_dp.jl once implmeneted in microscope --> Test methods
+#           Only generates indexing array for ignored vals
+#           Filter out fnames should be easiest
 
 function FocusFusion(parameters::Datastructures.ProcessingParameters,max_images::Int,tst::Bool=false)
     # Print process ID for debugging purposes
@@ -65,6 +60,7 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,max_images:
     total = length(ImagingGrid.y)*length(ImagingGrid.z)*length(ImagingGrid.exp)
     counter = 0
     
+    ignore = [IO_dp.GenerateFinalFileName(0,89571,48000)]
     
     for ei in ImagingGrid.exp
     for yi in ImagingGrid.y
@@ -72,8 +68,8 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,max_images:
         counter += 1
         final_name = IO_dp.GenerateFinalFileName(yi,zi,ei)
         success = false
-        # Check file doesnt exist
-        if !isfile("$(save_path)$(final_name)") || parameters.debug
+        # Check file doesnt exist, we arent in debug, and check if the file is to be ignored (missing data)
+        if ((!isfile("$(save_path)$(final_name)") || parameters.debug) && !(final_name in ignore))
             start = time()
             println("Processing image $(counter) out of $(total)")
             println("Current Focus Name: $(final_name)")
@@ -150,9 +146,11 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,max_images:
             end
 
         else
-
-            printstyled("$(final_name) already exists, skipping\n", color=:yellow)
-
+            if final_name in ignore
+                printstyled("$(final_name) to ignore as specified\n", color=:yellow)
+            else
+                printstyled("$(final_name) already exists, skipping\n", color=:yellow)
+            end
         end
     end
     end

@@ -6,6 +6,8 @@ module IO_dp
 include("./Datastructures.jl")
 import .Datastructures
 
+using StatsBase
+
 include("./ImagePlacement.jl")
 
 export GenerateFileName, GenerateFinalFileName, FixPath, GrabIdentifiers, GetFocusedIdentifiers, GetFocusedImageGrid, LoadDNGLibRaw, RowColumnIndexNaming
@@ -148,6 +150,80 @@ function RowColumnIndexNaming(ImagingParams::Datastructures.ProcessingParameters
     end
     return img_name_grid
 end
+
+
+function ParseMetaFile(path)
+    f = open(path, "r")
+    cont = read(f, String)
+    close(f)
+
+    cont = split(cont, "\n")
+    # 1 is header
+    cont = [split(cont[i], ",") for i in 2:length(cont)]
+    # Change dtypes
+    cont[:,1:3]  = Int.(cont[:,1:3])
+    cont[:,4:end] = Float.(cont[:,4:end])
+    x_val = length(unique(cont[:,1]))
+    y_val = length(unique(cont[:,2]))
+    z_val = length(unique(cont[:,3]))
+
+    accel = vec(cont[:,4])
+    # Just some info
+    printstyled("Acceleration statistics: mean=$(mean(accel)) std=$(std(accel)) max=$(maximum(accel)) min=$(minimum(accel))", color=:yellow)
+
+    contrast = zeros(Float, (3, x_val, y_val, z_val))
+    # Populate structured array
+    for i in eachindex(cont)
+        contrast[:,cont[i,1],cont[i,2],cont[i,3]] = cont[i,6:8]
+    end
+    # And unpack
+    contrast_max, contast_min, contrast_mean = Tuple(contrast[i,:,:,:] for i in 1:3)
+    return contrast_max, contast_min, contrast_mean
+end
+
+function GenerateImageIgnoreList(contrast_max, contast_min, contrast_mean, cont_method=1)
+    #TODO Watch out contrast vals computes mean max and min
+    # Could be useful to compute stats based on mean, and then also take into account max for selection 
+
+    # We will first generate some statistics from mean
+    flattend_contrast = vec(contrast_mean)
+    _mean,_median, _std, _min, _max = mean(flattend_contrast), median(flattend_contrast),std(flattend_contrast), minimum(flattend_contrast), maximum(flattend_contrast)
+
+    prinln("_mean")
+    prinln(_mean)
+    prinln("_median")
+    prinln(_median)
+    prinln("_std")
+    prinln(_std )
+    prinln("_min")
+    prinln(_min )
+    prinln("_max")
+    prinln(_max)
+
+    # TODO: Test the filtering technique
+    if cont_method == 1
+        threshhold = _mean - _std
+    elseif cont_method == 2
+        threshhold = _median - _std
+    elseif cont_method == 3
+        threshhold = _max - 2*_std
+    elseif cont_method == 4
+        threshhold = (_min+_max)/2 - _std 
+    elseif cont_method == 5
+        threshhold = (_mean+_median)/2 -_std
+    else
+        println("Please specify a method")
+    end
+
+    printstyled("Rejecting $(round(100*(flattend_contrast .< threshhold)/length(flattend_contrast)))", color=:yellow)
+    println("Threshhold $(threshhold)")
+
+    # Return indexing array
+    return contrast_mean .> threshhold
+end
+
+
+
 
 end # module
 
