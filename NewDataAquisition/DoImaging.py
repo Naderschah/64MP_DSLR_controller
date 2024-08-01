@@ -183,12 +183,12 @@ with open(dir+'/timing.txt', 'w') as t:
                     for k in coord_arr[0]:
                         grid.move_to_coord([k,j,i])
                         time.sleep(0.01) 
-                        f.write("{},{},{}:{}".format(k,j,i,sum(acc.get())))
+                        f.write("{},{},{}:{}\n".format(k,j,i,sum(acc.get())))
                         cam.capture_image('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.png'.format(e))
                         print([k,j,i])
+                        t.write("{}\n".format(time.time()-start))
                         f.write("{},{},{}:{}".format(k,j,i,sum(acc.get())))
                     coord_arr[0] = coord_arr[0][::-1]
-                    t.write("{}".format(time.time()-start))
                 coord_arr[1] = coord_arr[1][::-1]
             coord_arr[2] = coord_arr[2][::-1]
 
