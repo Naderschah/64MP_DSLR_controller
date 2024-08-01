@@ -17,13 +17,14 @@ using IterTools
 
 println("Loaded")
 
-path = "/Images/img_6/"
-save_path = "/SaveSpot/Tnut/"
+path = "/Images/img_2/"
+save_path = "/SaveSpot/FakeBee/"
 blackpoint = [0,0,0]
 contrast_precision = Float32 
 width = 3040
 height = 4056
 debug = false
+#TODO: When loading the intermediaries the dimensions of the loaded image are inverted -> Why?
 pp = Datastructures.ProcessingParameters(contrast_precision, ContrastFunctions.LoG, GreyProjectors.lstar, blackpoint, path, save_path,width, height, debug)
 
 # To determine RAM limits check ram usage, 
@@ -31,9 +32,16 @@ pp = Datastructures.ProcessingParameters(contrast_precision, ContrastFunctions.L
 # Enter the maximum number before it crashes here
 # TODO: Actually compute theoretical RAM use for N images of size WxH for each datatype present and add some overhead to do this dynamically
 
-max_images = 
+# 401 images in total for Mag 2 and 200 steps in X
+# 50 images uses about 70 GB vsz in total at max (between images) and minimum 50GB
+# batch of 50 takes 1.5 hrs per img
+# batch of 35 takes 1 hrs per img
+# Swap allocation really slows this down
+max_images = 10
 
 function FocusFusion(parameters::Datastructures.ProcessingParameters,max_images::Int,tst::Bool=false)
+    # Print process ID for debugging purposes
+    println("PID: $(getpid())")
     if tst # When profiling need to run once to initialize
         return
     end
@@ -56,12 +64,8 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,max_images:
     # Iterate the imaging grid
     total = length(ImagingGrid.y)*length(ImagingGrid.z)*length(ImagingGrid.exp)
     counter = 0
-    # Print process ID for debugging purposes
-    println("PID: $(getpid())")
-    #Temp directory as it uses too much ram and on harddrive since MKR by default sources from the harddrive path
-    if !isdir(joinpath(parameters.path, "tmp")) 
-        mkdir(joinpath(parameters.path, "tmp"))
-    end
+    
+    
     for ei in ImagingGrid.exp
     for yi in ImagingGrid.y
     for zi in ImagingGrid.z
@@ -71,62 +75,71 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,max_images:
         # Check file doesnt exist
         if !isfile("$(save_path)$(final_name)") || parameters.debug
             start = time()
-                println("Processing image $(counter) out of $(total)")
-                println("Current Focus Name: $(final_name)")
-                # Generate file names
-                fnames = [IO_dp.GenerateFileName(xi,yi,zi,ei) for xi in ImagingGrid.x]
-                # Run stacking for yze postion and split them as too much ram is used
-                println("Starting MKR fusion")
-                counter = 0
-                for batch in IterTools.partition(fnames, max_images)
-                    fail_count = 1
-                    while fail_count <= allowed_fail 
+            println("Processing image $(counter) out of $(total)")
+            println("Current Focus Name: $(final_name)")
+            # Generate file names
+            fnames = [IO_dp.GenerateFileName(xi,yi,zi,ei) for xi in ImagingGrid.x]
+            # Run stacking for yze postion and split them as too much ram is used
+            println("Starting MKR fusion")
+            counter_ = 0
+            #Temp directory as it uses too much ram and on harddrive since MKR by default sources from the harddrive path
+            if !isdir(joinpath(parameters.path, "$(yi)_$(zi)_$(ei)")) 
+                mkdir(joinpath(parameters.path, "$(yi)_$(zi)_$(ei)"))
+            end
+            for batch in IterTools.partition(fnames, max_images)
+                fail_count = 1
+                while fail_count <= allowed_fail 
+                    if !isfile(joinpath(parameters.path, "$(yi)_$(zi)_$(ei)", "im_$(counter_).png")) || parameters.debug
                         image = ImageFusion.MKR(batch, parameters, epsilons[fail_count])
                         # Save Image check for nans
                         if any(isnan.(image))
-                            printstyled("Warning: Image $(joinpath(parameters.path, "tmp", "im_$(counter).png")) contains NaNs. Retrying...\n", color=:red)
+                            printstyled("Warning: Image $(joinpath(parameters.path, "$(yi)_$(zi)_$(ei)", "im_$(counter_).png")) contains NaNs. Retrying...\n", color=:red)
                             fail_count += 1
                         else
-                            images.save(joinpath(parameters.path, "tmp", "im_$(counter).png"), image)
-                            counter += 1
+                            Images.save(joinpath(parameters.path, "$(yi)_$(zi)_$(ei)", "im_$(counter_).png"), image)
+                            counter_ += 1
                             success = true
                             break
                         end
-                    end
-                    if success
-                        printstyled("Completed $(joinpath(parameters.path, "tmp", "im_$(counter).png"))\n", color=:green)
-                        printstyled("Time elapsed: $(time() - start)\n", color=:blue)
-                    else
-                        printstyled("Failed $(joinpath(parameters.path, "tmp", "im_$(counter).png"))\n", color=:red)
-                        printstyled("Time elapsed: $(time() - start)\n", color=:red)
-                        failed_im = push!(failed_im, final_name)
-                    end
-                end
-                while fail_count <= allowed_fail
-                    success = false
-                    # And now fuse the remaining images (TODO this will at some point be more than N images, make this dynamically work)
-                    image = ImageFusion.MKR([joinpath("tmp", "im_$(i).png") for i in 0:counter] , parameters, epsilons[fail_count])
-                    if any(isnan.(image))
-                        printstyled("Warning: Image $(final_name) contains NaNs. Retrying...\n", color=:red)
-                        fail_count += 1
-                    else
-                        # Save the image and mark as successful if no NaNs found
-                        savepath = joinpath(save_path, final_name)
-                        Images.save(savepath, image)
-                        println("Image $(final_name) saved successfully.")
+                    else # Terminate if already exists
+                        printstyled("$(joinpath(parameters.path, "$(yi)_$(zi)_$(ei)", "im_$(counter_).png")) already exists, skipping\n", color=:yellow)
+                        counter_ += 1
                         success = true
                         break
                     end
                 end
                 if success
-                    printstyled("Completed $(final_name)\n", color=:green)
+                    printstyled("Completed $(joinpath(parameters.path, "$(yi)_$(zi)_$(ei)", "im_$(counter_).png"))\n", color=:green)
                     printstyled("Time elapsed: $(time() - start)\n", color=:blue)
                 else
-                    printstyled("Failed $(final_name)\n", color=:red)
+                    printstyled("Failed $(joinpath(parameters.path, "$(yi)_$(zi)_$(ei)", "im_$(counter_).png"))\n", color=:red)
                     printstyled("Time elapsed: $(time() - start)\n", color=:red)
                     failed_im = push!(failed_im, final_name)
                 end
-
+            end
+            fail_count  = 1
+            while fail_count <= allowed_fail
+                #TODO: The width and height are the other way around here for some reason when loading the images
+                parameters_tmp = deepcopy(parameters)
+                _width = parameters.width
+                _height = parameters.height
+                parameters_tmp.width = _height
+                parameters_tmp.height = _width
+                success = false
+                # And now fuse the remaining images (TODO this will at some point be more than N images, make this dynamically work)
+                image = ImageFusion.MKR([joinpath("$(yi)_$(zi)_$(ei)", "im_$(i).png") for i in 0:counter_-1] , parameters_tmp, epsilons[fail_count])
+                if any(isnan.(image))
+                    printstyled("Warning: Image $(final_name) contains NaNs. Retrying...\n", color=:red)
+                    fail_count += 1
+                else
+                    # Save the image and mark as successful if no NaNs found
+                    savepath = joinpath(save_path, final_name)
+                    Images.save(savepath, image)
+                    println("Image $(final_name) saved successfully.")
+                    success = true
+                    break
+                end
+            end
             if success
                 printstyled("Completed $(final_name)\n", color=:green)
                 printstyled("Time elapsed: $(time() - start)\n", color=:blue)
@@ -135,6 +148,7 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,max_images:
                 printstyled("Time elapsed: $(time() - start)\n", color=:red)
                 failed_im = push!(failed_im, final_name)
             end
+
         else
 
             printstyled("$(final_name) already exists, skipping\n", color=:yellow)

@@ -30,12 +30,24 @@ end
 
 # Get image identifiers from directory
 function GrabIdentifiers(image_directory)
-    files = readdir(image_directory)
-    filter!(!=("meta.txt"), files)
-    filter!(!=("tmp"), files)
+    println(image_directory)
+    files = [f for f in readdir(image_directory) if (!isdir(joinpath(image_directory,f)) && splitext(basename(f))[end] != ".txt")]# readdir(image_directory)
     x_y_z_exp = [split(i, "_") for i in files]
     x_y_z = [[parse(Int, String(i[1])),parse(Int, String(i[2])), parse(Int, String(i[3]))] for i in x_y_z_exp]
-    
+    # In case loading files fucks up again
+    #problematic_entries = []
+    #for (index, item) in enumerate(x_y_z_exp)
+    #    try
+    #        # Attempt to access and process the fourth index as in your original expression
+    #        parsed_value = parse(Int, String(split(item[4], ".")[1])[4:end])
+    #    catch e
+    #        # If an error occurs, add the index and item to the problematic list
+    #        push!(problematic_entries, (index, item))
+    #    end
+    #end
+    #println(problematic_entries)
+    #println(isdir(files[problematic_entries[1][1]]))
+
     exp = []
     exp = unique([parse(Int, String(split(i[4], ".")[1])[4:end]) for i in x_y_z_exp])
 

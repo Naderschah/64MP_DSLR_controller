@@ -1,17 +1,19 @@
 
 This directory contains all code regarding image processing. 
 
-
-The main files to worry about are:
-- FocusFusion.jl
-- CombineImages.jl
+All files Main are for the full routine
 
 
-The first uses the MKR algorithm to Fuse the images 
+MainFocus
+- Runs focusing, note the max images parameter in the main function, 50 images took 1.5 hours per focus stack, 35 only 1 hour, we want to avoid moving images to swap, there will be an inflection point where it is favorable to load images into swap rather than parts from hard drive, find it
+- Currently work is being done to prefilter for images on the raspberry pi based on contrast values
 
-The second uses the MIST algorithm to combine these into a large image. 
+50 : 1.5hrs
+35 : 1hrs 
+20 : 0.5 hrs Still using a lot of swap
+10 : ~0.5hrs But now (from htop) using max 60% mem vsz seems to max out at 25GB
 
-All of the files still need to be populated
 
-TODO:
-- Figure out how i stitched images
+MainCombine
+- So far only CentralAlign has been tested in this implementation, MIST is to be done
+- Fiji was a trial, not worth using

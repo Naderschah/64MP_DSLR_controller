@@ -47,9 +47,9 @@ overlap = 0.2
 magnification = 2
 res = [4056,3040]
 sensor_size = [7.564,5.467] # Sensor size in mm not px count
-
-step_size_x = 200
+# Magnification : mm depth in focus
 mm_per_step = conv_to_mm(1)
+step_size_x = 12e-6 / mm_per_step # TODO This is way to small
 
 imging_bounds = copy.deepcopy(grid.gridbounds)
 
