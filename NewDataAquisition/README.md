@@ -22,7 +22,7 @@ The following scripts can be found here:
     - Pre Imaging to allow centering of subject
     - Prints current gridbounds and mm conversion
     - Aligns camera to zero point of grid and closest to camera, and zero point and furthest from camera
-    - TODO: Should I just use a monitor for this again? Moving back and forth is kinda annoying, but a monitor jsut for this is also kinda annoying
+    - TODO: Should I just use a monitor for this again? Moving back and forth is kinda annoying, but a monitor jsut for this is also kinda annoying, if i get a server pc to get the code running might as well
 
 - Pinout.json
     - Contains the pinout for endstops stepper motors etc. 
@@ -39,7 +39,5 @@ The following scripts can be found here:
     - Allows moving motors through simple commands
     - Usefull for determining desired movement direction and moving the stage to a different position
 
-
-TODO: On grid off, move to start of step sequence to continue microstepping from there, record steps taken
 
 

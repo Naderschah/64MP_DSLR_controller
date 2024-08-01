@@ -12,16 +12,9 @@ As command line options the following need to be provided
  Formating is 
  <ident>=<val>
 
- TODO Rework bounds finding, make it so that the input is the minimal area covered
-        Also check that this is within original gridbounds
-        What does this mean
- TODO Add time estimate, 100Hz stepping * exp + overhead per im 
-        I think i did this and it didnt work, so I guess measure and estimate based on resolution?
+ TODO Wait for acceleration and thread time data to see if full stepping is worth using
 
- TODO So turns out the package utilizes half step by default, full step is implemented and supported
-        So switch to that (check the packages source code)
-
- mm_per_step conversion, the motors are:
+ mm_per_step conversion, the motors are: conv_to_mm(1) defautl function for this now
 
 
 
@@ -59,9 +52,13 @@ overlap = 0.2
 magnification = 2
 res = [4056,3040]
 sensor_size = [7.564,5.467] # Sensor size in mm not px count
-# Magnification : mm depth in focus
-mm_per_step = conv_to_mm(1)
-step_size_x = 12e-6 / mm_per_step # TODO This is way to small
+mm_per_step = conv_to_mm(1) # ~0.122 mu m per step or 122 nm per step
+
+# Focus depth is 12 mu m 
+# TODO Use computed after the profiling is done
+# The below is most likely overkill go with 150? also how is focus depth defined gpt refuses to give me a usefull answer
+#step_size_x = int(12 / mm_per_step ) # This is ~100 steps so double as many images now
+step_size_x = 200
 
 imging_bounds = copy.deepcopy(grid.gridbounds)
 
@@ -144,7 +141,6 @@ print('Changed directory to {}'.format(dir))
 px_size = 1.55*1e-3 
 im_y_len =  sensor_size[0]/magnification # mm width
 im_z_len =  sensor_size[1]/magnification
-#TODO Use sensor size instead
 
 effective_steps_per_mm_in_image = 1/(magnification*mm_per_step)
 # Steps to move overlap distance

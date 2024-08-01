@@ -9,8 +9,6 @@ Then on continue terminates camera window and moves to x=y=z=0
 Launches Camera Window
 
 Used to determine subject positioning and camera height
-
-TODO: Order of grid move might be switched around
 """
 from Controler_Classes import init_grid, Camera_Handler, conv_to_mm
 import time, json, sys, os

@@ -100,17 +100,6 @@ class Grid_Handler:
             self.pos[i] = int(pos[i])
         return
 
-    def reset_grid(self,axis=None):
-        """Resets the grid
-        
-        TODO: Not quite sure if this is needed
-        """
-        if axis == None:
-            self.zero_made = [False]*3
-        else:
-            self.zero_made[axis] = False
-        return
-
     def make_zeropoint(self,axis): 
         """
         Set zeropoint for axis
@@ -237,7 +226,10 @@ class Camera_Handler:
         return
 
     def disable_algos(self,disable_tuning):
-        """Disable everything that may interfere with the RAW images"""
+        """Disable everything that may interfere with the RAW images
+        #TODO : Make all independent of index
+        #TODO : Test a bit which help and which dont, black level could be usefull, color balance could be usefull --> Calibrate?
+        """
         # Load tuning file
         self.tuning = Picamera2.load_tuning_file("/usr/share/libcamera/ipa/rpi/vc4/imx477.json")
         if disable_tuning:
@@ -251,7 +243,7 @@ class Camera_Handler:
             # Disable gamma curve
             self.tuning['algorithms'][9]['rpi.contrast']["ce_enable"] = 0
             # Tuning file sometimes has sharpen and ccm swapped 
-            if 'rpi.ccm' in self.tuning['algorithms'][10]: index = 10 #TODO : Make all independent of index
+            if 'rpi.ccm' in self.tuning['algorithms'][10]: index = 10 
             elif 'rpi.ccm' in self.tuning['algorithms'][11]: index = 11
 
             # Disable color correction matrix for all color temperatures
@@ -320,7 +312,6 @@ class Camera_Handler:
         Image.fromarray(img).save(path)
         return
     
-    
     def start_preview(self,res=(720,480)):
         self.camera.stop()
         self.camera.configure(self.camera.create_preview_configuration(queue=False ,main={"size":res})) 
@@ -355,16 +346,7 @@ class Accelerometer:
 
 
 
-    
 
-def print_grid(grid,mm_per_step=0.00012397): # TODO : Number may be wrong
-    """Takes the grid controller as an input and prints the current position 
-    and grid bounds in both steps an millimeters"""
-    table = [["Pos steps",*grid.pos], ["Pos mm", *[i*mm_per_step for i in grid.pos]], 
-             ["Gb steps", *grid.gridbounds], ["Gb mm",*[i*mm_per_step for i in grid.gridbounds]]]
-    
-    print(tabulate(table))
-    return
 
 
 
@@ -395,3 +377,14 @@ def conv_to_mm(to_conv, half_step = True):
         return [i*mm_per_step for i in to_conv]
     else:
         return to_conv * mm_per_step
+
+        
+
+def print_grid(grid,mm_per_step=conv_to_mm(1)): 
+    """Takes the grid controller as an input and prints the current position 
+    and grid bounds in both steps an millimeters"""
+    table = [["Pos steps",*grid.pos], ["Pos mm", *[i*mm_per_step for i in grid.pos]], 
+             ["Gb steps", *grid.gridbounds], ["Gb mm",*[i*mm_per_step for i in grid.gridbounds]]]
+    
+    print(tabulate(table))
+    return

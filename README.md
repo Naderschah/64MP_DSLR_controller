@@ -20,6 +20,8 @@ This code may no longer be functional as several untested changes have been made
 
 The main code for image acquisition is now in NewDataAquistion, utilizing scripts instead of a GUI as the GUI added way to much boilerplate code and complicated debugging and changing things quite significantly 
 
+Also after ages of constantly messing up the computation because of stupitidy, I finally managed to compute the translation distance per step, it is 122 nm/step of the stepper motor. 
+
 
 ## Data Processing
 

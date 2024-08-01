@@ -12,13 +12,10 @@ Endstops contains for each motor one list with 2 pins corresponding to min max
 Both Motor_dir and Endstops are in order x,y,z
 
 Iteration when imaging goes as: x,y,z 
-
-Image processing interprets y as left to right in image
-And z as right to left
-TODO: Above statement might be wrong -> but easy enough to change interface
-
-Accelerometer: Not yet implemented order is [SDA,SCL] for I2C
-TODO: Implement accelerometer
+Current layout is 
+x is distance to camera
+y is in image width dimension
+z is in image height dimension
 """
 
 
