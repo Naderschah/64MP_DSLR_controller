@@ -223,6 +223,7 @@ class Camera_Handler:
 
         # Create dummy thread
         self.thread  = threading.Thread(target=self.dummy_thread,args=(),group=None, daemon=True)
+        self.thread.start()
         return
 
     def disable_algos(self,disable_tuning):
@@ -300,6 +301,7 @@ class Camera_Handler:
 
     def threaded_save(self,path, img):
         self.thread = threading.Thread(target=self.save, args=(path, img), daemon=True,group=None,)
+        self.thread.start()
         return
     
     def wait_for_thread(self):
