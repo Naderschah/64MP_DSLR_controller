@@ -222,7 +222,7 @@ class Camera_Handler:
         self.disable_autoexposure = disable_autoexposure
 
         # Create dummy thread
-        self.thread  = threading.Thread(self.dummy_thread,args=(),group=None, daemon=True)
+        self.thread  = threading.Thread(target=self.dummy_thread,args=(),group=None, daemon=True)
         return
 
     def disable_algos(self,disable_tuning):
