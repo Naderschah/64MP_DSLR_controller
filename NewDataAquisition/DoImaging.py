@@ -122,7 +122,7 @@ TODO: AWB was on all along, in custom controls i need to set "ColourGains" to (1
 sdn : Spatial denoise
 
 
-New Order of Operation: e 32000 i 1
+New Order of Operation: python3 DoImaging.py exp=32000 iso=1 grid_x=5 grid_y=1 grid_z=1 # 206, 2, 2 images
 - Small image of ground up weed using the same config as always 1x1 mm in y and z, and 5 mm height to look at rejection 
 - Next scientific image combining including the x coordinates included after rejection originally. 
 

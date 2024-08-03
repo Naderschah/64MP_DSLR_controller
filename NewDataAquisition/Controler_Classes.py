@@ -342,7 +342,8 @@ class Accelerometer:
         return
     
     def get(self):
-        return self.accel.acceleration
+        x,y,z = self.accel.acceleration
+        return x+y+z
 
 
 
