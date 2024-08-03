@@ -299,7 +299,7 @@ class Camera_Handler:
         return
 
     def threaded_save(self,path, img):
-        self.thread = threading.Thread(target=self.save, args=(path, img), daemon=True)
+        self.thread = threading.Thread(group=None,target=self.save, args=(path, img), daemon=True)
         return
     
     def wait_for_thread(self):

@@ -89,9 +89,66 @@ for i in cmd_line_opts:
 
 
 # Keep all control structures enabled to allow easy grid alignment
-cam = Camera_Handler(disable_tuning=True, 
+cam = Camera_Handler(disable_tuning=False, 
                      disable_autoexposure=True, 
                      res={"size":(res[0],res[1])})
+
+"""
+Ok so some ground up weed for imaging, accept the misalignment for now
+Tmr do black level, and nvm having a control, just enable ccm and see what happens, also disable cac
+Make the image really small 
+
+
+Testing order ::: Find Small Subject!
+First make another image to check how for threading and precomputed contrast works, decide on final testing setup
+Then activate black level < -- Shouldnt make much of a difference
+Then disable AWB
+Then CCM default config --> This one is prob pretty usefull
+Then any others
+Then acceleration based image rejection
+Disable cac (Chromatic abberation correction) -> It just shifts green and blue 2 px
+
+Disable Sharpen?
+
+Try scientific version available -> Find source to see whats scientific about this one
+- Modified ct_curve for awb
+- Disabled rpi.contrast through ce_enable
+- CCM actually measured -> More datapoints
+- No mention of alsc
+
+AGC (automatic gain/exposure correction) is not mentioned below > was it on the whoel time? doubt it Prob done through controls
+AWB (auto white balance) not mentioned here or in custom controls
+TODO: AWB was on all along, in custom controls i need to set "ColourGains" to (1.,1.) I guess it just says set to disable, but you can set between 0 and 32
+sdn : Spatial denoise
+
+
+New Order of Operation: e 32000 i 1
+- Small image of ground up weed using the same config as always 1x1 mm in y and z, and 5 mm height to look at rejection 
+- Next scientific image combining including the x coordinates included after rejection originally. 
+
+
+"""
+
+
+#TODO Temporarily set tuning to true and manually disabling here to mess with parameters and see effects
+#cam.tuning['algorithms'][0]['rpi.black_level']['black_level'] = 0 # Black level can probably be safely enabled -> Hopefully gets rid of some of that red background, applied to all can be overwritten with _r _g and _b 
+#cam.tuning['algorithms'][4]['rpi.geq']['offset'] = 0 # Green equalisation -> Default valeus selected i think 
+#cam.tuning['algorithms'][4]['rpi.geq']['slope'] = 0
+## luminance 0 disables algorithms effect
+#cam.tuning['algorithms'][8]['rpi.alsc']["luminance_strength"] = 0 # Auto lens shading correction : Can be calibrated, doesnt seem necessary
+## Reduce load on isp
+#cam.tuning['algorithms'][8]['rpi.alsc']["n_iter"] = 1 # Automatic Lens Shading Correction --> Not relevant for me
+## Disable gamma curve
+#cam.tuning['algorithms'][9]['rpi.contrast']["ce_enable"] = 0 # contrast and Gamma control? Maybe usefull but probably not, havent actually applied it after the fact never seems needed, maybe up ahead helps?
+## Tuning file sometimes has sharpen and ccm swapped 
+#if 'rpi.ccm' in cam.tuning['algorithms'][10]: index = 10  # Color Correction matrix see how well default works, see if can find calibration sources
+#elif 'rpi.ccm' in cam.tuning['algorithms'][11]: index = 11
+#
+## Disable color correction matrix for all color temperatures 
+#for i in range(len(cam.tuning['algorithms'][index]['rpi.ccm']['ccms'])):
+#    cam.tuning['algorithms'][index]['rpi.ccm']['ccms'][i]['ccm'] = [1,0,0,0,1,0,0,0,1]
+# END temp change
+
 
 acc = Accelerometer()
 
