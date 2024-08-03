@@ -311,7 +311,9 @@ class Camera_Handler:
         return
 
     def save(self,path, img):
+        start = time.time()
         Image.fromarray(img).save(path)
+        print("Saving took {} s".format(time.time()-start))
         return
     
     def start_preview(self,res=(720,480)):
