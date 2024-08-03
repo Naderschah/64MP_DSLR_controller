@@ -179,9 +179,9 @@ function ParseMetaFile(path)
     # And unpack
     contrast_max, contast_min, contrast_mean = Tuple(contrast[i,:,:,:] for i in 1:3)
     return contrast_max, contast_min, contrast_mean
-end
+end# TODO This doesnt work with multiple exposure, same with below
 
-function GenerateImageIgnoreList(contrast_max, contast_min, contrast_mean, cont_method=1)
+function GenerateImageIgnoreListContrast(contrast_max, contast_min, contrast_mean, cont_method=1)
     #TODO Watch out contrast vals computes mean max and min
     # Could be useful to compute stats based on mean, and then also take into account max for selection 
 
@@ -221,7 +221,6 @@ function GenerateImageIgnoreList(contrast_max, contast_min, contrast_mean, cont_
     # Return indexing array
     return contrast_mean .> threshhold
 end
-
 
 
 

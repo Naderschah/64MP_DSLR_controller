@@ -27,8 +27,8 @@ debug = false
 #TODO: When loading the intermediaries the dimensions of the loaded image are inverted -> Why?
 pp = Datastructures.ProcessingParameters(contrast_precision, ContrastFunctions.LoG, GreyProjectors.lstar, blackpoint, path, save_path,width, height, debug)
 
-# 10 images works great, 30 min per set for 4k
-max_images = 10
+# 10 images works great, 30 min per set for 4k, I just noticed its using so much because im running this in 20 threads
+max_images = 5
 
 # TODO: Implement GenerateImageIgnoreList from IO_dp.jl once implmeneted in microscope --> Test methods
 #           Only generates indexing array for ignored vals
@@ -60,8 +60,21 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,max_images:
     total = length(ImagingGrid.y)*length(ImagingGrid.z)*length(ImagingGrid.exp)
     counter = 0
     
-    ignore = [IO_dp.GenerateFinalFileName(0,89571,48000)]
+    ignore = [IO_dp.GenerateFinalFileName(0,89571,48000), IO_dp.GenerateFinalFileName(24785,89571,48000), IO_dp.GenerateFinalFileName(49571,89571,48000)]
     
+    # Parse meta file for contrast values if available and create filtering array
+    contrast_max, contast_min, contrast_mean,indexing_array = nothing,nothing,nothing,nothing
+    try
+        if isfile(joinpath(parameters.path, "meta.txt"))
+            println("Loading meta.txt to filter images by contrast")
+            contrast_max, contast_min, contrast_mean = IO_dp.ParseMetaFile(joinpath(parameters.path, "meta.txt"))
+            indexing_array = IO_dp.GenerateImageIgnoreListContrast(contrast_max, contast_min, contrast_mean, cont_method=1)
+        end
+    catch e 
+        printstyled("Failed to load meta file with error", color =:red)
+        println(e)
+    end
+
     for ei in ImagingGrid.exp
     for yi in ImagingGrid.y
     for zi in ImagingGrid.z
@@ -74,8 +87,15 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,max_images:
             println("Processing image $(counter) out of $(total)")
             println("Current Focus Name: $(final_name)")
             # Generate file names
-            fnames = [IO_dp.GenerateFileName(xi,yi,zi,ei) for xi in ImagingGrid.x]
+            if isnothing(indexing_array)
+                fnames = [IO_dp.GenerateFileName(xi,yi,zi,ei) for xi in ImagingGrid.x]
+            else # Filter for contrast values
+                fnames = [IO_dp.GenerateFileName(xi,yi,zi,ei) for xi in ImagingGrid.x if indexing_array[xi,yi,zi]]
+            end
+            # Filter based on files available
+            fnames =  [i for i in fnames if isfile(joinpath(parameters.path, i)) ]
             # Run stacking for yze postion and split them as too much ram is used
+            println("Files remaining after filter $(length(fnames))")
             println("Starting MKR fusion")
             counter_ = 0
             #Temp directory as it uses too much ram and on harddrive since MKR by default sources from the harddrive path
@@ -86,17 +106,27 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,max_images:
                 fail_count = 1
                 while fail_count <= allowed_fail 
                     if !isfile(joinpath(parameters.path, "$(yi)_$(zi)_$(ei)", "im_$(counter_).png")) || parameters.debug
-                        image = ImageFusion.MKR(batch, parameters, epsilons[fail_count])
-                        # Save Image check for nans
-                        if any(isnan.(image))
-                            printstyled("Warning: Image $(joinpath(parameters.path, "$(yi)_$(zi)_$(ei)", "im_$(counter_).png")) contains NaNs. Retrying...\n", color=:red)
-                            fail_count += 1
-                        else
-                            Images.save(joinpath(parameters.path, "$(yi)_$(zi)_$(ei)", "im_$(counter_).png"), image)
-                            counter_ += 1
-                            success = true
-                            break
+                        try # In case of some grid element not being imaged
+                            image = ImageFusion.MKR(batch, parameters, epsilons[fail_count])
+                            # Save Image check for nans
+                            if any(isnan.(image))
+                                printstyled("Warning: Image $(joinpath(parameters.path, "$(yi)_$(zi)_$(ei)", "im_$(counter_).png")) contains NaNs. Retrying...\n", color=:red)
+                                fail_count += 1
+                            else
+                                Images.save(joinpath(parameters.path, "$(yi)_$(zi)_$(ei)", "im_$(counter_).png"), image)
+                                counter_ += 1
+                                success = true
+                                break
+                            end
+                        catch e
+                            if isa(e, CompositeException)
+                                println("File didnt exist, stack added to failed_im tracker")
+                                break # Assume its a arguemnt error to load file
+                            else
+                                rethrow() # something else
+                            end
                         end
+                        
                     else # Terminate if already exists
                         printstyled("$(joinpath(parameters.path, "$(yi)_$(zi)_$(ei)", "im_$(counter_).png")) already exists, skipping\n", color=:yellow)
                         counter_ += 1
