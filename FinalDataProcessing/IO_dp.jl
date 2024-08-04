@@ -7,6 +7,7 @@ include("./Datastructures.jl")
 import .Datastructures
 
 using StatsBase
+using DelimitedFiles
 
 include("./ImagePlacement.jl")
 
@@ -159,49 +160,44 @@ function ParseMetaFile(path)
 
     cont = split(cont, "\n")
     # 1 is header
-    cont = [split(cont[i], ",") for i in 2:length(cont)]
-    # Change dtypes
-    cont[:,1:3]  = Int.(cont[:,1:3])
-    cont[:,4:end] = Float.(cont[:,4:end])
-    x_val = length(unique(cont[:,1]))
-    y_val = length(unique(cont[:,2]))
-    z_val = length(unique(cont[:,3]))
-
-    accel = vec(cont[:,4])
+    cont = [split(cont[i], ",") for i in 2:length(cont) if cont[i] != ""]
+    cont = stack(cont, dims=1)
+    # Turn into array
+    xyz  = map(x->parse(Int64,x),cont[:,1:3])
+    cont = map(x->parse(Float64,x),cont) 
+    # We now need to make an indexing table of the xyz list
+    x_vals = sort(unique(xyz[:,1]))
+    y_vals = sort(unique(xyz[:,2]))
+    z_vals = sort(unique(xyz[:,3]))
+    # Now we make an indexing dict
+    x_indexing = Dict(x_vals[i] => i for i in eachindex(x_vals))
+    y_indexing = Dict(y_vals[i] => i for i in eachindex(y_vals))
+    z_indexing = Dict(z_vals[i] => i for i in eachindex(z_vals))
     # Just some info
-    printstyled("Acceleration statistics: mean=$(mean(accel)) std=$(std(accel)) max=$(maximum(accel)) min=$(minimum(accel))", color=:yellow)
+    accel = vec(cont[:,4])
+    printstyled("Acceleration statistics: mean=$(mean(accel)) std=$(std(accel)) max=$(maximum(accel)) min=$(minimum(accel))\n", color=:yellow)
 
-    contrast = zeros(Float, (3, x_val, y_val, z_val))
+    contrast = zeros(Float64, (3, length(x_vals), length(y_vals), length(z_vals)))
     # Populate structured array
-    for i in eachindex(cont)
-        contrast[:,cont[i,1],cont[i,2],cont[i,3]] = cont[i,6:8]
+    for i in axes(cont, 1)
+        contrast[:,x_indexing[xyz[i,1]],y_indexing[xyz[i,2]],z_indexing[xyz[i,3]]] = cont[i,6:8]
     end
     # And unpack
     contrast_max, contast_min, contrast_mean = Tuple(contrast[i,:,:,:] for i in 1:3)
-    return contrast_max, contast_min, contrast_mean
+    return contrast_max, contast_min, contrast_mean, (x_indexing,y_indexing,z_indexing)
 end# TODO This doesnt work with multiple exposure, same with below
 
 function GenerateImageIgnoreListContrast(contrast_max, contast_min, contrast_mean, cont_method=1)
-    #TODO Watch out contrast vals computes mean max and min
-    # Could be useful to compute stats based on mean, and then also take into account max for selection 
-
     # We will first generate some statistics from mean
     flattend_contrast = vec(contrast_mean)
     _mean,_median, _std, _min, _max = mean(flattend_contrast), median(flattend_contrast),std(flattend_contrast), minimum(flattend_contrast), maximum(flattend_contrast)
 
-    prinln("_mean")
-    prinln(_mean)
-    prinln("_median")
-    prinln(_median)
-    prinln("_std")
-    prinln(_std )
-    prinln("_min")
-    prinln(_min )
-    prinln("_max")
-    prinln(_max)
-
+    println("Contrast Statistics\nmean: $(_mean)\nmedian: $(_median)\nstd: $(_std)\nmin: $(_min)\nmax: $(_max)")
     # TODO: Test the filtering technique
-    if cont_method == 1
+    if cont_method == 0
+        threshhold = 50000 # Custom filtering for broken contrast getting
+        return contrast_max .> threshhold
+    elseif cont_method == 1
         threshhold = _mean - _std
     elseif cont_method == 2
         threshhold = _median - _std
