@@ -1,7 +1,7 @@
 FROM amd64/julia:latest
 WORKDIR /FinalDataProcessing
 # Install packages
-RUN julia -e 'using Pkg; Pkg.add.(["DSP","PProf","JLD2","Images","StatsBase", "IterTools", "FilePathsBase"])'
+RUN julia -e 'using Pkg; Pkg.add.(["DSP","PProf","JLD2","Images","StatsBase", "IterTools", "FilePathsBase", "HDF5"])'
 # Install ps command
 RUN apt-get update && apt-get install -y procps && rm -rf /var/lib/apt/lists/*
 CMD '/bin/bash'

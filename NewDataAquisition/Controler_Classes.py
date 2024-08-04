@@ -325,7 +325,7 @@ class Camera_Handler:
         with h5py.File(path, "w") as f:
             dataset = f.create_dataset("image", data=img)
             dataset.attrs['stream'] = self.stream
-            dataset.attrs['bayer'] = self.raw_config['main']['format'][1:5]
+            dataset.attrs['bayer'] = self.raw_config['format'][1:5]
         print("Saving took {} s".format(time.time()-start))
         return
     
