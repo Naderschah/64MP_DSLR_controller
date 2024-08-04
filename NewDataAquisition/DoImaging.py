@@ -27,7 +27,10 @@ from pathlib import Path
 import copy
 import cv2
 
-def compute_contrast(image, kernel_size=9):
+def compute_contrast(image, kernel_size=9, raw=False):
+    if raw = True:
+        image = cv2.cvtColor(image, cv2.COLOR_BayerBG2RGB)
+
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
 
     # Generate LoG kernel
@@ -264,7 +267,7 @@ with open(dir+'/meta.txt', 'a') as f:
                     # --> Note deepcopy to avoid the new img overwriting the old
                     cam.threaded_save('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.hdf5'.format(e), copy.deepcopy(img))
                     # Doing this instead of threading adds ~12 min for 12000 images, io more important 
-                    res = compute_contrast(img, kernel_size=9) 
+                    res = compute_contrast(img, kernel_size=9, raw=(cam.stream == 'raw')) 
                     f.write("{},{},{},{},{},{},{},{}\n".format(k,j,i,_accel,time.time()-start, res[0],res[1],res[2]))
                     f.flush() #Just in case
                 coord_arr[0] = coord_arr[0][::-1]
