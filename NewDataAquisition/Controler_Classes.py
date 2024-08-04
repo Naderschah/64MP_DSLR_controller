@@ -4,6 +4,7 @@ import sys
 import time
 import RPi.GPIO as GPIO
 from picamera2 import Picamera2, Preview
+from picamera2.sensor_format import SensorFormat
 from libcamera import controls
 from tabulate import tabulate
 from ULN2003Pi import ULN2003
@@ -263,6 +264,10 @@ class Camera_Handler:
     def configure(self,disable_autoexposure,low_res=False, res={}):
         # Start camera with tuning file
         self.camera = Picamera2(tuning=self.tuning)
+        # Disable packing of data so that we can just read it as uint16
+        raw_format = SensorFormat(self.camera.sensor_format)
+        raw_format.packing = None
+        res['format']= raw_format.format # Essentially just removes _CSI2P from string SBGGR12_CSI2P
         # Retrieve relevant configuration options
         self.still_config = self.camera.create_still_configuration(raw=res)
         if not low_res:

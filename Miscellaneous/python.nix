@@ -9,6 +9,10 @@ in pkgs.mkShell {
 	      python-pkgs.matplotlib
 	      python-pkgs.requests
 	      python-pkgs.pip
+	      python-pkgs.ipython
+	      python-pkgs.jupyter
+	      python-pkgs.h5py
+	      python-pkgs.opencv4
         ]))
    ];
 }

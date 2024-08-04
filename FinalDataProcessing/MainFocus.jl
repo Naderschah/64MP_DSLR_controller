@@ -15,14 +15,16 @@ using Base.Threads
 using Images
 using IterTools
 
-println("Loaded")
 
-path = "/Images/img_3/"
-save_path = "/SaveSpot/WeedTrialsNoChange/"
+# TODO: If saving to HDF5 or BMP will need to increase bit depth in processing
+# FIXME: Image gets rotated in processing, fix that and fix the image sizes being flipped
+
+path = "/Images/img_8/"
+save_path = "/SaveSpot/WeedTrialsRawImage/"
 blackpoint = [0,0,0]
 contrast_precision = Float32 
-width = 3040
-height = 4056
+width = 2028 #3040 RAW data rn
+height =  1520# 4056
 debug = false
 #TODO: When loading the intermediaries the dimensions of the loaded image are inverted -> Why?
 pp = Datastructures.ProcessingParameters(contrast_precision, ContrastFunctions.LoG, GreyProjectors.lstar, blackpoint, path, save_path,width, height, debug)
@@ -37,6 +39,7 @@ max_images = 8
 function FocusFusion(parameters::Datastructures.ProcessingParameters,max_images::Int,tst::Bool=false)
     # Print process ID for debugging purposes
     println("PID: $(getpid())")
+    overallStart = time()
     if tst # When profiling need to run once to initialize
         return
     end
@@ -176,6 +179,7 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,max_images:
     end
     end
     println("Failed images: $(failed_im)")
+    println("Time taken for all $(overallStart-time())")
 end
 
 # Profiling

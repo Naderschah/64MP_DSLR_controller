@@ -15,7 +15,7 @@ export GenerateFileName, GenerateFinalFileName, FixPath, GrabIdentifiers, GetFoc
 
 # Generate pre focus file naming patterns
 function GenerateFileName(x,y,z,exp)
-    return "$(x)_$(y)_$(z)_exp$(exp).png"
+    return "$(x)_$(y)_$(z)_exp$(exp).hdf5"
 end
 
 function GenerateFinalFileName(x,y,e)
