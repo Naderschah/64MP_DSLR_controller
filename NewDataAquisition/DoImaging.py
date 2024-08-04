@@ -87,12 +87,6 @@ for i in cmd_line_opts:
     elif i.startswith("res_y"):
         res[1] = int(i.split('=')[1])
 
-
-# Keep all control structures enabled to allow easy grid alignment
-cam = Camera_Handler(disable_tuning=False, 
-                     disable_autoexposure=True, 
-                     res={"size":(res[0],res[1])})
-
 """
 Ok so some ground up weed for imaging, accept the misalignment for now
 Tmr do black level, and nvm having a control, just enable ccm and see what happens, also disable cac
@@ -153,7 +147,13 @@ It seems that the flex of the glue I added moves the motors during imaging, will
 # END temp change
 from picamera2 import Picamera2
 # Load scientific tuning file
-cam.tuning = Picamera2.load_tuning_file("/usr/share/libcamera/ipa/rpi/vc4/imx477_scientific.json")
+tuning = Picamera2.load_tuning_file("/usr/share/libcamera/ipa/rpi/vc4/imx477_scientific.json")
+
+# Keep all control structures enabled to allow easy grid alignment
+cam = Camera_Handler(disable_tuning=False, 
+                     disable_autoexposure=True, 
+                     res={"size":(res[0],res[1])},
+                     tuning_overwrite=tuning)
 
 
 acc = Accelerometer()

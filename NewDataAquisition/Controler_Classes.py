@@ -213,10 +213,13 @@ class Camera_Handler:
     stream = 'main' # To save to hdf5 metadata
 
 
-    def __init__(self, disable_tuning=True, disable_autoexposure=True,low_res=False, res={}):
+    def __init__(self, disable_tuning=True, disable_autoexposure=True,low_res=False, res={}, tuning_overwrite=None):
         # We start by disabling most of the algorithms done to change the image
         # Also initiates the self.camera object
-        self.disable_algos(disable_tuning)
+        if tuning_overwrite is None:
+            self.disable_algos(disable_tuning)
+        else:
+            self.tuning = tuning_overwrite
 
         self.configure(disable_autoexposure=disable_autoexposure,
                        low_res=low_res,
