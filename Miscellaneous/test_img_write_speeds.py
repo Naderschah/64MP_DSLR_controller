@@ -21,22 +21,23 @@ num_trials = 10
 
 # Generate an image from the camera
 from picamera2 import Picamera2, Preview
-camera = Picamera2(tuning=self.tuning)
+tuning = Picamera2.load_tuning_file("/usr/share/libcamera/ipa/rpi/vc4/imx477.json")
+camera = Picamera2(tuning=tuning)
 config = camera.create_still_configuration(raw={})
 camera.start()
 camera.switch_mode(config) 
 camera.stop()
 
-camera.set_iso(1)
-camera.set_exp(32000)
+camera.set_controls({'AnalogueGain':1})
+camera.set_controls({'ExposureTime':32000})
 time.sleep(2)
 camera.start()
 image_data = camera.capture_array()
 camera.stop()
 print("Sensor modes")
-print(camera.camera.sensor_modes)
+print(camera.sensor_modes)
 print("Configuration")
-print(camera.camera.camera_configuration()['raw'])
+print(camera.camera_configuration()['raw'])
 
 print("Img info")
 print(image_data.shape)
