@@ -28,7 +28,7 @@ import copy
 import cv2
 
 def compute_contrast(image, kernel_size=9, raw=False):
-    if raw = True:
+    if raw == True:
         image = cv2.cvtColor(image, cv2.COLOR_BayerBG2RGB)
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 

@@ -211,6 +211,7 @@ class Camera_Handler:
     exp = None
     still_config = None
     stream = 'main' # To save to hdf5 metadata
+    raw_config = None
 
 
     def __init__(self, disable_tuning=True, disable_autoexposure=True,low_res=False, res={}, tuning_overwrite=None):
@@ -279,6 +280,7 @@ class Camera_Handler:
         self.camera.start()
         self.camera.switch_mode(config)
         self.camera.stop()
+        self.raw_config = self.camera.camera_configuration()['raw']
         
 
     def set_iso(self,iso):
@@ -323,7 +325,7 @@ class Camera_Handler:
         with h5py.File(path, "w") as f:
             dataset = f.create_dataset("image", data=img)
             dataset.attrs['stream'] = self.stream
-            dataset.attrs['bayer'] = self.config['main']['format'][1:5]
+            dataset.attrs['bayer'] = self.raw_config['main']['format'][1:5]
         print("Saving took {} s".format(time.time()-start))
         return
     
