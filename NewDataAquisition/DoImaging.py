@@ -147,14 +147,14 @@ It seems that the flex of the glue I added moves the motors during imaging, will
 # END temp change
 from picamera2 import Picamera2
 # Load scientific tuning file
-tuning = Picamera2.load_tuning_file("/usr/share/libcamera/ipa/rpi/vc4/imx477_scientific.json")
+#tuning = Picamera2.load_tuning_file("/usr/share/libcamera/ipa/rpi/vc4/imx477_scientific.json")
 
 # Keep all control structures enabled to allow easy grid alignment
 cam = Camera_Handler(disable_tuning=False, 
                      disable_autoexposure=True, 
-                     res={"size":(res[0],res[1])},
-                     tuning_overwrite=tuning)
-
+                     res={"size":(res[0],res[1])},)
+                     #tuning_overwrite=tuning)
+cam.stream = 'raw'
 
 acc = Accelerometer()
 
@@ -275,7 +275,7 @@ t_diff = time.time()-start
 h = t_diff // 3600
 m = (t_diff-3600*h) // 60
 s = (t_diff -3600*h - m*60) //1
-print("Completed in {}:{}:{}".format(h,m,int(s)))
+print("Completed in {}:{}:{}".format(int(h),int(m),int(s)))
 os.system('echo "False" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
 
 # Add move away from min such that one may safely find endstops on the next run
