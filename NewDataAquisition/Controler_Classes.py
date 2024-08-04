@@ -317,13 +317,12 @@ class Camera_Handler:
         return
 
     def save(self,path, img):
-        # TODO Activate and change extension to hdf5 --> Also check whats going on with datatypes
         start = time.time()
         if False:
             Image.fromarray(img).save(path)
         with h5py.File(path, "w") as f:
             dataset = f.create_dataset("image", data=img)
-            dataset['stream'] = self.stream
+            dataset.attrs['stream'] = self.stream
         print("Saving took {} s".format(time.time()-start))
         return
     
