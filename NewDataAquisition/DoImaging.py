@@ -127,8 +127,9 @@ New Order of Operation: python3 DoImaging.py exp=32000 iso=1 grid_x=5 grid_y=1 g
 - Next scientific image combining including the x coordinates included after rejection originally. 
 
 
-"""
+FIXME: Page 17 of the Picamera2 module specifies that the raw stream has no image processing applied?
 
+"""
 
 #TODO Temporarily set tuning to true and manually disabling here to mess with parameters and see effects
 #cam.tuning['algorithms'][0]['rpi.black_level']['black_level'] = 0 # Black level can probably be safely enabled -> Hopefully gets rid of some of that red background, applied to all can be overwritten with _r _g and _b 
@@ -148,6 +149,9 @@ New Order of Operation: python3 DoImaging.py exp=32000 iso=1 grid_x=5 grid_y=1 g
 #for i in range(len(cam.tuning['algorithms'][index]['rpi.ccm']['ccms'])):
 #    cam.tuning['algorithms'][index]['rpi.ccm']['ccms'][i]['ccm'] = [1,0,0,0,1,0,0,0,1]
 # END temp change
+from picamera2 import Picamera2
+# Load scientific tuning file
+cam.tuning = Picamera2.load_tuning_file("/usr/share/libcamera/ipa/rpi/vc4/imx477_scientific.json")
 
 
 acc = Accelerometer()

@@ -10,6 +10,8 @@ from ULN2003Pi import ULN2003
 import numpy as np
 from PIL import Image
 import threading
+#pip install h5py
+import h5py
 
 # Accelerometer
 import board
@@ -311,6 +313,10 @@ class Camera_Handler:
         return
 
     def save(self,path, img):
+        # TODO Activate and change extension to hdf5 --> Also check whats going on with datatypes
+        if False:
+            with h5py.File(path, "w") as f:
+                dataset = f.create_dataset("image", data=img)
         start = time.time()
         Image.fromarray(img).save(path)
         print("Saving took {} s".format(time.time()-start))
