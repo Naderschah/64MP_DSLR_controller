@@ -121,13 +121,15 @@ AWB (auto white balance) not mentioned here or in custom controls
 TODO: AWB was on all along, in custom controls i need to set "ColourGains" to (1.,1.) I guess it just says set to disable, but you can set between 0 and 32
 sdn : Spatial denoise
 
+Maybe just use raw stream and do processing after the fact?
+
 
 New Order of Operation: python3 DoImaging.py exp=32000 iso=1 grid_x=5 grid_y=1 grid_z=1 # 206, 2, 2 images -> 4.5h
 - Small image of ground up weed using the same config as always 1x1 mm in y and z, and 5 mm height to look at rejection 
 - Next scientific image combining including the x coordinates included after rejection originally. 
 
 
-FIXME: Page 17 of the Picamera2 module specifies that the raw stream has no image processing applied?
+It seems that the flex of the glue I added moves the motors during imaging, will investigate further
 
 """
 
@@ -256,15 +258,11 @@ with open(dir+'/meta.txt', 'a') as f:
                     _accel = acc.get() # Take accel just before and jsut after
                     img = cam.capture_array()# Return image for contrast profiling
                     _accel = (acc.get()+_accel)/2 # Take accel just before and jsut after
-                    # Wait till previous image saved
-                    # ~16.6 seconds waiting time for 4k images, based on hand timing entire loop takes ~18.5s so saves 40 minutes for 12000 images
-                    # PNG is compressed, should try seeing how long compression takes
-                    # Just save as raw array with HDF5, add some meta data about bitdepth and stuff to the meta.txt file, 
-                    # TODO: Do this after testing camera modes
+                    # Wait till previous image saved, since switch to hdf5 should be much quicker
                     cam.wait_for_thread() 
                     # start seperate thread to save image 
                     # --> Note deepcopy to avoid the new img overwriting the old
-                    cam.threaded_save('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.png'.format(e), copy.deepcopy(img))
+                    cam.threaded_save('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.hdf5'.format(e), copy.deepcopy(img))
                     # Doing this instead of threading adds ~12 min for 12000 images, io more important 
                     res = compute_contrast(img, kernel_size=9) 
                     f.write("{},{},{},{},{},{},{},{}\n".format(k,j,i,_accel,time.time()-start, res[0],res[1],res[2]))

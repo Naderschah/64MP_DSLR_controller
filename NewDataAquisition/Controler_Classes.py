@@ -10,7 +10,7 @@ from ULN2003Pi import ULN2003
 import numpy as np
 from PIL import Image
 import threading
-#pip install h5py
+#pip install h5py needs sudo apt-get install libhdf5-dev on raspi (maybe everyehere?)
 import h5py
 
 # Accelerometer
@@ -210,6 +210,7 @@ class Camera_Handler:
     iso = None
     exp = None
     still_config = None
+    stream = 'main' # To save to hdf5 metadata
 
 
     def __init__(self, disable_tuning=True, disable_autoexposure=True,low_res=False, res={}):
@@ -294,7 +295,7 @@ class Camera_Handler:
         return
     
     def capture_array(self):
-        img = self.camera.capture_array() # Returns (3040, 4056, 3)
+        img = self.camera.capture_array(self.stream) 
         #Image.fromarray(img).save(path)
         return img
     
@@ -314,11 +315,12 @@ class Camera_Handler:
 
     def save(self,path, img):
         # TODO Activate and change extension to hdf5 --> Also check whats going on with datatypes
-        if False:
-            with h5py.File(path, "w") as f:
-                dataset = f.create_dataset("image", data=img)
         start = time.time()
-        Image.fromarray(img).save(path)
+        if False:
+            Image.fromarray(img).save(path)
+        with h5py.File(path, "w") as f:
+            dataset = f.create_dataset("image", data=img)
+            dataset['stream'] = self.stream
         print("Saving took {} s".format(time.time()-start))
         return
     
@@ -327,8 +329,7 @@ class Camera_Handler:
         self.camera.configure(self.camera.create_preview_configuration(queue=False ,main={"size":res})) 
         if self.disable_autoexposure:
             self.camera.set_controls(self.custom_controls)
-        self.camera.start_preview(Preview.QT) # Should be non blocking
-        #self.camera.start()
+        self.camera.start_preview(Preview.QT) 
 
     def stop_preview(self,):
         self.camera.stop_preview()
