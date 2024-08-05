@@ -61,7 +61,7 @@ mm_per_step = conv_to_mm(1) # ~0.122 mu m per step or 122 nm per step
 # TODO Use computed after the profiling is done
 # The below is most likely overkill go with 150? also how is focus depth defined gpt refuses to give me a usefull answer
 #step_size_x = int(12 / mm_per_step ) # This is ~100 steps so double as many images now
-step_size_x = 200
+step_size_x = 100
 
 imging_bounds = copy.deepcopy(grid.gridbounds)
 
