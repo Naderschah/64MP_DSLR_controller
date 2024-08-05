@@ -246,6 +246,7 @@ tot_time = sum(time_estimate_steps) + sum([len(coord_arr[2])*len(coord_arr[1])*e
 
 print("Assumed total time is {}".format(tot_time))
 # TODO: Max accel filter for images
+start = time.time()
 with open(dir+'/meta.txt', 'a') as f:
     f.write("x,y,z,accel,time since start, contrast max, contrast min, contrast mean")
     for e in exposure:
@@ -253,16 +254,19 @@ with open(dir+'/meta.txt', 'a') as f:
         cam.set_exp(e)
         for i in coord_arr[2]:
             for j in coord_arr[1]:
-                start = time.time()
                 for k in coord_arr[0]:
+                    _start = time.time()
                     grid.move_to_coord([k,j,i])
+                    print("Grid move took {}".format(time.time()-_start))
                     print([k,j,i])
                     time.sleep(0.01) 
                     _accel = acc.get() # Take accel just before and jsut after
+                    __start = time.time()
                     img = cam.capture_array()# Return image for contrast profiling
+                    print("Capture array took {}".format(time.time()-__start))
                     _accel = (acc.get()+_accel)/2 # Take accel just before and jsut after
                     # Wait till previous image saved, since switch to hdf5 should be much quicker
-                    cam.wait_for_thread() 
+                    cam.wait_for_thread() # Thread takes 0.1 - 0.2 s
                     # start seperate thread to save image 
                     # --> Note deepcopy to avoid the new img overwriting the old
                     cam.threaded_save('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.hdf5'.format(e), copy.deepcopy(img))
@@ -270,15 +274,15 @@ with open(dir+'/meta.txt', 'a') as f:
                     res = compute_contrast(img, kernel_size=9, raw=(cam.stream == 'raw')) 
                     f.write("{},{},{},{},{},{},{},{}\n".format(k,j,i,_accel,time.time()-start, res[0],res[1],res[2]))
                     f.flush() #Just in case
+                    print("Time for loop {}".format(time.time()-_start))
                 coord_arr[0] = coord_arr[0][::-1]
             coord_arr[1] = coord_arr[1][::-1]
         coord_arr[2] = coord_arr[2][::-1]
-
 t_diff = time.time()-start
 h = t_diff // 3600
 m = (t_diff-3600*h) // 60
 s = (t_diff -3600*h - m*60) //1
-print("Completed in {}:{}:{}".format(int(h),int(m),int(s)))
+print("Completed in {n:02}:{n:02}:{n:02}".format(int(h),int(m),int(s)))
 os.system('echo "False" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
 
 # Add move away from min such that one may safely find endstops on the next run
