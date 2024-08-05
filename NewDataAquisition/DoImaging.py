@@ -254,16 +254,12 @@ with open(dir+'/meta.txt', 'a') as f:
         cam.set_exp(e)
         for i in coord_arr[2]:
             for j in coord_arr[1]:
-                for k in coord_arr[0]:
-                    _start = time.time()
-                    grid.move_to_coord([k,j,i])
-                    print("Grid move took {}".format(time.time()-_start))
+                for k in coord_arr[0]: # Inner loop 2.4 - 2.6s
+                    grid.move_to_coord([k,j,i]) # 0.5s for 100 steps
                     print([k,j,i])
                     time.sleep(0.01) 
                     _accel = acc.get() # Take accel just before and jsut after
-                    __start = time.time()
                     img = cam.capture_array()# Return image for contrast profiling
-                    print("Capture array took {}".format(time.time()-__start))
                     _accel = (acc.get()+_accel)/2 # Take accel just before and jsut after
                     # Wait till previous image saved, since switch to hdf5 should be much quicker
                     cam.wait_for_thread() # Thread takes 0.1 - 0.2 s
@@ -271,10 +267,25 @@ with open(dir+'/meta.txt', 'a') as f:
                     # --> Note deepcopy to avoid the new img overwriting the old
                     cam.threaded_save('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.hdf5'.format(e), copy.deepcopy(img))
                     # Doing this instead of threading adds ~12 min for 12000 images, io more important 
+                    _start = time.time()
                     res = compute_contrast(img, kernel_size=9, raw=(cam.stream == 'raw')) 
+                    print("Compute contrast took ", time.time()-_start)
                     f.write("{},{},{},{},{},{},{},{}\n".format(k,j,i,_accel,time.time()-start, res[0],res[1],res[2]))
                     f.flush() #Just in case
                     print("Time for loop {}".format(time.time()-_start))
+
+                    """
+                    Timing: 2.5 for inner loop
+                    move_coord : 0.5s (100steps)
+                    accel.get : ? ~0?
+                    image : 0.2s @ 32000 mu s exp -> 0.16s overhead
+                    accel.get : ?
+                    threaded_save : ~0
+                    comupute_contrast : 
+                    ----
+                    so far: 0.7s
+                    """
+
                 coord_arr[0] = coord_arr[0][::-1]
             coord_arr[1] = coord_arr[1][::-1]
         coord_arr[2] = coord_arr[2][::-1]
