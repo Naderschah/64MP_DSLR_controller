@@ -255,6 +255,7 @@ with open(dir+'/meta.txt', 'a') as f:
         for i in coord_arr[2]:
             for j in coord_arr[1]:
                 for k in coord_arr[0]: # Inner loop 2.4 - 2.6s
+                    _start = time.time()
                     grid.move_to_coord([k,j,i]) # 0.5s for 100 steps
                     print([k,j,i])
                     time.sleep(0.01) 
@@ -267,21 +268,25 @@ with open(dir+'/meta.txt', 'a') as f:
                     # --> Note deepcopy to avoid the new img overwriting the old
                     cam.threaded_save('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.hdf5'.format(e), copy.deepcopy(img))
                     # Doing this instead of threading adds ~12 min for 12000 images, io more important 
-                    _start = time.time()
-                    res = compute_contrast(img, kernel_size=9, raw=(cam.stream == 'raw')) 
-                    print("Compute contrast took ", time.time()-_start)
+                    __start = time.time()
+                    img = img.view('uint16')
+                    # Equal grey project
+                    contrast_img = img[::2,::2]/4 + img[1::2,::2]/4 + img[::2,1::2]/4+ img[1::2,1::2]/4
+                    res = compute_contrast(contrast_img, kernel_size=9, raw=(cam.stream == 'raw')) 
+                    print("Compute contrast took ", time.time()-__start)
                     f.write("{},{},{},{},{},{},{},{}\n".format(k,j,i,_accel,time.time()-start, res[0],res[1],res[2]))
                     f.flush() #Just in case
                     print("Time for loop {}".format(time.time()-_start))
 
                     """
-                    Timing: 2.5 for inner loop
+                    Timing: 2.5 for inner loop (~0 if 1e-3)
                     move_coord : 0.5s (100steps)
                     accel.get : ? ~0?
                     image : 0.2s @ 32000 mu s exp -> 0.16s overhead
                     accel.get : ?
                     threaded_save : ~0
-                    comupute_contrast : 
+                    comupute_contrast : 1.8s wrong implementation
+                    write file : ~0
                     ----
                     so far: 0.7s
                     """
