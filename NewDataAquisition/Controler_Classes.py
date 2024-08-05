@@ -320,18 +320,15 @@ class Camera_Handler:
     def wait_for_thread(self):
         start= time.time()
         self.thread.join()
-        print("Waited {} seconds for thread to finish".format(time.time()-start))
         return
 
     def save(self,path, img):
-        start = time.time()
-        if False:
-            Image.fromarray(img).save(path)
+        #start = time.time() 0.1-0.2s
         with h5py.File(path, "w") as f:
             dataset = f.create_dataset("image", data=img)
             dataset.attrs['stream'] = self.stream
             dataset.attrs['bayer'] = self.raw_config['format'][1:5]
-        print("Saving took {} s".format(time.time()-start))
+        #print("Saving took {} s".format(time.time()-start))
         return
     
     def start_preview(self,res=(720,480)):
