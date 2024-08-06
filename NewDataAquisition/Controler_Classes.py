@@ -361,7 +361,7 @@ class Accelerometer:
     
     def get(self):
         x,y,z = self.accel.acceleration
-        return x+y+z
+        return np.sqrt(x**2+y**2+z**2)
 
 
 

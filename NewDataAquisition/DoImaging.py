@@ -248,7 +248,7 @@ print("Assumed total time is {}".format(tot_time))
 # TODO: Max accel filter for images
 start = time.time()
 with open(dir+'/meta.txt', 'a') as f:
-    f.write("x,y,z,accel,time since start, contrast max, contrast min, contrast mean")
+    f.write("x,y,z,accel,time since start, contrast max, contrast min, contrast mean\n")
     for e in exposure:
         print("Exposure: {}".format(e))
         cam.set_exp(e)
@@ -269,7 +269,7 @@ with open(dir+'/meta.txt', 'a') as f:
                     cam.threaded_save('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.hdf5'.format(e), copy.deepcopy(img))
                     # Doing this instead of threading adds ~12 min for 12000 images, io more important 
                     __start = time.time()
-                    img = img.view('uint16')
+                    img = img[:, :-16].view('uint16')
                     # Equal grey project
                     contrast_img = img[::2,::2]/4 + img[1::2,::2]/4 + img[::2,1::2]/4+ img[1::2,1::2]/4
                     res = compute_contrast(contrast_img, kernel_size=9, raw=(cam.stream == 'raw')) 
@@ -298,7 +298,7 @@ t_diff = time.time()-start
 h = t_diff // 3600
 m = (t_diff-3600*h) // 60
 s = (t_diff -3600*h - m*60) //1
-print("Completed in {n:02}:{n:02}:{n:02}".format(int(h),int(m),int(s)))
+print("Completed in {:02}:{:02}:{:02}".format(int(h),int(m),int(s)))
 os.system('echo "False" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
 
 # Add move away from min such that one may safely find endstops on the next run
