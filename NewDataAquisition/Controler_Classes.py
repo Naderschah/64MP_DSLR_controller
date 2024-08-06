@@ -352,22 +352,22 @@ class Camera_Handler:
 
 
 class Accelerometer:
-    data_range = 0 # +- 2g
-    data_rate = 0 # 0.10 Hz
+    data_range = adafruit_adxl34x.Range.RANGE_2_G
+    data_rate = adafruit_adxl34x.DataRate.RATE_1600_HZ
     def __init__(self):
         i2c = busio.I2C(board.SCL, board.SDA)
         self.accel = adafruit_adxl34x.ADXL345(i2c)
+        self.accel.range=self.data_range
+        self.accel.data_rate=self.data_rate
         return
     
     def get(self):
-        x,y,z = self.accel.acceleration
-        return np.sqrt(x**2+y**2+z**2)
+        return self.accel.acceleration
 
 
 
 
-
-
+## Helper functions
 
 def init_grid(pinout_path = './Pinout.json', ingore_gridfile = False, half_step = True):
     with open(pinout_path, 'r') as f:
@@ -407,3 +407,17 @@ def print_grid(grid,mm_per_step=conv_to_mm(1)):
     
     print(tabulate(table))
     return
+
+
+# Testing functions
+def test_acc_rates():
+    """Run in interactive shell to determine """
+    acc = Accelerometer()
+    print("This assumes g to digital signal conversion is accurate")
+    for i in (adafruit_adxl34x.DataRate.RATE_3200_HZ,adafruit_adxl34x.DataRate.RATE_1600_HZ,adafruit_adxl34x.DataRate.RATE_800_HZ,adafruit_adxl34x.DataRate.RATE_400_HZ,adafruit_adxl34x.DataRate.RATE_200_HZ,adafruit_adxl34x.DataRate.RATE_100_HZ,adafruit_adxl34x.DataRate.RATE_50_HZ,adafruit_adxl34x.DataRate.RATE_25_HZ,adafruit_adxl34x.DataRate.RATE_12_5_HZ,adafruit_adxl34x.DataRate.RATE_6_25HZ,adafruit_adxl34x.DataRate.RATE_3_13_HZ,adafruit_adxl34x.DataRate.RATE_1_56_HZ,adafruit_adxl34x.DataRate.RATE_0_78_HZ,adafruit_adxl34x.DataRate.RATE_0_39_HZ,adafruit_adxl34x.DataRate.RATE_0_20_HZ,adafruit_adxl34x.DataRate.RATE_0_10_HZ):
+        acc.accel.data_rate = i
+        ls = [[*acc.accel.acceleration] for i in range(0,10000)]
+        print(i)
+        print(np.mean(np.array(ls),axis=0)) # Turn into displacement for 32000 microseconds exp time
+        print(np.std(np.array(ls),axis=0)) # Turn into displacement for 32000 microseconds exp time
+

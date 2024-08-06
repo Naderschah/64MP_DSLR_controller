@@ -244,6 +244,14 @@ tot_move_dist_for_axis = [max_dist[i]*move_multiplier[i] for i in range(len(max_
 time_estimate_steps = [tot_move_dist_for_axis[i]/90 for i in range(len(exposure))]
 tot_time = sum(time_estimate_steps) + sum([len(coord_arr[2])*len(coord_arr[1])*e for e in exposure])*1e-6
 
+
+# Acc limits mean readout on still (abs) +- 1.5std (not abs) -> yzx since readout axes different
+# measured during no move but motors on 10000 datapoints
+deviations = 1.5
+yzx_mean_readout = [ 1.23893293e-01,  8.19051408e-03, 9.21124513e+00]
+yzx_std_readout = [0.24559896, 0.27919091, 0.34976954]
+
+
 print("Assumed total time is {}".format(tot_time))
 # TODO: Max accel filter for images
 start = time.time()
@@ -253,15 +261,28 @@ with open(dir+'/meta.txt', 'a') as f:
         print("Exposure: {}".format(e))
         cam.set_exp(e)
         for i in coord_arr[2]:
+            ___start = time.time()
+            while (np.abs(acc_val[0]) > yzx_mean_readout[0] + yzx_std_readout[0]) and (np.abs(acc_val[0]) < yzx_mean_readout[0] - yzx_std_readout[0]):
+                #  Check at 100Hz until within bounds
+                time.sleep(0.01)
+            print("Waited {} s for acceleration to stabilize in z".format(time.time()-___start))
             for j in coord_arr[1]:
+                ___start = time.time()
+                while (np.abs(acc_val[1]) > yzx_mean_readout[1] + yzx_std_readout[1]) and (np.abs(acc_val[1]) < yzx_mean_readout[1] - yzx_std_readout[1]):
+                    #  Check at 100Hz until within bounds
+                    time.sleep(0.01)
+                print("Waited {} s for acceleration to stabilize in y".format(time.time()-___start))
                 for k in coord_arr[0]: # Inner loop 2.4 - 2.6s
                     _start = time.time()
                     grid.move_to_coord([k,j,i]) # 0.5s for 100 steps
                     print([k,j,i])
-                    time.sleep(0.01) 
-                    _accel = acc.get() # Take accel just before and jsut after
+                    acc_val =  acc.get()
+                    ___start = time.time()
+                    while (np.abs(acc_val[2]) > yzx_mean_readout[2] + yzx_std_readout[2]) and (np.abs(acc_val[2]) < yzx_mean_readout[2] - yzx_std_readout[2]):
+                        #  Check at 100Hz until within bounds
+                        time.sleep(0.01)
+                    print("Waited {} s for acceleration to stabilize".format(time.time()-___start))
                     img = cam.capture_array()# Return image for contrast profiling
-                    _accel = (acc.get()+_accel)/2 # Take accel just before and jsut after
                     # Wait till previous image saved, since switch to hdf5 should be much quicker
                     cam.wait_for_thread() # Thread takes 0.1 - 0.2 s
                     # start seperate thread to save image 
@@ -274,7 +295,7 @@ with open(dir+'/meta.txt', 'a') as f:
                     contrast_img = img[::2,::2]/4 + img[1::2,::2]/4 + img[::2,1::2]/4+ img[1::2,1::2]/4
                     res = compute_contrast(contrast_img, kernel_size=9, raw=(cam.stream == 'raw')) 
                     print("Compute contrast took ", time.time()-__start)
-                    f.write("{},{},{},{},{},{},{},{}\n".format(k,j,i,_accel,time.time()-start, res[0],res[1],res[2]))
+                    f.write("{},{},{},{},{},{},{}\n".format(k,j,i,time.time()-start, res[0],res[1],res[2]))
                     f.flush() #Just in case
                     print("Time for loop {}".format(time.time()-_start))
 
