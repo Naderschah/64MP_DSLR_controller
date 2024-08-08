@@ -292,7 +292,8 @@ with open(dir+'/meta.txt', 'a') as f:
                     cam.threaded_save('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.hdf5'.format(e), copy.deepcopy(img))
                     # Doing this instead of threading adds ~12 min for 12000 images, io more important 
                     __start = time.time()
-                    img = img[:, :-16].view('uint16')
+                    # Copy so it is C-contiguous apparently it isnt at the moment
+                    img = img[:, :-16].copy().view('uint16')
                     # Equal grey project
                     contrast_img = img[::2,::2]/4 + img[1::2,::2]/4 + img[::2,1::2]/4+ img[1::2,1::2]/4
                     res = compute_contrast(contrast_img, kernel_size=9, raw=(cam.stream == 'raw')) 
