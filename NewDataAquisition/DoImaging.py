@@ -261,12 +261,14 @@ with open(dir+'/meta.txt', 'a') as f:
         print("Exposure: {}".format(e))
         cam.set_exp(e)
         for i in coord_arr[2]:
+            acc_val =  acc.get()
             ___start = time.time()
             while (np.abs(acc_val[0]) > yzx_mean_readout[0] + yzx_std_readout[0]) and (np.abs(acc_val[0]) < yzx_mean_readout[0] - yzx_std_readout[0]):
                 #  Check at 100Hz until within bounds
                 time.sleep(0.01)
             print("Waited {} s for acceleration to stabilize in z".format(time.time()-___start))
             for j in coord_arr[1]:
+                acc_val =  acc.get()
                 ___start = time.time()
                 while (np.abs(acc_val[1]) > yzx_mean_readout[1] + yzx_std_readout[1]) and (np.abs(acc_val[1]) < yzx_mean_readout[1] - yzx_std_readout[1]):
                     #  Check at 100Hz until within bounds
