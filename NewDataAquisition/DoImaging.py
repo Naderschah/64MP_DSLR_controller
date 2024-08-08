@@ -27,14 +27,9 @@ from pathlib import Path
 import copy
 import cv2
 
-def compute_contrast(image, kernel_size=9, raw=False):
-    if raw == True:
-        image = cv2.cvtColor(image, cv2.COLOR_BayerBG2RGB)
-
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
-
+def compute_contrast(image, kernel_size=9):
     # Generate LoG kernel
-    blur = cv2.GaussianBlur(gray, (kernel_size, kernel_size), 0)
+    blur = cv2.GaussianBlur(image, (kernel_size, kernel_size), 0)
     # Change CV_32F to whatever the datatype of the passed or gray image is
     laplacian = cv2.Laplacian(blur, cv2.CV_32F, ksize=kernel_size)
     laplacian = np.abs(laplacian) # Take absolute value
@@ -294,9 +289,9 @@ with open(dir+'/meta.txt', 'a') as f:
                     __start = time.time()
                     # Copy so it is C-contiguous apparently it isnt at the moment
                     img = img[:, :-16].copy().view('uint16')
-                    # Equal grey project
-                    contrast_img = img[::2,::2]/4 + img[1::2,::2]/4 + img[::2,1::2]/4+ img[1::2,1::2]/4
-                    res = compute_contrast(contrast_img, kernel_size=9, raw=(cam.stream == 'raw')) 
+                    # Equal grey project with green averaged first
+                    contrast_img = (img[::2,::2]//3 + img[1::2,::2]//6 + img[::2,1::2]//6+ img[1::2,1::2]//3).astype('uint16')
+                    res = compute_contrast(contrast_img, kernel_size=9) 
                     print("Compute contrast took ", time.time()-__start)
                     f.write("{},{},{},{},{},{},{}\n".format(k,j,i,time.time()-start, res[0],res[1],res[2]))
                     f.flush() #Just in case
