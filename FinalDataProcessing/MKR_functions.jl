@@ -35,7 +35,7 @@ function Laplacian_Pyramid(I,nlev=nothing)
     if (isnothing(nlev))
         nlev = floor(log(min(r,c)) / log(2))
     end
-    J = convert(Array{Float64}, I)
+    J = convert(Array{Float32}, I)
     # Recursively build pyramid
     pyr = Dict()
     filter = Pyramid_Filter
@@ -54,7 +54,6 @@ function Reconstruct_Laplacian_Pyramid(pyr)
     #=
     Takes pyramid and makes image
     =#
-    println("Reconstructing Laplacian Pyramid")
     nlev = length(pyr)
     # Start with low pass residual
     R = pyr[nlev]
@@ -68,7 +67,7 @@ function Reconstruct_Laplacian_Pyramid(pyr)
     return R
 end
 
-function GenerateEmptyPyramids(h_n, w_n, nlev, N)
+function GenerateEmptyPyramids(w_n, h_n, nlev, N)
     pyr = Dict()
     pyr_Weight = Dict()
     Weight_mat = Float32.(zeros(w_n,h_n, 3, N))

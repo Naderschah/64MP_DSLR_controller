@@ -8,6 +8,7 @@ import .Datastructures
 
 using StatsBase
 using DelimitedFiles
+using PrettyTables
 
 include("./ImagePlacement.jl")
 
@@ -161,7 +162,11 @@ function ParseMetaFile(path)
     cont = split(cont, "\n")
     # 1 is header
     cont = [split(cont[i], ",") for i in 2:length(cont) if cont[i] != ""]
-    cont = stack(cont, dims=1)
+    try
+        cont = stack(cont, dims=1)
+    catch
+        cont = stack(cont[1:end-1],dims=1)
+    end
     # Turn into array
     xyz  = map(x->parse(Int64,x),cont[:,1:3])
     cont = map(x->parse(Float64,x),cont) 
@@ -173,17 +178,16 @@ function ParseMetaFile(path)
     x_indexing = Dict(x_vals[i] => i for i in eachindex(x_vals))
     y_indexing = Dict(y_vals[i] => i for i in eachindex(y_vals))
     z_indexing = Dict(z_vals[i] => i for i in eachindex(z_vals))
-    # Just some info
-    accel = vec(cont[:,4])
-    printstyled("Acceleration statistics: mean=$(mean(accel)) std=$(std(accel)) max=$(maximum(accel)) min=$(minimum(accel))\n", color=:yellow)
 
     contrast = zeros(Float64, (3, length(x_vals), length(y_vals), length(z_vals)))
     # Populate structured array
-    for i in axes(cont, 1)
-        contrast[:,x_indexing[xyz[i,1]],y_indexing[xyz[i,2]],z_indexing[xyz[i,3]]] = cont[i,6:8]
+    for i in axes(cont, 1) 
+        contrast[:,x_indexing[xyz[i,1]],y_indexing[xyz[i,2]],z_indexing[xyz[i,3]]] = cont[i,5:7]
     end
     # And unpack
-    contrast_max, contast_min, contrast_mean = Tuple(contrast[i,:,:,:] for i in 1:3)
+    contrast_max = contrast[1,:,:,:]
+    contast_min = contrast[2,:,:,:]
+    contrast_mean = contrast[3,:,:,:]
     return contrast_max, contast_min, contrast_mean, (x_indexing,y_indexing,z_indexing)
 end# TODO This doesnt work with multiple exposure, same with below
 
@@ -191,31 +195,33 @@ function GenerateImageIgnoreListContrast(contrast_max, contast_min, contrast_mea
     # We will first generate some statistics from mean
     flattend_contrast = vec(contrast_mean)
     _mean,_median, _std, _min, _max = mean(flattend_contrast), median(flattend_contrast),std(flattend_contrast), minimum(flattend_contrast), maximum(flattend_contrast)
+    
+    # Generate pretty print table for easier adjustment of method during processing
+    threshhold = ["Threshhold",_mean -0.5*_std, _median - _std, _max - 2*_std, (_min+_max)/2 - _std, (_mean+_median)/2 -_std]
+    percrejected = Any["Rejected (%)"]
+    percrejected2 = [100*sum(flattend_contrast .< i)/length(flattend_contrast) for i in threshhold[2:end]]
+    append!(percrejected, percrejected2)
 
-    println("Contrast Statistics\nmean: $(_mean)\nmedian: $(_median)\nstd: $(_std)\nmin: $(_min)\nmax: $(_max)")
-    # TODO: Test the filtering technique
-    if cont_method == 0
-        threshhold = 50000 # Custom filtering for broken contrast getting
-        return contrast_max .> threshhold
-    elseif cont_method == 1
-        threshhold = _mean - _std
-    elseif cont_method == 2
-        threshhold = _median - _std
-    elseif cont_method == 3
-        threshhold = _max - 2*_std
-    elseif cont_method == 4
-        threshhold = (_min+_max)/2 - _std 
-    elseif cont_method == 5
-        threshhold = (_mean+_median)/2 -_std
-    else
-        println("Please specify a method")
-    end
-
-    printstyled("Rejecting $(round(100*(flattend_contrast .< threshhold)/length(flattend_contrast)))", color=:yellow)
-    println("Threshhold $(threshhold)")
+    header = ["","Mean-0.5STD", "Median-STD", "Max-2STD", "(Min+Max)/2 - STD", "(Mean+Median)/2-STD"]
+    hl_current = PrettyTables.Highlighter(
+           (data, i, j) -> (j == cont_method+1) && (i != 1),
+           PrettyTables.crayon"blue bold"
+       );
+    hl_column = PrettyTables.Highlighter(
+        (data, i, j) -> (j == 1),
+        PrettyTables.crayon"yellow bold"
+    );
+    PrettyTables.pretty_table(
+        permutedims(hcat(threshhold, percrejected));
+        formatters    = ft_printf("%5.2f", 2:4),
+        header        = header,
+        header_crayon = PrettyTables.crayon"yellow bold",
+        highlighters  = (hl_current, hl_column),
+        tf            = tf_unicode_rounded
+    )    
 
     # Return indexing array
-    return contrast_mean .> threshhold
+    return contrast_mean .> threshhold[cont_method+1]
 end
 
 
