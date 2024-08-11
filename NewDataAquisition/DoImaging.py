@@ -298,16 +298,20 @@ with open(dir+'/meta.txt', 'a') as f:
                     print("Time for loop {}".format(time.time()-_start))
 
                     """
-                    Timing: 2.5 for inner loop (~0 if 1e-3)
+                    Timing: 1.1 for inner loop (~0 if 1e-3)
                     move_coord : 0.5s (100steps)
                     accel.get : ? ~0?
                     image : 0.2s @ 32000 mu s exp -> 0.16s overhead
-                    accel.get : ?
                     threaded_save : ~0
-                    comupute_contrast : 1.8s wrong implementation
+                    comupute_contrast : 0.32
                     write file : ~0
                     ----
-                    so far: 0.7s
+                    That works out correctly
+
+                    Acc seems to never actually be triggered, which fair enough
+                    -- Run trials on this
+
+                    At 100 steps for full range it should be 14.685 minutes per y,z pos
                     """
 
                 coord_arr[0] = coord_arr[0][::-1]
