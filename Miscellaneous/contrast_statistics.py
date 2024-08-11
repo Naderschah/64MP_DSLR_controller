@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import copy
 from scipy.optimize import curve_fit
 
-dir = '/run/media/felix/3677421f-5daf-4ea7-ba33-31b09d11edcf1/Images/img_0'
+dir = '/run/media/felix/3677421f-5daf-4ea7-ba33-31b09d11edcf/Images/img_0'
 
 with open(os.path.join(dir, 'meta.txt'), 'r') as t:
     meta = t.readlines()
@@ -16,7 +16,10 @@ meta = meta[1:]
 meta = [[float(j) for j in i] for i in meta]
 
 # Time since start, x, y, z, acceleration, contrast max min mean
-fin_array = [[ i[4], i[0], i[1], i[2], i[3], i[5], i[6], i[7] ] for i in meta]
+try:
+    fin_array = [[ i[3], i[0], i[1], i[2], i[4], i[5], i[6] ] for i in meta]
+except:
+    fin_array = [[ i[3], i[0], i[1], i[2], i[4], i[5], i[6] ] for i in meta[:-2]]
 
 fin_array = np.array(fin_array)
 
@@ -24,9 +27,9 @@ orig_data = copy.deepcopy(fin_array)
 
 # Make a plot of contrast values
 sub = orig_data[:,5:]
-plt.plot(np.abs(orig_data[:,5]), label='max')
-plt.plot(np.abs(orig_data[:,6]), label='min')
-plt.plot(np.abs(orig_data[:,7]), label='mean')
+plt.plot(np.abs(orig_data[:,4]), label='max')
+plt.plot(np.abs(orig_data[:,5]), label='min')
+plt.plot(np.abs(orig_data[:,6]), label='mean')
 
 plt.legend()
 plt.grid()
@@ -34,7 +37,7 @@ plt.savefig("Contrast Statistics")
 
 plt.clf()
 
-hist, bin_edges = np.histogram(orig_data[:,7], bins=100)
+hist, bin_edges = np.histogram(orig_data[:,6], bins=100)
 bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
 cdf = np.cumsum(hist * np.diff(bin_edges))
 cdf_normalized = cdf / cdf[-1]
@@ -59,7 +62,7 @@ ax1.grid(True, which='both')
 plt.savefig("Contrast Binning mean")
 plt.clf()
 
-hist, bin_edges = np.histogram(orig_data[:,5], bins=100)
+hist, bin_edges = np.histogram(orig_data[:,4], bins=100)
 bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
 cdf = np.cumsum(hist * np.diff(bin_edges))
 cdf_normalized = cdf / cdf[-1]
@@ -113,10 +116,10 @@ def evaluate_thresholds(contrast_mean):
 
 
 print("         Attemting methods on mean array")
-evaluate_thresholds(orig_data[:,7])
+evaluate_thresholds(orig_data[:,6])
 print()
 print("         Attemting methods on max array")
-evaluate_thresholds(orig_data[:,5])
+evaluate_thresholds(orig_data[:,4])
 print()
 
 """
@@ -124,11 +127,3 @@ Mean and median are decently close
 
 
 """
-
-accel = np.abs(fin_array[:,-1])
-#And lastly some acceleration statistics
-print("Acceleration statistics")
-print("Mean: {}".format(np.mean(accel)))
-print("Std: {}".format(np.std(accel)))
-print("Min: {}".format(np.min(accel)))
-print("Max: {}".format(np.max(accel)))

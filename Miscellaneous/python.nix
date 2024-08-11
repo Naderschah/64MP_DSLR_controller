@@ -13,6 +13,8 @@ in pkgs.mkShell {
 	      python-pkgs.jupyter
 	      python-pkgs.h5py
 	      python-pkgs.opencv4
+	      python-pkgs.h5py
         ]))
+	pkgs.hdf5
    ];
 }
