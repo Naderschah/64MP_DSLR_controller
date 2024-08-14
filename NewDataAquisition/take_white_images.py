@@ -5,7 +5,7 @@ It saves them to a folder for later processing
 Adjust iso and exp as needed below
 """
 
-import os, time, copy
+import os, datetime, copy, time
 from Controler_Classes import Camera_Handler
 
 iso = 1
@@ -25,11 +25,15 @@ cam.stream = 'raw'
 
 cam.set_iso(iso)
 cam.set_exp(exp)
+cam.start()
+time.sleep(1)
 
-
-for i in count:
+for i in range(count):
     img = cam.capture_array()
     cam.wait_for_thread()
-    cam.threaded_save(os.path.join(save_path, time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())+'hdf5'), copy.deepcopy(img))
+    cam.threaded_save(os.path.join(save_path, datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")+'.hdf5'), copy.deepcopy(img))
+    print(i)
 
+cam.wait_for_thread()
 print("Done")
+cam.stop()
