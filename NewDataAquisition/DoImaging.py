@@ -30,6 +30,7 @@ import psutil
 from pathlib import Path
 import copy
 import cv2
+import h5py
 
 def compute_contrast(image, kernel_size=9):
     # Generate LoG kernel
@@ -231,6 +232,14 @@ for i in coord_arr:
     print(str(len(i))+": {}".format([j*mm_per_step for j in i]))
 print("Camera image width and height in mm: {}, {}".format(im_y_len, im_z_len))
 
+
+# Write grid to file for realtime processing
+with h5py.File(os.path.join(dir, 'grid.hdf5'), "w") as f:
+    xdat = f.create_dataset("x", data=coord_arr[0])
+    ydat = f.create_dataset("y", data=coord_arr[1])
+    zdat = f.create_dataset("z", data=coord_arr[2])
+    expdat = f.create_dataset("exp", data=exposure)
+
 # Start camera for imaging
 cam.start()
 
@@ -308,10 +317,11 @@ with open(dir+'/meta.txt', 'a') as f:
                     ----
                     That works out correctly
 
-                    Acc seems to never actually be triggered, which fair enough
-                    -- Run trials on this
+                    Acc never triggered, but kept to determine bumping the microscope
 
                     At 100 steps for full range it should be 14.685 minutes per y,z pos
+
+                    Timing for network save over ether seems the same as normal
                     """
 
                 coord_arr[0] = coord_arr[0][::-1]
