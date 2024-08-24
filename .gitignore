@@ -1,3 +1,8 @@
 calibration/
 DataProcessing/deep-high-dynamic-range
 *CPU_profile*
+Flats/
+*.pkl
+*.hdf5
+*.png
+*__pycache__*

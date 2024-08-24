@@ -55,14 +55,15 @@ function SimpleDebayer(img, bayer_patter = "BGGR")
 end
 
 
-path = "/Images/img_8/20400_0_8192_exp32000.hdf5"
+path = "/Images/img_0/11000_0_0_exp32000.hdf5"
 
 _file = HDF5.h5open(path, "r")
 
 img = HDF5.read(_file["image"])
 HDF5.close(_file)
 print(size(img))
-img = unpack_12bit_packed(img, size(img,1), size(img,2))
+#img = unpack_12bit_packed(img, size(img,1), size(img,2))
+img = reinterpret(UInt16,img)
 print(size(img))
 
 # Debayer
@@ -75,7 +76,7 @@ println(minimum(img)/typemax(UInt16))
 println(size(img))
 println(sum(img)/length(img)/typemax(UInt16))
 # Now save and check
-img = colorview(Images.RGB, permutedims(convert.(N0f16, img./65535), (3, 2,1))) 
+img = colorview(Images.RGB, permutedims(convert.(N0f16, img./(2^12-1)), (3, 2,1))) 
 println(size(img))
 println(typeof(img))
 println(size(img))

@@ -16,6 +16,11 @@ in pkgs.mkShell {
 	      python-pkgs.h5py
 	      python-pkgs.pytest
 	      python-pkgs.xarray
+	      python-pkgs.colour
+	      python-pkgs.beautifulsoup4
+	      python-pkgs.scikit-learn
+	      python-pkgs.scikit-image
+	      python-pkgs.numba
 	      python-pkgs.plotly
 	      (python-pkgs.buildPythonPackage {
                 pname = "mpl-interactions";

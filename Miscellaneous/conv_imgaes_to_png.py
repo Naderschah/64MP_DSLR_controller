@@ -3,8 +3,8 @@ import numpy as np
 import h5py
 import os
 
-path = '/run/media/felix/3677421f-5daf-4ea7-ba33-31b09d11edcf/Images/img_3'
-save_path = '/run/media/felix/3677421f-5daf-4ea7-ba33-31b09d11edcf/Images/img_3/tmp_pngs'
+path = './CCM/1015/'
+save_path = './CCM/1015/tmp'
 
 """
 To inspect specific images
@@ -24,7 +24,8 @@ def load_image(path):
         
 
 for i in os.listdir(path):
-    if '_8192_8192_exp32000' in i:
+    #if '_8192_8192_exp32000' in i:
+    if i[-5:] == 'hdf5':
         img = load_image(os.path.join(path, i))
         img = Image.fromarray(img, mode='RGB')
         img.save(os.path.join(save_path, i[:-5]+'.png'))
