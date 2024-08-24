@@ -23,7 +23,7 @@ res = input("Have the endstops been calibrated? [Y/N]")
 if res.lower() != 'y':
     print("Please calibrate and come back")
     sys.exit(0)
-
+print("normal set up base in focus ~149 mm")
 print("Moving to 0,0,0")
 grid.move_to_coord([0,0,0])
 

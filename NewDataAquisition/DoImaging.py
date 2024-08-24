@@ -56,7 +56,7 @@ res = [4056,3040]
 sensor_size = [7.564,5.467] # Sensor size in mm not px count
 mm_per_step = conv_to_mm(1) # ~0.122 mu m per step or 122 nm per step
 img_path = '/media/micro/3677421f-5daf-4ea7-ba33-31b09d11edcf/Images'
-img_path = '/home/micro/RemoteStorage'
+img_path = '/home/micro/RemoteStorage/Images/'
 # Focus depth is 12 mu m 
 # TODO Use computed after the profiling is done
 # The below is most likely overkill go with 150? also how is focus depth defined gpt refuses to give me a usefull answer
@@ -201,7 +201,7 @@ count = 0
 while dirname+'_'+str(count) in dirs:
     count += 1
 dirname = dirname+'_'+str(count)
-dir = os.path.join(img_path+dirname)
+dir = os.path.join(img_path,dirname)
 os.mkdir(dir)
 os.chdir(dir)
 print('Changed directory to {}'.format(dir))
