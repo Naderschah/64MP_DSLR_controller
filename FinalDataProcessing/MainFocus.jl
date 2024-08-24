@@ -109,7 +109,7 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,batch_size:
     # Parse meta file for contrast values if available and create filtering array
     contrast_max, contast_min, contrast_mean,indexing_array,conv_dicts = nothing,nothing,nothing,nothing,nothing
 
-    if isfile(joinpath(parameters.path, "meta.txt"))
+    if isfile(joinpath(parameters.path, "meta.txt")) && !realtime_processing
         println("Loading meta.txt to filter images by contrast")
         # Conv dicts is a tupple of dictionaries to find the index of coordinates each has the form coord => index
         contrast_max, contast_min, contrast_mean,conv_dicts = IO_dp.ParseMetaFile(joinpath(parameters.path, "meta.txt"))
@@ -155,7 +155,7 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,batch_size:
                     end
                     return partitions
                 end
-                function BatchedMKR(fnames, pp, batch_size, prev_path, yi,zi,ei, progress_bar; filter=Kernels.GaussianKernel(5),first=false)
+                function BatchedMKR(fnames, pp, batch_size, prev_path, yi,zi,ei, progress_bar; filter=Kernels.GaussianKernel(5),first=false, realtime_processing=false)
                     """
                     Function for automatic recursion of the dataset, ie process images in batch size until none left
                     fnames -> Full path file + file names for processing
@@ -232,7 +232,7 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,batch_size:
                 # And run the iteration function with pretty print
                 p = Progress(compute_total_iterations(length(fnames), batch_size), "$(final_name)",1)
                 # First flag tells to preprocess imgs with blackpoint flat and CCM, after wards wont again
-                image = BatchedMKR(fnames, pp, batch_size, intermediary_img_path, yi,zi,ei,p,filter=Kernels.GaussianKernel(5,2.5), first = true)# filter= nothing, 
+                image = BatchedMKR(fnames, pp, batch_size, intermediary_img_path, yi,zi,ei,p,filter=Kernels.GaussianKernel(5,2.5), first = true, realtime_processing=realtime_processing)# filter= nothing, 
                 println("Finished")
                 # Save the Image
                 savepath = joinpath(parameters.save_path, final_name)
