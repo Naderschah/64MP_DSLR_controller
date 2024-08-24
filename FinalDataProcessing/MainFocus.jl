@@ -46,7 +46,7 @@ Kernel for pyr and contrast should prob be the same size to target the same size
 """
 
 
-
+realtime_processing = false
 batch_size = 8
 path = "/Images/img_0/"
 save_path = "/SaveSpot/LensDistortion/"
@@ -65,9 +65,10 @@ HDF5.close(_file)
 pp = Datastructures.ProcessingParameters(contrast_precision, ContrastFunctions.LoG, GreyProjectors.lstar, blackpoint, path, save_path,width, height, debug, CCM, flat)
 
 
-function FocusFusion(parameters::Datastructures.ProcessingParameters,batch_size::Int,tst::Bool=false)
+function FocusFusion(parameters::Datastructures.ProcessingParameters,batch_size::Int,tst::Bool=false,realtime_processing::Bool=false)
     # Print process ID for debugging purposes
     println("PID: $(getpid())")
+    printstyled("Running with $(nthreads()) threads\n", color=:blue)
     overallStart = time()
     if tst # When profiling need to run once to initialize
         return
@@ -79,13 +80,17 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,batch_size:
     # Where focus stack recursions will be stored
     intermediary_img_path = parameters.save_path
 
+    # Todo can the two below be removed? Actually all the NaN checks? If there are nans the images are wrong havent had any problems in a while
     # Epsilons in case of Nans (assumed) resulting from the weight matrix scaling
     epsilons = [1e-12,1e-10, 1e-8, 1e-6]
-    printstyled("Running with $(nthreads()) threads\n", color=:blue)
     # Number of times fusion may fail (needs the same number of epsilons)
     allowed_fail= 4 
     # Grab image identifiers
-    ImagingGrid = IO_dp.GrabIdentifiers(parameters.path)
+    if !realtime_processing
+        ImagingGrid = IO_dp.GrabIdentifiers(parameters.path)
+    else
+        ImagingGrid = IO_dp.LoadGridFromPath(parameters.path)
+    end
     #Temp override
     #ImagingGrid.exp = [32000]
     #ImagingGrid.y =[0,24785,49571,]
@@ -129,7 +134,9 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,batch_size:
             else  fnames = [IO_dp.GenerateFileName(xi,yi,zi,ei) for xi in ImagingGrid.x if indexing_array[conv_dicts[1][xi],conv_dicts[2][yi],conv_dicts[3][zi]]]
             end
             # Filter based on files available and make full path
-            fnames =  [joinpath(parameters.path,i) for i in fnames if isfile(joinpath(parameters.path, i)) ]
+            if !realtime_processing
+                fnames =  [joinpath(parameters.path,i) for i in fnames if isfile(joinpath(parameters.path, i)) ]
+            end
             # Run stacking for yze postion and split them as too much ram is used
             println("File count $(length(fnames))/$(length(ImagingGrid.x))")
             counter_ = 0
@@ -182,6 +189,15 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,batch_size:
                             outname = joinpath(curr_save_dir, "im_$(counter_).png")
                             push!(out_fnames, outname) # Push fname now to avoid clash with isfile
                             if !isfile(outname) 
+                            if realtime_processing
+                                # Check If all images for the batch are avaiable
+                                _start = time()
+                                while sum([isfile(i) for i in batch]) != batch_size
+                                    # Wait for 2 minutes maximum
+                                    if (time()-_start > 120) throw("Reached Waiting Timeout -> Check why no more images are arriving") end
+                                    sleep(3) # ~ enough for two images to be taken
+                                end
+                            end 
                             fail_count = 1
                             # Do MKR with fail check
                             while fail_count <= allowed_fail
@@ -251,5 +267,5 @@ if isinteractive()
     @profile FocusFusion(pp)
     pprof()
 else
-    FocusFusion(pp, batch_size)
+    FocusFusion(pp, batch_size, realtime_processing)
 end
