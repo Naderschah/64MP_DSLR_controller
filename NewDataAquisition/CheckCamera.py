@@ -17,7 +17,7 @@ from pathlib import Path
 # Initiate all the controller classs
 grid,gpio_pins = init_grid()
 
-cam = Camera_Handler(disable_tuning=True, disable_autoexposure=True, low_res=True)
+cam = Camera_Handler(disable_tuning=True, disable_autoexposure=True, low_res=False)
 
 
 print("Movement commands are formated as: <Motor><Steps>, where <Motor>=x,y,z and steps is some number")
@@ -45,9 +45,9 @@ while True:
             to_run(val)
         elif command == "capture" or command == "c":
             cam.start()
-            cam.capture_image(str(Path.home())+'/cam_check_capture.png')
+            cam.capture_image('/home/micro/RemoteStorage/cam_check_capture.png')
             cam.stop()
-            os.system("feh {}".format(str(Path.home())+'/cam_check_capture.png'))
+            print("Ready")
         else:
             raise Exception("Command Not recognized")
     

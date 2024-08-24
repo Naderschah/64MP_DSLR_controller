@@ -6,3 +6,4 @@ Flats/
 *.hdf5
 *.png
 *__pycache__*
+*ipynbcheckpoint*

@@ -18,7 +18,7 @@ from pathlib import Path
 grid,gpio_pins = init_grid()
 
 # Keep all control structures enabled to allow easy grid alignment
-cam = Camera_Handler(disable_tuning=False, disable_autoexposure=False,low_res=True)
+cam = Camera_Handler(disable_tuning=False, disable_autoexposure=False,low_res=False)
 res = input("Have the endstops been calibrated? [Y/N]")
 if res.lower() != 'y':
     print("Please calibrate and come back")
@@ -35,9 +35,9 @@ while True:
     res = input()
     if res == 'capture' or res == 'c':
         cam.start()
-        cam.capture_image(str(Path.home())+'/cam_check_capture.png')
+        cam.capture_image('/home/micro/RemoteStorage/cam_check_capture.png')
         cam.stop()
-        os.system("feh {}".format(str(Path.home())+'/cam_check_capture.png'))
+        print("Ready")
     elif res == 'exit':
         break
     elif res == 'exitnow':
