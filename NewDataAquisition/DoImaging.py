@@ -265,28 +265,22 @@ with open(dir+'/meta.txt', 'a') as f:
         cam.set_exp(e)
         for i in coord_arr[2]:
             acc_val =  acc.get()
-            ___start = time.time()
             while (np.abs(acc_val[0]) > yzx_mean_readout[0] + yzx_std_readout[0]) and (np.abs(acc_val[0]) < yzx_mean_readout[0] - yzx_std_readout[0]):
                 #  Check at 100Hz until within bounds
                 time.sleep(0.01)
-            print("Waited {} s for acceleration to stabilize in z".format(time.time()-___start))
             for j in coord_arr[1]:
                 acc_val =  acc.get()
-                ___start = time.time()
                 while (np.abs(acc_val[1]) > yzx_mean_readout[1] + yzx_std_readout[1]) and (np.abs(acc_val[1]) < yzx_mean_readout[1] - yzx_std_readout[1]):
                     #  Check at 100Hz until within bounds
                     time.sleep(0.01)
-                print("Waited {} s for acceleration to stabilize in y".format(time.time()-___start))
                 for k in coord_arr[0]: # Inner loop 2.4 - 2.6s
                     _start = time.time()
                     grid.move_to_coord([k,j,i]) # 0.5s for 100 steps
                     print([k,j,i])
                     acc_val =  acc.get()
-                    ___start = time.time()
                     while (np.abs(acc_val[2]) > yzx_mean_readout[2] + yzx_std_readout[2]) and (np.abs(acc_val[2]) < yzx_mean_readout[2] - yzx_std_readout[2]):
                         #  Check at 100Hz until within bounds
                         time.sleep(0.01)
-                    print("Waited {} s for acceleration to stabilize".format(time.time()-___start))
                     img = cam.capture_array()# Return image for contrast profiling
                     # Wait till previous image saved, since switch to hdf5 should be much quicker
                     cam.wait_for_thread() # Thread takes 0.1 - 0.2 s
@@ -294,13 +288,11 @@ with open(dir+'/meta.txt', 'a') as f:
                     # --> Note deepcopy to avoid the new img overwriting the old
                     cam.threaded_save('{}'.format('_'.join([str(i) for i in grid.pos]))+'_exp{}.hdf5'.format(e), copy.deepcopy(img))
                     # Doing this instead of threading adds ~12 min for 12000 images, io more important 
-                    __start = time.time()
                     # Copy so it is C-contiguous apparently it isnt at the moment
                     img = img[:, :-16].copy().view('uint16')
                     # Equal grey project with green averaged first
                     contrast_img = (img[::2,::2]//3 + img[1::2,::2]//6 + img[::2,1::2]//6+ img[1::2,1::2]//3).astype('uint16')
                     res = compute_contrast(contrast_img, kernel_size=9) 
-                    print("Compute contrast took ", time.time()-__start)
                     f.write("{},{},{},{},{},{},{}\n".format(k,j,i,time.time()-start, res[0],res[1],res[2]))
                     f.flush() #Just in case
                     print("Time for loop {}".format(time.time()-_start))
