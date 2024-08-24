@@ -31,7 +31,7 @@ time.sleep(1)
 for i in range(count):
     img = cam.capture_array()
     cam.wait_for_thread()
-    cam.threaded_save(os.path.join(save_path, datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")+'.hdf5'), copy.deepcopy(img))
+    cam.threaded_save(os.path.join(save_path, datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")+'.hdf5'), copy.deepcopy(img))
     print(i)
 
 cam.wait_for_thread()

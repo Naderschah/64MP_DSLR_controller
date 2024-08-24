@@ -204,7 +204,7 @@ function GenerateImageIgnoreListContrast(contrast_max, contast_min, contrast_mea
 
     header = ["","Mean-0.5STD", "Median-STD", "Max-2STD", "(Min+Max)/2 - STD", "(Mean+Median)/2-STD"]
     hl_current = PrettyTables.Highlighter(
-           (data, i, j) -> (j == cont_method+1) && (i != 1),
+           (data, i, j) -> (i == cont_method+1) && (j != 1),
            PrettyTables.crayon"blue bold"
        );
     hl_column = PrettyTables.Highlighter(

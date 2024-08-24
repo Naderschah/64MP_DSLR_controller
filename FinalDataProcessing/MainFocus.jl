@@ -10,39 +10,59 @@ include("./Grey_Projectors.jl")
 import .GreyProjectors
 include("./ImageFusion.jl")
 import .ImageFusion
+include("./Kernels.jl")
+import .Kernels
 
 using Base.Threads
 using Images
 using IterTools
 using ProgressMeter
+using HDF5
+
+
+"""
+Rectangular artifacts: Could be due to out of range values? Check dtype and max val at the end of fusion but clipping is applied
+Current trial: Using 3x3 LoG kernel for lap pyramid 
+- Seems like undersmoothing 
+
+Also all sampling filters must be a 1D array generating the 2D seperable kernel
+
+
+Lap Pyramid
+    - 3x3 should be fine, can play with different standard deviations 
+        - Default Lap Pyramid sigma unknown --> Seems like binomial approximation to Gaussian 
+        - Trial 2.5
+
+To be trialed: 3x3,5x5,7x7 kernel for contrast with sigma = n/6 
+    - default is 9x9 @ 1.4sigma
+        Results
+        - 
+
+
+Kernel for pyr and contrast should prob be the same size to target the same size features?
+- For current rest 3x3 samples within minimum detail, first pyramid layer might be useless if 3x3 
+    (if we remove top and bottom layer might improve quality and noise performance)
+
+"""
+
 
 
 batch_size = 8
 path = "/Images/img_0/"
-save_path = "/SaveSpot/FakeBee2/"
-blackpoint = [0,0,0]
+save_path = "/SaveSpot/LensDistortion/"
 contrast_precision = Float32 
 width = 2028 #3040 RAW data rn
-height =  1520# 4056
+height = 1520# 4056
 debug = false
 
-function restart_with_threads(num_threads)
-    ENV["JULIA_NUM_THREADS"] = string(num_threads)
-    println("Restarting Julia with $num_threads threads...")
-    run(`$(Base.julia_cmd()) -t $num_threads -e 'println("Running with ", Threads.nthreads(), " threads")'`)
-end
+calib_data = "../CalibrationData/Calibration.hdf5"
+_file = HDF5.h5open(calib_data, "r")
+blackpoint = HDF5.read(_file["Blackpoint"]) 
+flat = HDF5.read(_file["flat"])  # flat field
+CCM = HDF5.read(_file["CCM"])  # Color correction matrix
+HDF5.close(_file)
 
-# Restart with number of threads
-if nthreads() == 1
-    num_threads = batch_size
-    # Overwrite in case there is too many and risks getting killed
-    if batch_size >= Sys.CPU_THREADS
-        num_threads = Sys.CPU_THREADS - 1
-    end
-    restart_with_threads(num_threads)
-end
-
-pp = Datastructures.ProcessingParameters(contrast_precision, ContrastFunctions.LoG, GreyProjectors.lstar, blackpoint, path, save_path,width, height, debug)
+pp = Datastructures.ProcessingParameters(contrast_precision, ContrastFunctions.LoG, GreyProjectors.lstar, blackpoint, path, save_path,width, height, debug, CCM, flat)
 
 
 function FocusFusion(parameters::Datastructures.ProcessingParameters,batch_size::Int,tst::Bool=false)
@@ -67,10 +87,9 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,batch_size:
     # Grab image identifiers
     ImagingGrid = IO_dp.GrabIdentifiers(parameters.path)
     #Temp override
-    #ImagingGrid.exp = ["NoIR"]
-    #ImagingGrid.y =[0]
-    #ImagingGrid.z = [0]
-
+    #ImagingGrid.exp = [32000]
+    #ImagingGrid.y =[0,24785,49571,]
+    #ImagingGrid.z = [0,17914,35828,53742]
 
     # Iterate the imaging grid
     total = length(ImagingGrid.y)*length(ImagingGrid.z)*length(ImagingGrid.exp)
@@ -104,7 +123,7 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,batch_size:
         if ((!isfile("$(save_path)$(final_name)") || parameters.debug) && !(final_name in ignore))
             start = time()
             println()
-            printstyled("Processing image $(counter) out of $(total)\n", color=:blue)
+            printstyled("Processing image $(counter) out of $(total)\n\n", color=:blue)
             # Generate file names
             if isnothing(indexing_array)  fnames = [IO_dp.GenerateFileName(xi,yi,zi,ei) for xi in ImagingGrid.x]
             else  fnames = [IO_dp.GenerateFileName(xi,yi,zi,ei) for xi in ImagingGrid.x if indexing_array[conv_dicts[1][xi],conv_dicts[2][yi],conv_dicts[3][zi]]]
@@ -112,93 +131,99 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters,batch_size:
             # Filter based on files available and make full path
             fnames =  [joinpath(parameters.path,i) for i in fnames if isfile(joinpath(parameters.path, i)) ]
             # Run stacking for yze postion and split them as too much ram is used
-            println("File count $(length(ImagingGrid.x))/$(length(fnames))")
+            println("File count $(length(fnames))/$(length(ImagingGrid.x))")
             counter_ = 0
-            #Use save directory as ssd full
-            if !isdir(joinpath(intermediary_img_path, "$(yi)_$(zi)_$(ei)")) 
-                mkdir(joinpath(intermediary_img_path, "$(yi)_$(zi)_$(ei)"))
-            end
-            function partition_image_array(iterable, n)
-                partitions = []
-                i = 1
-                while i <= length(iterable)
-                    end_idx = min(i + n - 1, length(iterable))
-                    push!(partitions, iterable[i:end_idx])
-                    i += n
+            if length(fnames) != 0
+                #Use save directory as ssd full
+                if !isdir(joinpath(intermediary_img_path, "$(yi)_$(zi)_$(ei)")) 
+                    mkdir(joinpath(intermediary_img_path, "$(yi)_$(zi)_$(ei)"))
                 end
-                return partitions
-            end
-            function BatchedMKR(fnames, pp, batch_size, prev_path, yi,zi,ei, progress_bar)
-                """
-                Function for automatic recursion of the dataset, ie process images in batch size until none left
-                fnames -> Full path file + file names for processing
-                pp -> processing parameters for MKR
-                batch_size -> Maximum number of images to run MKR on
-                prev_path -> The path under which to creaet the new out directory
-                """
-                out_fnames = []
-                if length(fnames) <= batch_size
-                    #TODO: Make final image
-                    fail_count = 1
-                    while fail_count <= allowed_fail
-                        image = ImageFusion.MKR(fnames, parameters, epsilons[fail_count])
-                        next!(progress_bar)
-                        if any(isnan.(image))
-                            fail_count += 1
-                        else
-                            return image
-                        end 
+                function partition_image_array(iterable, n)
+                    partitions = []
+                    i = 1
+                    while i <= length(iterable)
+                        end_idx = min(i + n - 1, length(iterable))
+                        push!(partitions, iterable[i:end_idx])
+                        i += n
                     end
-                else
-                    # Set new path make dir if doesnt exist
-                    curr_save_dir = joinpath(prev_path, "$(yi)_$(zi)_$(ei)") 
-                    if !isdir(curr_save_dir)
-                        mkdir(curr_save_dir)
-                    end
-                    counter_ = 0
-                    # Dont use itertools -> Doesnt supply remainder elements
-                    for batch in partition_image_array(fnames, batch_size)
-                        # Now we handled file and dir existance and locations
-                        outname = joinpath(curr_save_dir, "im_$(counter_).png")
-                        push!(out_fnames, outname) # Push fname now to avoid clash with isfile
-                        if !isfile(outname) 
+                    return partitions
+                end
+                function BatchedMKR(fnames, pp, batch_size, prev_path, yi,zi,ei, progress_bar; filter=Kernels.GaussianKernel(5),first=false)
+                    """
+                    Function for automatic recursion of the dataset, ie process images in batch size until none left
+                    fnames -> Full path file + file names for processing
+                    pp -> processing parameters for MKR
+                    batch_size -> Maximum number of images to run MKR on
+                    prev_path -> The path under which to creaet the new out directory
+                    """
+                    out_fnames = []
+                    if length(fnames) <= batch_size
+                        #TODO: Make final image
                         fail_count = 1
-                        # Do MKR with fail check
                         while fail_count <= allowed_fail
-                            image = ImageFusion.MKR(batch, parameters, epsilons[fail_count])
+                            image = ImageFusion.MKR(fnames, parameters, epsilons[fail_count],filter=filter)
+                            next!(progress_bar)
                             if any(isnan.(image))
                                 fail_count += 1
                             else
-                                Images.save(outname, image)
-                                next!(progress_bar)
-                                break
-                            end
-                        end # Fail check
-                        end # Is file
-                        counter_ += 1
-                    end # Batch
-                end # fnames size check
-                # Start new iteration 
-                return BatchedMKR(out_fnames, pp, batch_size, curr_save_dir, yi, zi, ei,progress_bar)
-            end # function
-            function compute_total_iterations(image_count::Int, batch_size::Int)
-                """Compute how many times in total batched MKR will be called"""
-                total_iterations = 0
-                current_images = image_count
-                while current_images > 1
-                    iterations_at_level = ceil(Int, current_images / batch_size)
-                    total_iterations += iterations_at_level
-                    current_images = iterations_at_level
-                end
-                return total_iterations
-            end # function
-            # And run the iteration function with pretty print
-            p = Progress(compute_total_iterations(length(fnames), batch_size), "$(final_name)",1)
-            image = BatchedMKR(fnames, pp, batch_size, intermediary_img_path, yi,zi,ei,p)
-            # Save the Image
-            savepath = joinpath(parameters.save_path, final_name)
-            Images.save(savepath, image)
+                                return image
+                            end 
+                        end
+                    else
+                        # Set new path make dir if doesnt exist
+                        curr_save_dir = joinpath(prev_path, "$(yi)_$(zi)_$(ei)") 
+                        if !isdir(curr_save_dir)
+                            mkdir(curr_save_dir)
+                        end
+                        counter_ = 0
+                        # Dont use itertools -> Doesnt supply remainder elements
+                        for batch in partition_image_array(fnames, batch_size)
+                            # Now we handled file and dir existance and locations
+                            outname = joinpath(curr_save_dir, "im_$(counter_).png")
+                            push!(out_fnames, outname) # Push fname now to avoid clash with isfile
+                            if !isfile(outname) 
+                            fail_count = 1
+                            # Do MKR with fail check
+                            while fail_count <= allowed_fail
+                                image = ImageFusion.MKR(batch, parameters, epsilons[fail_count], filter=filter,apply_corrections=first)
+                                if any(isnan.(image))
+                                    fail_count += 1
+                                else
+                                    Images.save(outname, image)
+                                    next!(progress_bar)
+                                    break
+                                end
+                            end # Fail check
+                            end # Is file
+                            counter_ += 1
+                        end # Batch
+                    end # fnames size check
+                    # Start new iteration 
+                    return image = BatchedMKR(out_fnames, pp, batch_size, curr_save_dir, yi, zi, ei,progress_bar,filter=filter)
+                end # function
 
+                function compute_total_iterations(image_count::Int, batch_size::Int)
+                    """Compute how many times in total batched MKR will be called"""
+                    total_iterations = 0
+                    current_images = image_count
+                    while current_images > 1
+                        iterations_at_level = ceil(Int, current_images / batch_size)
+                        total_iterations += iterations_at_level
+                        current_images = iterations_at_level
+                    end
+                    return total_iterations
+                end # function
+                # And run the iteration function with pretty print
+                p = Progress(compute_total_iterations(length(fnames), batch_size), "$(final_name)",1)
+                # First flag tells to preprocess imgs with blackpoint flat and CCM, after wards wont again
+                image = BatchedMKR(fnames, pp, batch_size, intermediary_img_path, yi,zi,ei,p,filter=Kernels.GaussianKernel(5,2.5), first = true)# filter= nothing, 
+                println("Finished")
+                # Save the Image
+                savepath = joinpath(parameters.save_path, final_name)
+                Images.save(savepath, image)
+            else
+                println("No Images to process")
+            end
         else # Handle ignore and exist
             if final_name in ignore
                 printstyled("$(final_name) to ignore as specified\n", color=:red)

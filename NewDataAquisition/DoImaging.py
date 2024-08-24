@@ -2,12 +2,16 @@
 Does the imaging routine
 
 As command line options the following need to be provided
- - exposure
- - ISO
- - Grid maxima redefinition (for smaller things)
- - Overlap override
- - Magnification override (or specification)
- - resolution
+ - exp=<> exposure
+ - iso=<> ISO
+ - grid_x=<> 
+ - grid_y=<> 
+ - grid_z=<> Grid maxima redefinition (for smaller things)
+ - overlap=<> Overlap override
+ - mag=<> Magnification override (or specification)
+ - res_x=<>
+ - res_y=<> resolution
+ - NS : Attempts to save all data on mounted ssh path -- Only worth it over Ether
 
  Formating is 
  <ident>=<val>
@@ -51,7 +55,8 @@ magnification = 2
 res = [4056,3040]
 sensor_size = [7.564,5.467] # Sensor size in mm not px count
 mm_per_step = conv_to_mm(1) # ~0.122 mu m per step or 122 nm per step
-
+img_path = '/media/micro/3677421f-5daf-4ea7-ba33-31b09d11edcf/Images'
+img_path = '/home/micro/RemoteStorage'
 # Focus depth is 12 mu m 
 # TODO Use computed after the profiling is done
 # The below is most likely overkill go with 150? also how is focus depth defined gpt refuses to give me a usefull answer
@@ -84,6 +89,10 @@ for i in cmd_line_opts:
         res[0] = int(i.split('=')[1])
     elif i.startswith("res_y"):
         res[1] = int(i.split('=')[1])
+    elif i.startswith("path"):
+        img_path = i.split('=')[1]
+
+
 
 """
 Ok so some ground up weed for imaging, accept the misalignment for now
@@ -185,15 +194,14 @@ print("Initiated Camera and Motor Objects")
 
 # Mark imaging for rsync 
 os.system('echo "True" > {}'.format(os.path.abspath(str(Path.home())+"/imaging.txt")))
-
 # Make the imaging directory and move there
-dirs = os.listdir('/media/micro/3677421f-5daf-4ea7-ba33-31b09d11edcf/Images')
+dirs = os.listdir(img_path)
 dirname = 'img'
 count = 0 
 while dirname+'_'+str(count) in dirs:
     count += 1
 dirname = dirname+'_'+str(count)
-dir = '/media/micro/3677421f-5daf-4ea7-ba33-31b09d11edcf/Images/'+dirname
+dir = os.path.join(img_path+dirname)
 os.mkdir(dir)
 os.chdir(dir)
 print('Changed directory to {}'.format(dir))

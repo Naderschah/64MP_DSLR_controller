@@ -17,10 +17,8 @@ using FixedPointNumbers
 using HDF5
 
 
-
 # Merten Kautz van Reeth image fusion
-function MKR(fnames, pp::Main.Datastructures.ProcessingParameters, epsilon=1e-10)
-
+function MKR(fnames, pp::Main.Datastructures.ProcessingParameters, epsilon=1e-10; raw=true, filter=MKR_functions.Pyramid_Filter(), apply_corrections=false)
     # N Images
     N = size(fnames,1)
     # Number of pyramid levels
@@ -29,49 +27,61 @@ function MKR(fnames, pp::Main.Datastructures.ProcessingParameters, epsilon=1e-10
     pyr, pyr_Weight, Weight_mat = MKR_functions.GenerateEmptyPyramids(pp.width,pp.height, nlev, N)
 
     Threads.@threads for x in eachindex(fnames)
-
-        # Load image
-        if fnames[x][end-3:end] == ".dng"
-            img = IO_dp.LoadDNGLibRaw(fnames[x], (3,pp.width,pp.height))
-            norm = typemax(eltype(img))
-        elseif fnames[x][end-3:end] == ".png" 
-            img = permutedims(Images.channelview(Images.load(fnames[x]))[1:3,:,:], (2,3,1))
-            norm = typemax(eltype(img))
-        elseif fnames[x][end-4:end] == ".hdf5"
-            _file = HDF5.h5open(fnames[x], "r")
-            img = HDF5.read(_file["image"])
-            if read(_file["image"]["stream"]) == "raw"
-                # Img data is stored as double width UInt8 array
-                img = reinterpret(UInt16,img[1:end-16,:]) # Want 4056, 3040
-                # Debayer
-                img = SimpleDebayer(img)  # Out :=> 2028,1520,3 UInt16 but act UInt12
-                img = img ./ (2^12-1) # Float64 0 -> 1
-                #img = PostProcessing.apply_ccm(img) # Float64 0 -> 1
-                #img = PostProcessing.apply_gamma_correction(trunc.(UInt16,img.*(2^16-1))) # Uint16 with appropriate data range
+        # Preallocate in case of error
+        img = zeros(UInt8, pp.width, pp.height, 3)
+        norm = 1
+        try # In case some file is damaged
+            # Load image
+            if fnames[x][end-3:end] == ".dng"
+                img = IO_dp.LoadDNGLibRaw(fnames[x], (3,pp.width,pp.height))
+                norm = typemax(eltype(img))
+            elseif fnames[x][end-3:end] == ".png" 
+                img = permutedims(Images.channelview(Images.load(fnames[x]))[1:3,:,:], (2,3,1))
+                img = img/typemax(eltype(img))
                 norm = 1
-
-                """
-                Using nothing takes 5.7 for 171 images bs 8
-                Using CCM takes 7.33 minutes for 171 images bs 8
-                Using gamma takes 5.3 minutes for 171 images bs 8
-                Using gamma spline takes 6 minutes for 171 images bs 8
-
-                Interp spline versions effectively equivalent
-
-                No point in applying gamme curve before processing (maybe after)
-                Neither ccm nor gamma appear to improve the image
-                """
+            elseif fnames[x][end-4:end] == ".hdf5"
+                _file = HDF5.h5open(fnames[x], "r")
+                img = HDF5.read(_file["image"])
+                if raw#read(_file["image"]["stream"]) == "raw" # The stream attribute was missing form one image
+                    # Img data is stored as double width UInt8 array
+                    img = reinterpret(UInt16,img[1:end-16,:]) # Want 4056, 3040
+                    # Debayer
+                    img = SimpleDebayer(img)  # Out :=> 2028,1520,3 UInt16 but act UInt12
+                    img = img ./ (2^12-1) # Float64 0 -> 1
+                    #img = PostProcessing.apply_ccm(img) # Float64 0 -> 1
+                    #img = PostProcessing.apply_gamma_correction(trunc.(UInt16,img.*(2^16-1))) # Uint16 with appropriate data range
+                    norm = 1
+                else
+                    img = permutedims(img, (3,2,1))
+                    norm = typemax(eltype(img)) # TODO: May be wrong
+                end
+                HDF5.close(_file)
             else
-                img = permutedims(img, (3,2,1))
-                norm = typemax(eltype(img)) # TODO: May be wrong
+                error("Image format not known")
             end
-            HDF5.close(_file)
-            
-        else
-            error("Image format not known")
+        catch e 
+            printstyled("Failed Loading Image, or preprocessing\nError:\n", color=:red)
+            println(e)
         end
-        # Remove blackpoint
-        img = ScalingFunctions.removeBlackpoint(img, pp.blackpoint)
+
+        if apply_corrections
+            # Remove blackpoint (uint16)
+            img = ScalingFunctions.removeBlackpoint(img, pp.blackpoint/(2^16-1))
+            # Apply flat field, just straightforward division of each pixel 
+            img = img ./ permutedims(pp.flat, (2,3,1))
+            # Now CCM, for CCM we first need to normalize the color for best results
+            h,w,c = size(img)
+            px_magnitude = sum(img, dims=3)
+            # Normalize the pixel values
+            img = img./px_magnitude
+            # Apply CCM
+            img = reshape( reshape(img, h*w, 3) * pp.CCM , h,w,3)
+            # And restore magnitude
+            img = img .* px_magnitude
+            # Now we clip in case any values went outside the expected range
+            img = clamp.(img, 0, 1)
+        end
+
         # Scale 0 to 1, julia does math in 32 bit even if we set 16, so 32 bit float
         img = Float32.(img ./ norm)
         if any(isnan.(img))
@@ -82,7 +92,11 @@ function MKR(fnames, pp::Main.Datastructures.ProcessingParameters, epsilon=1e-10
         # Compute Contrast
         Weight_mat[:,:,:,x] = pp.ContrastFunction(img, pp)
         # Generate image Pyramid
-        img_pyr = MKR_functions.Laplacian_Pyramid(img, nlev)
+        if filter == nothing
+            img_pyr = MKR_functions.Laplacian_Pyramid(img, nlev)
+        else
+            img_pyr = MKR_functions.Laplacian_Pyramid(img, nlev, filter=filter)
+        end
         # Assign to final pyramid
         for l in (1:nlev) @inbounds pyr[l][:,:,:,x] = img_pyr[l]  end
     end
@@ -96,7 +110,11 @@ function MKR(fnames, pp::Main.Datastructures.ProcessingParameters, epsilon=1e-10
 
     # Create pyramid weight matrix
     Threads.@threads for i = 1:N
-        tmp = MKR_functions.Gaussian_Pyramid(Weight_mat[:,:,:,i])
+        if filter == nothing
+            tmp = MKR_functions.Gaussian_Pyramid(Weight_mat[:,:,:,i])
+        else
+            tmp = MKR_functions.Gaussian_Pyramid(Weight_mat[:,:,:,i],filter=filter)
+        end
         for l in (1:nlev)
             pyr_Weight[l][:,:,:,i] = tmp[l]
             if any(isnan.(pyr_Weight[l][:,:,:,i]))
@@ -113,9 +131,23 @@ function MKR(fnames, pp::Main.Datastructures.ProcessingParameters, epsilon=1e-10
     Threads.@threads for l in (1:nlev)
         @inbounds fin_pyr[l] = sum(pyr_Weight[l][:,:,:,:] .* pyr[l][:,:,:,:], dims=4)[:,:,:,1]  
     end
+
+    #Threads.@threads for l in (1:nlev)
+    #    @inbounds fin_pyr[l] = sum(pyr_Weight[l][:,:,:,:] .* pyr[l][:,:,:,:], dims=4)[:,:,:,1]  
+    #end
+
     
     # Reconstruct image and return
-    return clamp.(MKR_functions.Reconstruct_Laplacian_Pyramid(fin_pyr), 0, 1)
+    if filter == nothing
+        res = MKR_functions.Reconstruct_Laplacian_Pyramid(fin_pyr)
+    else
+        res = MKR_functions.Reconstruct_Laplacian_Pyramid(fin_pyr, filter=filter)
+    end
+    if maximum(res) > 1
+        res ./= maximum(res)
+    end
+    res = clamp.(res, 0, 1)
+    return res
 end
 
 

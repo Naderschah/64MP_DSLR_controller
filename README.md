@@ -11,6 +11,11 @@ The old set up looks like:
 The current set up looks like:
 TODO
 
+Some general notes, my lens is limited to $4.44\mu m$, so the corresponding Nyquist sampling rate in magnification is $5.68x$ for a pixel size of $1.55\mu m$. 
+
+There are a number of artifacts in the MKR stacked images especially for edges there is quite a few, this applies to any form of debayering, with and without ISP processing, so hopefully its spatial aliasing, allthough I doubt it. It is probably just a remnant from the algorithms reconstuction across image borders
+
+
 ## Image Aquisition
 
 

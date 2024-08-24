@@ -14,8 +14,8 @@ function removeBlackpoint(img, blackpoint)
     # Remove blackpoint
     for i in 1:3
         bool_array = img[:,:,i] .<= blackpoint[i]
-        img[:,:,i][bool_array] .= blackpoint[i]
-        img[:,:,i] .-= blackpoint[i]
+        img[:,:,i][bool_array] .= 0
+        img[:,:,i][.!bool_array] .-= blackpoint[i]
     end
     return img
 end
@@ -27,7 +27,7 @@ function ScaleWeightMatrix(W_mat,epsilon=1e-10)
         W_mat[:,:,i,:] .-= minimum(W_mat[:,:,i,:])
         W_mat[:,:,i,:] .+= epsilon
     end
-    # And scale 0 to 1 such that each pixel sums to 1
+    # And scale 0 to 1 such that each pixels color sums to 1
     N = size(W_mat,4)
     W_mat ./= repeat(sum(W_mat,dims=4), outer=[1,1,1,N])
     

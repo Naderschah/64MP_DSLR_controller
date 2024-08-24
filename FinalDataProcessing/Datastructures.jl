@@ -12,6 +12,8 @@ mutable struct ProcessingParameters
     width::Int64
     height::Int64
     debug::Bool
+    CCM::Array{Float64,2}
+    flat::Array{Float64,3}
 end 
 
 mutable struct ImagingGrid
@@ -25,7 +27,7 @@ end
 struct ImagingParameters
     exposure::String
     magnification::Float64
-    px_size::Float64
+    px_size::Vector{Float64}
     steps_per_mm::Float64
     overlap::Float64
     path::String

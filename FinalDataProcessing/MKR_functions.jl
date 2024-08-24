@@ -3,9 +3,12 @@ module MKR_functions
 
 using DSP
 ###                                 Pyramid Functions
-Pyramid_Filter = [.0625, .25, .375, .25, .0625]
 
-function Gaussian_Pyramid(I,nlev=nothing)
+function Pyramid_Filter()
+    return [.0625, .25, .375, .25, .0625]
+end
+
+function Gaussian_Pyramid(I,nlev=nothing; filter = Pyramid_Filter())
     #=
     Construct the gaussian Pyramid, nlev determines maximum level --> Automatically computed based on maximum posible
     =#
@@ -16,7 +19,6 @@ function Gaussian_Pyramid(I,nlev=nothing)
         nlev = floor(log(min(r,c)) / log(2))
     end
     pyr = Dict()
-    filter = Pyramid_Filter
     # Make copy, assigning now messes up some type stuff, really weird error
     J = I
     for l in 2.0:nlev
@@ -27,7 +29,7 @@ function Gaussian_Pyramid(I,nlev=nothing)
     return pyr
 end
 
-function Laplacian_Pyramid(I,nlev=nothing)
+function Laplacian_Pyramid(I,nlev=nothing;filter = Pyramid_Filter())
     size_ = size(I)
     r = size_[1]
     c = size_[2]
@@ -38,7 +40,6 @@ function Laplacian_Pyramid(I,nlev=nothing)
     J = convert(Array{Float32}, I)
     # Recursively build pyramid
     pyr = Dict()
-    filter = Pyramid_Filter
     for l in (1:nlev-1)
         I = downsample(J, filter)
         odd = 2 .*size(I) .- size(J)
@@ -49,19 +50,23 @@ function Laplacian_Pyramid(I,nlev=nothing)
     pyr[nlev] = J
     return pyr
 end
-
-function Reconstruct_Laplacian_Pyramid(pyr)
+using Images
+function Reconstruct_Laplacian_Pyramid(pyr; filter = Pyramid_Filter())
     #=
     Takes pyramid and makes image
     =#
     nlev = length(pyr)
     # Start with low pass residual
+    #printstyled("Making Pyramid Video! In MKR_functions.Reconstruct_Laplacian_Pyramid\n", color=:red)
+    #if !isdir("/SaveSpot/FakeBee2/0_35828_32000/vid")
+    #    mkdir("/SaveSpot/FakeBee2/0_35828_32000/vid")
+    #end
     R = pyr[nlev]
-    filter = Pyramid_Filter
     for l in ((nlev-1):-1:1)
         # Upsample, add to current level
         odd = 2 .*size(R) .- size(pyr[l])
         R = pyr[l] + upsample(R,odd,filter)
+        #Images.save("/SaveSpot/FakeBee2/0_35828_32000/vid/$l.png", R./maximum(R))
         if any(isnan.(R)) println("Laplacian reconst at level $l has $(sum(isnan.(R))) Nan values") end   
     end
     return R
@@ -86,24 +91,22 @@ end
 
 ###                             Resampling functions
 
-function downsample(I, filter)
-    # Apply paded filter
-    if ndims(filter) == 1  filter=filter*filter' end
-    extended = imfilter(I,filter)
-    # remove padding 
+function downsample(I, filter,subsample=2)
+    """Original
+    removed as I may have implemented filtering only along rows, doing now what I know works """
+    ## Apply paded filter
+    #if ndims(filter) == 1  filter=filter*filter' end
+    #extended = imfilter(I,filter)
+    ## remove padding 
+    #fe = trunc(Int,size(filter)[1]/2)
+    #extended=extended[1+2*fe:end-2*fe, 1+2*fe:end-2*fe,:]
+    ## return every other element
+    #return extended[1:2:end,1:2:end,:]
+    #printstyled("Downample\n", color=:red)
     fe = trunc(Int,size(filter)[1]/2)
-    multip = 2 # 2 for each imfilter
-    if ndims(I) == 3
-        extended=extended[multip*fe+1:end-multip*fe, multip*fe+1:end-multip*fe,:]
-        # return every other element
-        return extended[1:2:end,1:2:end,:]
-    elseif ndims(I) == 4
-        extended=extended[multip*fe+1:end-multip*fe, multip*fe+1:end-multip*fe,:,:]
-        # return every other element
-        return extended[1:2:end,1:2:end,:,:]
-    else
-        throw("Downsample not defined for $(ndims(I))")
-    end
+    # Do convolution (to avoid aliasing) and subsample
+    R = DSP.conv(filter*filter', I)[fe+1:subsample:end-fe, fe+1:subsample:end-fe,:]
+    return R
 end
 
 function upsample(I,odd, filter)
@@ -118,17 +121,35 @@ function upsample(I,odd, filter)
     ## Fix borders in case we need odd sized array
     if odd[1] == 1 R = R[1+odd[1]:end,1:end,:] end
     if odd[2] == 1 R = R[1:end,1+odd[2]:end,:] end
+    # Convolution to smooth the image to avoid any blocky features
+    R = DSP.conv(filter*filter', R)
+
+    R = R[fe+1:end-fe, fe+1:end-fe,:]
+
+    """
+    Old Mistakes:
+    I never assigned the output of DSP to R, so the filter was never run on upsample
+    Make padding increased dim by (2,2,0)
+    DSP increases size by (2,0,0)
+    So I assume DSP only acts on the first axes and thats why I have it twice, once for row once for column
+    Upsample filter is 1D
+    Original implementation (for future reference, everything after odd):
     R = make_padding(R, fe) 
     DSP.conv(R, filter)
     R = make_padding(R, fe) 
     DSP.conv(R, filter)
-    multip = 2 
+    multip =2 
     R = R[multip*fe+1:end-multip*fe, multip*fe+1:end-multip*fe,:]
+
+    """
+
     return R
 end
 
 function imfilter(mono, h)
     #=
+                No longer used
+
     Naming and args from matlab only mono and h used
     mono -- greyscale image
     h -- kernel
@@ -146,6 +167,8 @@ end
 
 function make_padding(mono, kernel_extend)
     #=
+    No longer used (except for imfilter, which is no longer used)
+
     Adds padding on each side of size kernel_extend
     Defined for 3D arrays (im_dim_1, im_dim_2, [colors]) 
     =#

@@ -1,14 +1,4 @@
 
-
-
-using AbstractFFTs
-using Images
-using StatsBase
-using JLD2
-using ImageTransformations
-using Rotations
-using CoordinateTransformations
-using ImageSegmentation
 #=
 Directly copied from Old Data processing
 
@@ -24,6 +14,16 @@ TODO Min max may be implemented wrong, matlab seems to return both val and ind b
 module MIST
 
 
+
+using AbstractFFTs
+using Images
+using StatsBase
+using JLD2
+using ImageTransformations
+using Rotations
+using CoordinateTransformations
+using ImageSegmentation
+
 DEBUG = false
 
 function Stitch(path, save_path, img_name_grid, preprocessing_kernel=[],extra_op=nothing_func, imaging_params=Dict())
@@ -35,7 +35,7 @@ function Stitch(path, save_path, img_name_grid, preprocessing_kernel=[],extra_op
     estimated_overlap_y = imaging_params.estimated_overlap_y
     repeatability = imaging_params.repeatability
     if !endswith(path,"/") path = path*"/" end
-    println(path)
+    if !isdir(save_path) mkdir(save_path) end
     # Generate grid with image names as indices
     println("Computing the PCIAM")
     if !isfile("$(save_path)pciam.jl") || !DEBUG
@@ -127,10 +127,8 @@ function GetImage(path,name,kernel::AbstractArray=[],extra_op=nothing_func)
         end
         return extra_op(img)
     catch exp
-        println(exp)
         println("Image not found, usign zeros instead")    
-        println("$(path)$(name)")
-        img = zeros(3040,4056)
+        img = zeros(2020,1512)
         return extra_op(img)
     end
 end
@@ -149,8 +147,7 @@ function GetImage(path,name,kernel::Dict=Dict(),extra_op=nothing_func)
         return extra_op(img)
     catch
         println("Image not found, usign zeros instead")    
-        println("$(path)$(name)")
-        img = zeros(3040,4056)
+        img = zeros(2020,1512)
         return extra_op(img)
     end
 
@@ -163,7 +160,7 @@ function read_img(path, name,extra_op=nothing_func)
         return extra_op(permutedims(channelview(img), (2,3,1))) 
     catch
         println("Image not found, usign zeros instead")    
-        return zeros(3040,4056,3)
+        return zeros(2028,1520,3)
     end
 end
 
@@ -219,10 +216,10 @@ end
 
 function pciam(img1, img2, direction,number_of_peaks=2)
     # Phase correlation matrix (PCM)
-    fc = fft(img1) .* conj!(fft(img2)) # Multidim fft d=2
+    fc = AbstractFFTs.fft(img1) .* conj!(AbstractFFTs.fft(img2)) # Multidim fft d=2
     fc ./= abs.(fc) # Divide by magnitude
     replace!(fc, 0. => 1e-10)# Avoid zero terms
-    pcm = real.(ifft!(fc)) # Multidim ifft d=2 only keep real
+    pcm = real.(AbstractFFTs.ifft!(fc)) # Multidim ifft d=2 only keep real
 
     # Grab peaks from PCM
     idx =sortperm(-collect(Iterators.flatten(pcm))) # Sort descending
@@ -437,15 +434,6 @@ function translation_optimization(source_directory, img_name_grid, Y1, X1, Y2, X
 end
 
 
-function compute_image_overlap(X, Y, source_directory, img_name_grid, direction)
-    # TODO: THis function needs implmeentation https://github.com/usnistgov/MIST/blob/mist-matlab/src/subfunctions/compute_image_overlap.m
-    # Not strictly required for my algo since i know the overlap to a high accuracy and this wont be called
-    overlap = NaN
-    throw("Compute image overlay not implemented also should not be called by code something is wrong")
-    return overlap
-end
-
-
 function cross_correlation_hill_climb(images_path, I1_name, I2_name, bounds, x, y,preprocessing_kernel=[],extra_op=nothing_func)
     # TODO: Is color version better?
     I1 = GetImage(images_path, I1_name, preprocessing_kernel,extra_op)
@@ -625,7 +613,7 @@ function correct_translation_model(X, Y, CC, source_directory, img_name_grid, si
     valid_translations_index = BitArray(undef, (1,1))
     # compute the estimated overlap
     if isnan(overlap)
-        overlap = compute_image_overlap(X, Y, source_directory, img_name_grid, direction);
+        throw(Exception("OverlapComputationNotImplemented"))
     end
 
     # bound the computed image overlap (0,100)
@@ -677,7 +665,7 @@ function correct_translation_model(X, Y, CC, source_directory, img_name_grid, si
     # valid translations must have a cc of >= 0.5
     println("valid_translations_index sum")
     println(sum(valid_translations_index))
-    valid_translations_index[CC .< 0.5] .= 0;
+    valid_translations_index[CC .< 0.7] .= 0;
     println("valid_translations_index sum post cc")
     println(sum(valid_translations_index))
     # test for existance of valid translations
@@ -1151,12 +1139,12 @@ function assemble_stitched_image(source_directory, img_name_grid, global_y_img_p
             if ~isempty(img_name_grid[img_idx])
                 current_image = float32.(read_img(source_directory, img_name_grid[img_idx]))
                 # Assemble the image to the global one
-                x_st = global_x_img_pos[img_idx];
-                x_end = global_x_img_pos[img_idx]+img_width-1;
-                y_st = global_y_img_pos[img_idx];
-                y_end = global_y_img_pos[img_idx]+img_height-1;
-                I[y_st:y_end,x_st:x_end,1:end] = I[y_st:y_end,x_st:x_end,1:end] + current_image;
-                countsI[y_st:y_end,x_st:x_end] = countsI[y_st:y_end,x_st:x_end] .+ 1;
+                x_st = global_x_img_pos[img_idx]
+                x_end = global_x_img_pos[img_idx]+img_width-1
+                y_st = global_y_img_pos[img_idx]
+                y_end = global_y_img_pos[img_idx]+img_height-1
+                I[y_st:y_end,x_st:x_end,1:end] += current_image
+                countsI[y_st:y_end,x_st:x_end] .+= 1
             end
         end
         if any(isnan.(I)) println("I has nans") end
@@ -1288,7 +1276,7 @@ function build_img_name_grid(source_img_dir,indx=[0,0,1],fnamefunc=fnamegen_vary
             img_name_grid[j,i]  = fnamefunc(x[i],y[j],e)
         end
     end
-    return img_name_grid[end:-1:1,end:-1:1]
+    return img_name_grid#[end:-1:1,end:-1:1]
 end
 
 
