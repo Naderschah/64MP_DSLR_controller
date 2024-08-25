@@ -15,6 +15,6 @@ CMD '/bin/bash'
 
 
 # Needs to be run as: (-it interactive -p for notebook port -v all the directory bind mounts )
-# docker container rm julia_app; docker run -it -p 8888:8888 -v /home/felix/Microscope/:/FinalDataProcessing -v /MicroscopeNetStorage/Images/:/Images -v /home/felix/RapidStorage2:/SaveSpot --name julia_app my_julia_image
+# docker container rm julia_app; docker run --user $(id -u):$(id -g) -it -p 8888:8888 -v /home/felix/Microscope/:/FinalDataProcessing -v /MicroscopeNetStorage/Images/:/Images -v /home/felix/RapidStorage2:/SaveSpot --name julia_app my_julia_image
 # With build
 # docker build -t my_julia_image .
