@@ -64,7 +64,9 @@ img_path = '/home/micro/RemoteStorage/'
 #step_size_x = int(12 / mm_per_step ) # This is ~100 steps so double as many images now
 step_size_x = 100
 
+
 imging_bounds = copy.deepcopy(grid.gridbounds)
+overwrote_path = False
 
 for i in cmd_line_opts:
     if i.startswith('exp'):
@@ -92,8 +94,20 @@ for i in cmd_line_opts:
         res[1] = int(i.split('=')[1])
     elif i.startswith("path"):
         img_path = i.split('=')[1]
+        overwrote_path = True
 
+# Check if drive is mounted
+def is_drive_mounted(drive_path):
+    partitions = psutil.disk_partitions()
+    for partition in partitions:
+        if partition.mountpoint == drive_path:
+            return True
+    return False
 
+if not overwrote_path:
+    if not is_drive_mounted(img_path):
+        print("Please mount the remote drive, or specify a different path")
+        sys.exit(0)
 
 """
 Ok so some ground up weed for imaging, accept the misalignment for now
