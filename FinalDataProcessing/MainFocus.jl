@@ -49,7 +49,7 @@ Kernel for pyr and contrast should prob be the same size to target the same size
 realtime_processing = false
 batch_size = 8
 path = "/Images/img_0/"
-save_path = "/SaveSpot/LensDistortion/"
+save_path = "/SaveSpot/GarlicShellFullSet/"
 contrast_precision = Float32 
 width = 2028 #3040 RAW data rn
 height = 1520# 4056

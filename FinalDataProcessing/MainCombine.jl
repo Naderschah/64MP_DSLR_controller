@@ -25,8 +25,8 @@ IP = Datastructures.ImagingParameters(
     px_size,                    # Px_size 
     mm_per_step,                # mm traveled per step of linear stage
     0.8,                        # Image overlap in x & y 
-    "/SaveSpot/LensDistortion/",          # Image Path
-    "/SaveSpot/LensDistortion/combined/", # Save Path
+    "/SaveSpot/GarlicShell/",          # Image Path
+    "/SaveSpot/GarlicShell/combined/", # Save Path
     16,                         # Bit depth
     2028,                        # Image width      TODO: Why is this the wrong way around
     1520,                        # Image height
@@ -41,7 +41,14 @@ MP = MIST.MISTParameters(
     )
 println("Pixel size")
 println(IP.px_size)
-method = "MIST" # Choice of MIST, Central
+method = "GridFile" # Choice of MIST, Central, GridFile
+"""
+MIST doesnt really work -> I think thats cause i implemented it wrong, but may just be the image sets I tried because it does align subsets kind of ok 
+Central -> Just aligns based on step pos
+GridFile -> Use gimp plugin to load image grid, handalign, and then use save grid and save to the same directory, loads this file and alligns according to this
+        -> Overlapping regions populated by euclidean distance
+"""
+
 # Do alignment
 start = time()
 if method == "Central"
@@ -57,6 +64,13 @@ elseif method == "MIST" # TODO Orientation may become problematic here
                MIST.LoG_kernel, 
                x -> x[1:end, end:-1:1, 1:end], #MIST.nothing_func, # In case some extra processing is to be applied to the image loading
                MP)  #end:-1:1
+elseif method == "GridFile"
+    # TODO: Add exposure overwrite
+    # TODO: Add dynamic Bit depth same for focus stack
+    img_grid_file = joinpath(IP.path, "grid.txt")
+    submethod = "MKR"
+    f_im = ImageCombining.GridAlign(IP, img_grid_file, method=submethod)
+    method = "$(method)_$(submethod)" # For file name
 else
     println("Method not recognized")
 end
@@ -64,4 +78,4 @@ println("Took $(time()-start) seconds")
 
 
 # Save image
-Images.save("$(IP.save_path)Central_Align.png",f_im)
+Images.save("$(IP.save_path)$(method).png",f_im)

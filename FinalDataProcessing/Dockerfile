@@ -2,7 +2,7 @@ FROM amd64/julia:latest
 WORKDIR /FinalDataProcessing
 # Install packages
 ENV JULIA_NUM_THREADS=8
-RUN julia -e 'using Pkg; Pkg.add.(["DSP","PProf","JLD2","Images","StatsBase", "IterTools", "FilePathsBase", "HDF5","FixedPointNumbers", "ProgressMeter","PrettyTables","AbstractFFTs", "ImageTransformations","Rotations","CoordinateTransformations","ImageSegmentation","ImageFiltering","ImageQualityIndexes","Plots", "IJulia"])'
+RUN julia -e 'using Pkg; Pkg.add.(["DSP","PProf","JLD2","Images","StatsBase", "IterTools", "FilePathsBase", "HDF5","FixedPointNumbers", "ProgressMeter","PrettyTables","AbstractFFTs", "ImageTransformations","Rotations","CoordinateTransformations","ImageSegmentation","ImageFiltering","ImageQualityIndexes","Plots", "IJulia", "Combinatorics"])'
 # Install ps command
 RUN apt-get update && apt-get install -y procps
 # So that IJulia Works 
