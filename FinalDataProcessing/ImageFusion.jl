@@ -16,6 +16,30 @@ import .PostProcessing
 using FixedPointNumbers
 using HDF5
 
+function pad_img(arr, pad_w, pad_h)
+    # Dimensions of the original array
+    w, h, c = size(arr)
+
+    # New dimensions after padding
+    new_w = w + 2 * pad_w
+    new_h = h + 2 * pad_h
+    
+    # Creating a new array with the same type as the original
+    padded_arr = similar(arr, new_w, new_h, c)
+    
+    # Copying the original array into the center of the new padded array
+    padded_arr[pad_w+1:end-pad_w, pad_h+1:end-pad_h, :] .= arr
+    
+    # Pad the left and right columns
+    padded_arr[1:pad_w, pad_h+1:end-pad_h, :] .= repeat(arr[ 1:1, :, :], pad_w, 1, 1)
+    padded_arr[end-pad_w+1:end, pad_h+1:end-pad_h, :] .= repeat(arr[end:end, :, :], pad_w, 1, 1)
+
+    # Now pad the top and bottom using the already padded columns
+    padded_arr[:, 1:pad_h, :] .= repeat(padded_arr[:, pad_h+1:pad_h+1, :], 1, pad_h, 1)
+    padded_arr[:, end-pad_h+1:end, :] .= repeat(padded_arr[:, end-pad_h:end-pad_h, :], 1, pad_h, 1)
+    
+    return padded_arr
+end
 
 # Merten Kautz van Reeth image fusion
 function MKR(fnames, pp::Main.Datastructures.ProcessingParameters, epsilon=1e-10; raw=true, filter=MKR_functions.Pyramid_Filter(), apply_corrections=false)
@@ -23,8 +47,10 @@ function MKR(fnames, pp::Main.Datastructures.ProcessingParameters, epsilon=1e-10
     N = size(fnames,1)
     # Number of pyramid levels
     nlev = floor(log(min(pp.height ,pp.width)) / log(2))
+    padding = 4
+    width, height = pp.width + 2*padding,pp.height+ 2*padding
     # Prealocate data structures
-    pyr, pyr_Weight, Weight_mat = MKR_functions.GenerateEmptyPyramids(pp.width,pp.height, nlev, N)
+    pyr, pyr_Weight, Weight_mat = MKR_functions.GenerateEmptyPyramids(width, height, nlev, N)
 
     Threads.@threads for x in eachindex(fnames)
         # Preallocate in case of error
@@ -90,12 +116,12 @@ function MKR(fnames, pp::Main.Datastructures.ProcessingParameters, epsilon=1e-10
             replace!(img, NaN=>0)
         end
         # Compute Contrast
-        Weight_mat[:,:,:,x] = pp.ContrastFunction(img, pp)
+        Weight_mat[:,:,:,x] = pad_img(pp.ContrastFunction(img, pp), padding, padding)
         # Generate image Pyramid
         if filter == nothing
-            img_pyr = MKR_functions.Laplacian_Pyramid(img, nlev)
+            img_pyr = MKR_functions.Laplacian_Pyramid(pad_img(img, padding, padding), nlev)
         else
-            img_pyr = MKR_functions.Laplacian_Pyramid(img, nlev, filter=filter)
+            img_pyr = MKR_functions.Laplacian_Pyramid(pad_img(img, padding, padding), nlev, filter=filter)
         end
         # Assign to final pyramid
         for l in (1:nlev) @inbounds pyr[l][:,:,:,x] = img_pyr[l]  end
@@ -146,7 +172,8 @@ function MKR(fnames, pp::Main.Datastructures.ProcessingParameters, epsilon=1e-10
     if maximum(res) > 1
         res ./= maximum(res)
     end
-    res = clamp.(res, 0, 1)
+    # Clamp and remove padding
+    res = clamp.(res, 0, 1)[padding+1:end-padding, padding+1:end-padding, :]
     return res
 end
 

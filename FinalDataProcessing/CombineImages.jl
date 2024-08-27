@@ -439,7 +439,7 @@ function FindOverlappingRegions(bool_array)
         end
 
         # We now need to find the largest possible area that is completely true
-        # We can achieve this by iterating the array pixels TODO this needs to be sepreated as a function
+        # We can achieve this by iterating the array pixels 
         idx1_min, idx1_max, idx2_min, idx2_max = FindFirstRectangle(overlap_array)
         # the mins always have to get populated, the max's mustnt
         # all are initialized to -1 so if -1 is returned for the mins, no area was found
@@ -485,15 +485,6 @@ function FindOverlappingRegions(bool_array)
         end
         # if none were triggered all is in order
 
-        ##      This si not used and the entire array is passed instead of the cropped version
-        ##      this is to avoid any extra errors introduced by indexing or confusion at the cost of performance
-        ##      May be optimized later --> FUTURE NOTE: DONT TOUCH THIS UNLESS YOUR ABSOLUTELY SURE
-        # Combine indeces to find the actual area -- but the below should be the correct syntax
-        #idx1_min = idx1_min + idx1_min2 - 1 
-        #idx1_max = idx1_max + idx1_max2 - 1 
-        #idx2_min = idx2_min + idx2_min2 - 1 
-        #idx2_max = idx2_max + idx2_max2 - 1
-
         # And return our indices
         return idx1_min, idx1_max, idx2_min, idx2_max, imgs_with_true_in_area
 
@@ -502,7 +493,76 @@ function FindOverlappingRegions(bool_array)
     return -1,-1,-1,-1, [-1]
 end # function
 
-function FindFirstRectangle(overlap_array)
+function FindFirstRectangle(grid)
+    """
+    Adaptation of "Largest Rectangle in Histogram"
+    """
+    rows, cols = size(grid)
+    
+    # Height array to hold counts of consecutive 'true's in each column
+    height = zeros(Int, cols)
+
+    max_area = 0
+    best_tl = (0, 0)
+    best_br = (-1, -1)
+
+    for i in 1:rows
+        for j in 1:cols
+            if grid[i, j]
+                height[j] += 1
+            else
+                height[j] = 0
+            end
+        end
+
+        # Stack to store indices of the columns
+        stack = Int[]
+        left_limit = zeros(Int, cols)
+        right_limit = fill(cols + 1, cols)
+
+        # Calculate left limits
+        for j in 1:cols
+            while !isempty(stack) && height[last(stack)] >= height[j]
+                pop!(stack)
+            end
+            left_limit[j] = isempty(stack) ? 1 : last(stack) + 1
+            push!(stack, j)
+        end
+
+        # Clear stack for right limits calculation
+        empty!(stack)
+
+        # Calculate right limits
+        for j in cols:-1:1
+            while !isempty(stack) && height[last(stack)] >= height[j]
+                pop!(stack)
+            end
+            right_limit[j] = isempty(stack) ? cols : last(stack) - 1
+            push!(stack, j)
+        end
+
+        # Determine the maximum area rectangle for this row
+        for j in 1:cols
+            area = height[j] * (right_limit[j] - left_limit[j] + 1)
+            if area > max_area
+                max_area = area
+                best_tl = (i - height[j] + 1, left_limit[j])
+                best_br = (i, right_limit[j])
+            end
+        end
+    end
+
+    if max_area > 0
+        idx1_min, idx2_min = best_tl
+        idx1_max, idx2_max = best_br
+        return idx1_min, idx1_max, idx2_min, idx2_max
+    else
+        return -1,-1,-1,-1 # or return some indication that no rectangle is found
+    end
+end
+
+
+function FindFirstRectangleOld(overlap_array)
     """
     Helper function for 
         FindOverlappingRegions(bool_array)
@@ -555,9 +615,65 @@ function FindFirstRectangle(overlap_array)
     return idx1_min, idx1_max, idx2_min, idx2_max
 end
 
+function pad3d_array(arr, pad_w, pad_h, fill)
+    # Dimensions of the original array
+    N, w, h = size(arr)
+    
+    # New dimensions after padding
+    new_w = w + 2 * pad_w
+    new_h = h + 2 * pad_h
+    
+    # Creating a new array with the same type as the original, filled with zeros
+    # Adjust the element type if the array does not contain zeros by default
+    padded_arr = zeros(eltype(arr), N, new_w, new_h)
+    
+    # Copying the original array into the center of the new padded array
+    padded_arr[:, pad_w+1:end-pad_w, pad_h+1:end-pad_h] .= arr
 
+    if fill
+        #   Pad the left and right columns
+        padded_arr[:, 1:pad_w, pad_h+1:end-pad_h] .= repeat(arr[:, 1:1, :], 1, pad_w, 1)
+        padded_arr[:, end-pad_w+1:end, pad_h+1:end-pad_h] .= repeat(arr[:, end:end, :], 1, pad_w, 1)
+
+        # Now pad the top and bottom using the already padded columns
+        padded_arr[:, :, 1:pad_h] .= repeat(padded_arr[:, :, pad_h+1:pad_h+1], 1, 1, pad_h)
+        padded_arr[:, :, end-pad_h+1:end] .= repeat(padded_arr[:, :, end-pad_h:end-pad_h], 1, 1, pad_h)
+    end
+    return padded_arr
+end
+
+function pad4d_array(arr, pad_w, pad_h)
+    # Dimensions of the original array
+    N, w, h, c = size(arr)
+
+    # New dimensions after padding
+    new_w = w + 2 * pad_w
+    new_h = h + 2 * pad_h
+    
+    # Creating a new array with the same type as the original
+    padded_arr = similar(arr, N, new_w, new_h, c)
+    
+    # Copying the original array into the center of the new padded array
+    padded_arr[:, pad_w+1:end-pad_w, pad_h+1:end-pad_h, :] .= arr
+    
+    # Pad the left and right columns
+    padded_arr[:, 1:pad_w, pad_h+1:end-pad_h, :] .= repeat(arr[:, 1:1, :, :], 1, pad_w, 1, 1)
+    padded_arr[:, end-pad_w+1:end, pad_h+1:end-pad_h, :] .= repeat(arr[:, end:end, :, :], 1, pad_w, 1, 1)
+
+    # Now pad the top and bottom using the already padded columns
+    padded_arr[:, :, 1:pad_h, :] .= repeat(padded_arr[:, :, pad_h+1:pad_h+1, :], 1, 1, pad_h, 1)
+    padded_arr[:, :, end-pad_h+1:end, :] .= repeat(padded_arr[:, :, end-pad_h:end-pad_h, :], 1, 1, pad_h, 1)
+    
+    return padded_arr
+end
+# TODO: There has to be a way to combine pad3d and pad4d neatly without a bunch of if statements
 function DoMKRforFocusedImages(imgs, euclidean_distance)
     # Modified version of ./ImageFusion.jl/MKR() that doenst load images and uses a different weight matrix
+    # We pad the array 
+    padding = 6
+    imgs = pad4d_array(imgs, padding, padding)
+    #euclidean_distance = pad3d_array(euclidean_distance, padding,padding, false)
+
     N, w, h, c = size(imgs)
     # Adjust image scaling
     imgs = imgs ./255
@@ -573,17 +689,23 @@ function DoMKRforFocusedImages(imgs, euclidean_distance)
 
     #               Populate weight matrix
     # We want euclidean distance to not be too significant a factor, so we scale it to max 0.5
-    euclidean_distance ./= maximum(euclidean_distance)*2
+    #euclidean_distance ./= maximum(euclidean_distance)*2
     # We pregenerate the color standard deviation
     clrstd = Array{Float32}(undef, size(imgs,1),size(imgs,2),size(imgs,3),size(imgs,4)) 
     for x in axes(imgs,1)
         clrstd[x,:,:,:] = ContrastFunctions.color_STD(imgs[x,:,:,:], Float32)
     end
+
+    contrast = Array{Float32}(undef, size(imgs,1),size(imgs,2),size(imgs,3),size(imgs,4)) 
+    for x in axes(imgs,1)
+        contrast[x,:,:,:] = ContrastFunctions.LoG(imgs[x,:,:,:],GreyProjectors.lstar, Float32)
+    end
     # Normalize
     clrstd ./= maximum(clrstd)
+    contrast ./= maximum(contrast)
     # And combine the weight matrix
-    for x in axes(euclidean_distance, 1) 
-        Weight_mat[:,:,:,x] = repeat(euclidean_distance[x,:,:], outer=[1,1,3]) + clrstd[x,:,:,:]
+    for x in axes(euclidean_distance, 1) #repeat(euclidean_distance[x,:,:], outer=[1,1,3]) +
+        Weight_mat[:,:,:,x] =  clrstd[x,:,:,:] + contrast[x,:,:,:]
     end
     Weight_mat = ScalingFunctions.ScaleWeightMatrix(Weight_mat, 1e-12)
     Threads.@threads for i = 1:N
@@ -609,8 +731,8 @@ function DoMKRforFocusedImages(imgs, euclidean_distance)
     end
     # Reconstruct
     res = MKR_functions.Reconstruct_Laplacian_Pyramid(fin_pyr)
-    # Clamp and return
-    return clamp.(res, 0, 1)
+    # Clamp undo pad and return
+    return clamp.(res, 0, 1)[padding+1:end-padding, padding+1:end-padding, :]
 end
 
 

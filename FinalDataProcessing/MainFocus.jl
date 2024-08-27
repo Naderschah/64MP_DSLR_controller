@@ -20,32 +20,6 @@ using ProgressMeter
 using HDF5
 
 
-"""
-Rectangular artifacts: Could be due to out of range values? Check dtype and max val at the end of fusion but clipping is applied
-Current trial: Using 3x3 LoG kernel for lap pyramid 
-- Seems like undersmoothing 
-
-Also all sampling filters must be a 1D array generating the 2D seperable kernel
-
-
-Lap Pyramid
-    - 3x3 should be fine, can play with different standard deviations 
-        - Default Lap Pyramid sigma unknown --> Seems like binomial approximation to Gaussian 
-        - Trial 2.5
-
-To be trialed: 3x3,5x5,7x7 kernel for contrast with sigma = n/6 
-    - default is 9x9 @ 1.4sigma
-        Results
-        - 
-
-
-Kernel for pyr and contrast should prob be the same size to target the same size features?
-- For current rest 3x3 samples within minimum detail, first pyramid layer might be useless if 3x3 
-    (if we remove top and bottom layer might improve quality and noise performance)
-
-"""
-
-
 realtime_processing = false
 batch_size = 8
 path = "/Images/img_0/"
