@@ -33,7 +33,7 @@ Images
     - taken_imgs : Contains the taken images
     - first_process : Contains the processed images
     - substacks : contains to be focused substacks
-        - $x_$y_$z_meta.txt : Contains information for this substack
+        - x_y_z_meta.txt : Contains information for this substack
 
 Everything needs to be tested
 """
@@ -42,6 +42,10 @@ Everything needs to be tested
 batch_size = 8
 root_path = "/Images/"
 fobj = open(joinpath(root_path, "curr_img.txt"), "r")
+while strip(read(fobj, String)) == ""
+    println("Waiting for imaging to start")
+    sleep(5)
+end
 img_nr_path = strip(read(fobj, String))
 close(fobj)
 path = joinpath(root_path, img_nr_path)

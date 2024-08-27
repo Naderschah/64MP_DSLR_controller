@@ -56,5 +56,7 @@ end
 
 
 function WellExposedness(I; sigma)
-    return exp( - (I .- 0.5)**2 ./ (2*sigma**2))
+    return exp( - (I .- 0.5).^2 ./ (2*sigma^2))
+end
+
 end #module

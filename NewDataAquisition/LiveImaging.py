@@ -69,6 +69,7 @@ grid,gpio_pins = init_grid()
 ## Command line parsing
 cmd_line_opts = sys.argv[1:]
 
+drive_identifier = b'10.42.0.1' # IP addr on ether 
 exposure = None
 iso = None
 overlap = 0.2
@@ -108,15 +109,18 @@ for i in cmd_line_opts:
     elif i.startswith("res_y"):
         res[1] = int(i.split('=')[1])
 
-# Check if drive is mounted
-def is_drive_mounted(drive_path):
-    partitions = psutil.disk_partitions()
-    for partition in partitions:
-        if partition.mountpoint == drive_path:
-            return True
-    return False
 
-if not is_drive_mounted(img_path):
+def is_drive_mounted(identifier=b'10.42.0.1'):
+    """
+    Uses df -h to check for available space
+    identitfier needs to be a byte string!
+    """
+    # Check identifier
+    avail = [i for i in subprocess.check_output('df -m', shell=True).split(b'\n') if identifier in i][0]
+    return (len(avail) == 1)
+
+
+if not is_drive_mounted(identifier=drive_identifier):
     print("Please mount the remote drive")
     sys.exit(0)
 
@@ -235,7 +239,7 @@ f.write("x,y,z,accel,time since start, contrast max, contrast min, contrast mean
 for i in coord_arr[2]:
     for j in coord_arr[1]:
         # Check ssd
-        while check_drive_space() <= 120:
+        while check_drive_space(identifier= drive_identifier) <= 120:
             print("Drive Full, waiting")
             time.sleep(5) # Sleep for 5 seconds -> Processing may take quite a while
         __start = time.time()

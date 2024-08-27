@@ -2,19 +2,27 @@
 
 The original idea of this project was to generate very high resolution images of small subjects by imaging over a very large grid using a linear stage. The magnification in the current set up is 2x, however, the goal is to go up to 20x eventually. 
 
-With the final goal of turning these images into very high resolution 3d mappings of the subjects.
+With the final goal of turning these images into very high resolution 3d mappings of the subjects. Allthough I have no idea how to properly place multiple cameras for this, a new camera placement solution will have to be found for this, currently im envisioning a 4 camera set up, hanging above the stage, 3 of which are offset from the center lens to image at 120 degree angles relative to one another with the focus points for all 4 cameras at the same location, so essentially the cameras will be at the corners of a pyramid, and at the center of one plane will be a 4th camera with the same point in focus, this assembly will then be attached to a linear stage and suspended in some fashion above the actual stage. However, there is a number of problems with actually constructing this and sourcing enough microscope lenses. So this is far future. 
 
 The old set up looks like:
 
 <img src="./imgs/SetUp.jpg" alt="Microscope" width="800"/>
 
 The current set up looks like:
-TODO
+<img src="./imgs/SetUp2.jpg" alt="Microscope" width="800"/>
 
-Some general notes, my lens is limited to $4.44\mu m$, so the corresponding Nyquist sampling rate in magnification is $5.68x$ for a pixel size of $1.55\mu m$. 
 
-There are a number of artifacts in the MKR stacked images especially for edges there is quite a few, this applies to any form of debayering, with and without ISP processing, so hopefully its spatial aliasing, allthough I doubt it. It is probably just a remnant from the algorithms reconstuction across image borders
+The raw output of the microscope had to be increased, there is an issue where on occasion some images will have a large black area, this causes one in focus section to be very different from all the others, so every location is now imaged twice. But there is also the issue of images being over and under exposed quite frequently, so I every location is now imaged with 3 different exposures. This generates per full set (for hdf5) 3600GB of data, so images are processed in real time by a network mounted device onto which all data is saved (connected via ethernet, speed equivalent to USB2.0 ssd). And this device then fuses the 6 images and saves them in the format the old imaging script used to provide images. 
 
+The relevant scripts for this now are:
+
+NewDataAquisition
+--> LiveImaging.py
+
+FinalDataProcessing
+--> RealTimeFocus.jl
+
+After imaging is completed the normal MainFocus.jl may be run to generate the focus stacks, if the system (but particularly IO as there are a lot of read write operations occuring, ie write 6 images and a text file load all of them write a new file delete the old files) isn't overloaded one could even run this in parallel with the live_processing flag enabled.  
 
 ## Image Aquisition
 
@@ -33,8 +41,8 @@ Also after ages of constantly messing up the computation because of stupitidy, I
 Most files are older stages of the pipeline trialing different things. A working version of the Software will be provided in the subfolder Final Data Processing. 
 
 Image stacking is now fully implemented with only two things left to do:
-- RAM usage control, for a large number of x images the code gets killed due to using too much ram, this is solved for now by simply splitting it into 4 batches such that MKR runs 5 times, a dynamic implementation of this (checking for total RAM used at maximum) is going to be added
-- For some reason width and height of the image in the meta data supplied to the code is inverted, I think this is due to the camera being rotated in older setups and I fergot that while writing the code and testing alongside, this si to be changed but effectively only amounts to a renaming
+- RAM usage control, for a large number of x images the code gets killed due to using too much ram, this is solved for now by simply splitting it into 4 batches such that MKR runs 5 times, currently its set to 8 images at a time as I am still running this on my main PC and like to use it at the same time. 
+- For some reason width and height of the image in the meta data supplied to the code is inverted, I think this is due to the camera being rotated in older setups and I fergot that while writing the code and testing alongside, so any width or height written may not be trusted, I wanted to fix this, but it leads to a lot of things breaking so I will adopt a more agnostic naming convention from now on, ie axes_1, axes_2 instead of width and height where applicable. 
 
 
 ## Taken Images
@@ -52,28 +60,14 @@ The entire thing is controller by a raspberry CM4 on a CM-IO board, the camera c
 
 The linear stage has motors attached using 3d printed components to automate the movement, these correspond to 28BYJ-48 stepper motors with the standard driver one getts with them. At the maximal positions the individual motors are allowed to travel endstops are mounted.
 
-The motor controllers and raspberry pi are housed in a box onto which the linear stage and camera are (poorly) attached. Cooling is provided by an attached fan mildly damped by a tpu insert. 
+I got a number of aluminium and steel pieces from some old hospital bed, these were used to attach the linear stage to a plate and mount the camera on top of it. The stepper drivers and CM4 are simply mounted to the plate using zipties and electric tape. 
 
-Lighting is provided by a hand made led array, there is a small one hugging the lens and a large one attached to the camera sensor, allthough the latter introduced quite some background noise, however, did reduce imaging time significantly. 
+Lighting is provided by a cheap ring light, its heating may be a source of extra noise, especially since I added a PVC (I think) seethrough tarp around the entire setup to keep dust out, its not great, but it does the job. 
 
-Around the entire set up one finds black velvet as it is pretty good at absorbing light and pretty cheap to source.
-
+The subject is elevated by a number of aluminium blocks the top one has some black velvet to minimize reflection into the camera, this might be adding extra reflection, ie a grey background, but hasn't been too bad, might redo the entire tarp casing for it in a while. 
 
 ## Future Set-up
 
-Outdated: TODO rewrite some time
+Soon a server node from an old server will be made available to me, once I figure out how to make it quiet enough to keep on during image running all work will be offloaded to it, opening the possibilities of increasin magnification (ie currently each stack would produce way to much data to process in time due to storage limitations) and processing all data in real time. But a good enough lens (that doesnt increase magnification to the point that imaging would take even longer) must still be sourced.
 
-For the next iteration of the set up the camera will be top mounted, this is mainly since the extension tubes get quite long and ensuring alignment is much easier when gravity is helping. 
-
-To do this an old xyz 3d-printer will be utilized, the hotend will be replaced with the camera and then raspberry pi will be mounted onto the other side of the vertical assembly to keep the camera cable short. The linear stage will be mounted where the hot-end was onece.
-To achieve less reflectance of the 3d printer surfaces (all of which tend to be shiny) everything that may reflect will be painted with something like Black4.0, a highly absorbant acrylic paint. 
-
-The 3d printer frame will then allow to move the camera higher allowing the mounting of extension tubes, furthmore the 3d printers motherboard will remain in place to control the already present stepper motors, with the possibility of controller the linear stage from it as well by sending commands from the raspberry. However, the last part is not quite certain yet. 
-
-Lights will be mounted along the length of the camera holder. 
-
-Cooling is an issue i havent quite figured out yet. 
-
-3d mapping is lost in this set up as rotations will not add much spacial information anymore, however, I do have a spare raspi camera I might side mount to make lower resolution 3d models. 
-
-For this the software will be completely rehauled. 
+There is also the 3d mapping plan, but that will require a mutlitude of changes for which I do not have the resources, expertise, and time at the moment. 
