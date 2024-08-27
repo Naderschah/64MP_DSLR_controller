@@ -187,4 +187,24 @@ function make_padding(mono, kernel_extend)
     return extended
 end
 
+
+
+function SimpleDebayer(img, bayer_patter = "BGGR")
+    """Reduces image size by half simply overlapping the pixels"""
+    output = Array{UInt16}(undef,(Int(size(img, 1) / 2), Int(size(img, 2)/ 2), 3))
+    # TODO: Generalize for differnt bayer orders, or not ltos of operations involved, and this isnt going to change
+    for i in 1:2:size(img,1)-1
+        for j in 1:2:size(img,2)-1
+            # B (Blue)
+            output[i ÷ 2 + 1, j ÷ 2 + 1, 3] = img[i, j]
+            # G1 (Green)
+            output[i ÷ 2 + 1, j ÷ 2 + 1, 2] = (img[i, j+1]÷2 + img[i+1, j]÷2)
+            # R (Red)
+            output[i ÷ 2 + 1, j ÷ 2 + 1, 1] = img[i+1, j+1]
+        end
+    end
+    return output
+end
+
+
 end # module

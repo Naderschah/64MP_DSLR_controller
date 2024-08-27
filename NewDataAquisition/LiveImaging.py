@@ -246,15 +246,20 @@ for i in coord_arr[2]:
             grid.move_to_coord([k,j,i]) 
             print([k,j,i])
             imgs_for_substack = []
-            for e in exposure: 
+            for e in exposure:
+                cam.stop() 
                 cam.set_exp(e)
+                cam.set_iso(iso)
+                cam.start()
                 # We now have to wait for the exposure to be applied to the next frame
                 _start = time.time()
                 framecnt = 0
                 while True:
                     # The below returns the most recent frame metadata or 
                     # Waits for the next frame if previous has been returned
-                    if int(cam.check_metadata()["ExposureTime"]) == int(e):
+                    meta = cam.check_metadata()
+                    print(meta)
+                    if int(meta["ExposureTime"]) == int(e):
                         break # loop when settings set -> Expecting a 0.15s overhead one frame plus mistiming
                     framecnt += 1
                     print("Waited {} frames".format(framecnt)) #TODO : Temp debug

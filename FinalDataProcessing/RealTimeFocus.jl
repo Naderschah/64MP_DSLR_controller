@@ -14,6 +14,8 @@ include("./Kernels.jl")
 import .Kernels
 include("MKR_functions.jl")
 import .MKR_functions
+include("ScalingFunctions.jl")
+import .ScalingFunctions
 
 using Base.Threads
 using Images
@@ -41,14 +43,31 @@ Everything needs to be tested
 
 batch_size = 8
 root_path = "/Images/"
-fobj = open(joinpath(root_path, "curr_img.txt"), "r")
-while read(fobj, String) == ""
-    println("Waiting for imaging to start")
-    sleep(5)
+img_nr_path = ""
+
+"""
+Flipping around open and while causes the loop to never terminate, the break is stated as being outside of a loop
+and returning is unsuccessfull
+TODO: Report to julia dev
+"""
+function read_image_path(root_path::String)
+    file_path = joinpath(root_path, "curr_img.txt")
+    img_nr_path = ""
+    open(file_path, "r") do f
+        while true
+            img_nr_path = readline(f)
+            # Check if img_nr_path is empty or not
+            if !isempty(img_nr_path)
+                break
+            end
+            println("Waiting for imaging to start")
+            sleep(5)
+        end
+    end
+    return img_nr_path
 end
-img_nr_path = read(fobj, String)
-close(fobj)
-println(img_nr_path)
+
+img_nr_path = read_image_path(root_path)
 path = joinpath(root_path, img_nr_path)
 load_path = joinpath(path,"taken_imgs")
 substack_path = joinpath(path,"substacks")
@@ -95,9 +114,10 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters, paths::Pat
         avail_substacs = readdir(paths.substack_path)
         if length(avail_substacs) > 0
             # Read first file
-            fobj = open(joinpath(paths.substack_path, avail_substacs[1]), "r")
-            fnames = split(read(fobj), "\n")
-            close(fobj)  # Close the file
+            fnames = nothing
+            open(joinpath(paths.substack_path, avail_substacs[1]), "r") do f
+                fnames = split(read(f, String), "\n")
+            end
             # We use the meta file name as this one contains the least information irrelevant
             # to the final output
             nf_name = replace(avail_substacs[1], "_meta.txt" => "_stack.png")
@@ -118,9 +138,10 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters, paths::Pat
             println("Completed substack $(nf_name)")
         else
             # Check its still running
-            fobj = open(joinpath(paths.root_path, "curr_img.txt"), "r")
-            terminate = strip(read(fobj, String)) == ""
-            close(fobj)  # Close the file
+            terminate = nothing            
+            open(joinpath(paths.root_path, "curr_img.txt"), "r") do f
+                terminate = read(f, String) == ""
+            end
             if terminate 
                 break
             end
@@ -137,13 +158,13 @@ function LiveProcessingMKR(fnames, pp::Main.Datastructures.ProcessingParameters,
     N = length(fnames)
     padding = 4
     w, h = pp.width + 2 * padding, pp.height + 2 * padding
-    imgs = Array{Float32}(N, w, h, 3)
+    imgs = Array{Float32}(undef, N, w, h, 3)
     Threads.@threads for x in eachindex(fnames)
         _file = HDF5.h5open(fnames[x], "r")
         img = HDF5.read(_file["image"])
         img = reinterpret(UInt16,img[1:end-16,:])
-        img = SimpleDebayer(img) ./ (2^12-1) # Norm to flat
-        imgs[x,:,:,:] = pad3d_array(img, padding, padding, true)
+        img = MKR_functions.SimpleDebayer(img) ./ (2^12-1) # Norm to flat
+        @inbounds imgs[x,:,:,:] = pad3d_array(img, padding, padding, true)
     end
     
     nlev = floor(log(min(w, h)) / log(2))
@@ -152,23 +173,23 @@ function LiveProcessingMKR(fnames, pp::Main.Datastructures.ProcessingParameters,
     pyr, pyr_Weight, Weight_mat = MKR_functions.GenerateEmptyPyramids(w, h, nlev, N)
 
     # TODO Sizes correct way around?
-    clrstd = Array{Float32}(undef, N, pp.width, pp.height) 
-    contrast = Array{Float32}(undef, N, pp.width, pp.height) 
-    exposedness = Array{Float32}(undef, N, pp.width, pp.height) 
+    clrstd = Array{Float32}(undef, N, w,h,3) 
+    contrast = Array{Float32}(undef, N, w,h, 3) 
+    exposedness = Array{Float32}(undef, N, w,h ,3) 
     Threads.@threads for x in axes(imgs,1)
-        clrstd[x,:,:,:] = ContrastFunctions.color_STD(imgs[x,:,:,:], pp.precision)
-        greyscaled = pp.greyscaler(imgs[x,:,:,:])
-        contrast[x,:,:,:] = pp.ContrastFunction(greyscaled, pp.precision)
+        @inbounds clrstd[x,:,:,:] = ContrastFunctions.color_STD(imgs[x,:,:,:], pp.precision)
+        @inbounds greyscaled = pp.Greyscaler(imgs[x,:,:,:])
+        @inbounds contrast[x,:,:,:] = pp.ContrastFunction(greyscaled, pp.precision)
         # Gaussian deviation from midway value
-        exposedness[x,:,:,:] = ContrastFunction.WellExposedness(greyscaled ./maximum(greyscaled), sigma = 0.2)
+        @inbounds exposedness[x,:,:,:] = ContrastFunctions.WellExposedness(greyscaled ./maximum(greyscaled), sigma = 0.2)
     end
     # Normalize 
     clrstd ./= maximum(clrstd)  
     contrast ./= maximum(contrast)  
     exposedness ./= maximum(exposedness)
     # Combine 
-    Threads.@threads for x in 1:len(fnames) 
-        Weight_mat[:,:,:,x] =  clrstd[x,:,:,:] + contrast[x,:,:,:] + exposedness[x,:,:,:]
+    Threads.@threads for x in 1:N
+        @inbounds Weight_mat[:,:,:,x] =  clrstd[x,:,:,:] + contrast[x,:,:,:] + exposedness[x,:,:,:] 
     end
     # Free memory
     clrstd = nothing
@@ -180,8 +201,15 @@ function LiveProcessingMKR(fnames, pp::Main.Datastructures.ProcessingParameters,
     Threads.@threads for i = 1:N
         tmp = MKR_functions.Gaussian_Pyramid(Weight_mat[:,:,:,i])
         for l in (1:nlev)
-            pyr_Weight[l][:,:,:,i] = tmp[l]
+            @inbounds pyr_Weight[l][:,:,:,i] = tmp[l]
         end
+    end
+    # Free memory
+    Weight_mat = nothing
+    # And image pyramid
+    Threads.@threads for x in 1:N
+        img_pyr = MKR_functions.Laplacian_Pyramid(imgs[x,:,:,:], nlev)
+        for l in (1:nlev) @inbounds pyr[l][:,:,:,x] = img_pyr[l]  end
     end
     # Create final pyramid
     fin_pyr = Dict()
@@ -197,7 +225,7 @@ end
 
 function pad3d_array(arr, pad_w, pad_h, fill)
     # Dimensions of the original array
-    N, w, h = size(arr)
+    w, h, c = size(arr)
     
     # New dimensions after padding
     new_w = w + 2 * pad_w
@@ -205,19 +233,19 @@ function pad3d_array(arr, pad_w, pad_h, fill)
     
     # Creating a new array with the same type as the original, filled with zeros
     # Adjust the element type if the array does not contain zeros by default
-    padded_arr = zeros(eltype(arr), N, new_w, new_h)
+    padded_arr = zeros(eltype(arr), new_w, new_h, c)
     
     # Copying the original array into the center of the new padded array
-    padded_arr[:, pad_w+1:end-pad_w, pad_h+1:end-pad_h] .= arr
+    padded_arr[pad_w+1:end-pad_w, pad_h+1:end-pad_h, :] .= arr
 
     if fill
         #   Pad the left and right columns
-        padded_arr[:, 1:pad_w, pad_h+1:end-pad_h] .= repeat(arr[:, 1:1, :], 1, pad_w, 1)
-        padded_arr[:, end-pad_w+1:end, pad_h+1:end-pad_h] .= repeat(arr[:, end:end, :], 1, pad_w, 1)
+        padded_arr[1:pad_w, pad_h+1:end-pad_h,:] .= repeat(arr[1:1, :, :], pad_w,1, 1)
+        padded_arr[end-pad_w+1:end, pad_h+1:end-pad_h,:] .= repeat(arr[end:end,: ,:], pad_w, 1,1)
 
         # Now pad the top and bottom using the already padded columns
-        padded_arr[:, :, 1:pad_h] .= repeat(padded_arr[:, :, pad_h+1:pad_h+1], 1, 1, pad_h)
-        padded_arr[:, :, end-pad_h+1:end] .= repeat(padded_arr[:, :, end-pad_h:end-pad_h], 1, 1, pad_h)
+        padded_arr[:,  1:pad_h, :] .= repeat(padded_arr[:, pad_h+1:pad_h+1, :], 1, pad_h, 1)
+        padded_arr[:,  end-pad_h+1:end,:] .= repeat(padded_arr[:, end-pad_h:end-pad_h,:], 1, pad_h, 1)
     end
     return padded_arr
 end

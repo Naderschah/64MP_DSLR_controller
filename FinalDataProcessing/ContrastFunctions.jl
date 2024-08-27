@@ -56,7 +56,10 @@ end
 
 
 function WellExposedness(I; sigma)
-    return exp( - (I .- 0.5).^2 ./ (2*sigma^2))
+    """
+    I should be greyscaled as otherwise we are changing colors
+    """
+    return repeat(exp.( - (I .- 0.5).^2 ./ (2*sigma^2)), outer=[1,1,3])
 end
 
 end #module
