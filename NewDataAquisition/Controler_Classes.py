@@ -309,6 +309,9 @@ class Camera_Handler:
         #Image.fromarray(img).save(path)
         return img
     
+    def check_metadata(self):
+        return self.camera.capture_metadata()
+
     def dummy_thread(self):
         return
 

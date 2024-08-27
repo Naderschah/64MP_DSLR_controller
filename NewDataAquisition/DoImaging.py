@@ -18,6 +18,8 @@ As command line options the following need to be provided
 
  TODO Wait for acceleration and thread time data to see if full stepping is worth using
 
+ FIXME: acc implementation wrong, it never resources the acceleration values
+
  mm_per_step conversion, the motors are: conv_to_mm(1) defautl function for this now
 
 
@@ -59,9 +61,6 @@ mm_per_step = conv_to_mm(1) # ~0.122 mu m per step or 122 nm per step
 img_path = '/media/micro/3677421f-5daf-4ea7-ba33-31b09d11edcf/Images'
 img_path = '/home/micro/RemoteStorage/'
 # Focus depth is 12 mu m 
-# TODO Use computed after the profiling is done
-# The below is most likely overkill go with 150? also how is focus depth defined gpt refuses to give me a usefull answer
-#step_size_x = int(12 / mm_per_step ) # This is ~100 steps so double as many images now
 step_size_x = 100
 
 
@@ -108,69 +107,6 @@ if not overwrote_path:
     if not is_drive_mounted(img_path):
         print("Please mount the remote drive, or specify a different path")
         sys.exit(0)
-
-"""
-Ok so some ground up weed for imaging, accept the misalignment for now
-Tmr do black level, and nvm having a control, just enable ccm and see what happens, also disable cac
-Make the image really small 
-
-
-Testing order ::: Find Small Subject!
-First make another image to check how for threading and precomputed contrast works, decide on final testing setup
-Then activate black level < -- Shouldnt make much of a difference
-Then disable AWB
-Then CCM default config --> This one is prob pretty usefull
-Then any others
-Then acceleration based image rejection
-Disable cac (Chromatic abberation correction) -> It just shifts green and blue 2 px
-
-Disable Sharpen?
-
-Try scientific version available -> Find source to see whats scientific about this one
-- Modified ct_curve for awb
-- Disabled rpi.contrast through ce_enable
-- CCM actually measured -> More datapoints
-- No mention of alsc
-
-AGC (automatic gain/exposure correction) is not mentioned below > was it on the whoel time? doubt it Prob done through controls
-AWB (auto white balance) not mentioned here or in custom controls
-TODO: AWB was on all along, in custom controls i need to set "ColourGains" to (1.,1.) I guess it just says set to disable, but you can set between 0 and 32
-sdn : Spatial denoise
-
-Maybe just use raw stream and do processing after the fact?
-
-
-New Order of Operation: python3 DoImaging.py exp=32000 iso=1 grid_x=5 grid_y=1 grid_z=1 # 206, 2, 2 images -> 4.5h
-- Small image of ground up weed using the same config as always 1x1 mm in y and z, and 5 mm height to look at rejection 
-- Next scientific image combining including the x coordinates included after rejection originally. 
-
-
-It seems that the flex of the glue I added moves the motors during imaging, will investigate further
-
-"""
-
-#TODO Temporarily set tuning to true and manually disabling here to mess with parameters and see effects
-#cam.tuning['algorithms'][0]['rpi.black_level']['black_level'] = 0 # Black level can probably be safely enabled -> Hopefully gets rid of some of that red background, applied to all can be overwritten with _r _g and _b 
-#cam.tuning['algorithms'][4]['rpi.geq']['offset'] = 0 # Green equalisation -> Default valeus selected i think 
-#cam.tuning['algorithms'][4]['rpi.geq']['slope'] = 0
-## luminance 0 disables algorithms effect
-#cam.tuning['algorithms'][8]['rpi.alsc']["luminance_strength"] = 0 # Auto lens shading correction : Can be calibrated, doesnt seem necessary
-## Reduce load on isp
-#cam.tuning['algorithms'][8]['rpi.alsc']["n_iter"] = 1 # Automatic Lens Shading Correction --> Not relevant for me
-## Disable gamma curve
-#cam.tuning['algorithms'][9]['rpi.contrast']["ce_enable"] = 0 # contrast and Gamma control? Maybe usefull but probably not, havent actually applied it after the fact never seems needed, maybe up ahead helps?
-## Tuning file sometimes has sharpen and ccm swapped 
-#if 'rpi.ccm' in cam.tuning['algorithms'][10]: index = 10  # Color Correction matrix see how well default works, see if can find calibration sources
-#elif 'rpi.ccm' in cam.tuning['algorithms'][11]: index = 11
-#
-## Disable color correction matrix for all color temperatures 
-#for i in range(len(cam.tuning['algorithms'][index]['rpi.ccm']['ccms'])):
-#    cam.tuning['algorithms'][index]['rpi.ccm']['ccms'][i]['ccm'] = [1,0,0,0,1,0,0,0,1]
-# END temp change
-from picamera2 import Picamera2
-# Load scientific tuning file
-#tuning = Picamera2.load_tuning_file("/usr/share/libcamera/ipa/rpi/vc4/imx477_scientific.json")
-
 # Keep all control structures enabled to allow easy grid alignment
 cam = Camera_Handler(disable_tuning=False, 
                      disable_autoexposure=True, 
@@ -260,16 +196,9 @@ cam.start()
 
 # Time estimate
 
-# Steps per second: 100Hz -> Call it 90 with all the sleep and checking
-# Imaging time is e
-# Overhead is?
-
-max_dist = [np.max(i) for i in coord_arr]
-move_multiplier = [1, len(coord_arr[2]),len(coord_arr[2])*len(coord_arr[1])]
-tot_move_dist_for_axis = [max_dist[i]*move_multiplier[i] for i in range(len(max_dist))]
-time_estimate_steps = [tot_move_dist_for_axis[i]/90 for i in range(len(exposure))]
-tot_time = sum(time_estimate_steps) + sum([len(coord_arr[2])*len(coord_arr[1])*e for e in exposure])*1e-6
-
+# Just compute based on ususal average time 1.2 normal add overhead for y and z moves
+tot_time = 1.5*len(coord_arr[0])*len(coord_arr[1])*len(coord_arr[2])
+# For full set took 9:48 h and 650GB 
 
 # Acc limits mean readout on still (abs) +- 1.5std (not abs) -> yzx since readout axes different
 # measured during no move but motors on 10000 datapoints
