@@ -42,12 +42,13 @@ Everything needs to be tested
 batch_size = 8
 root_path = "/Images/"
 fobj = open(joinpath(root_path, "curr_img.txt"), "r")
-while strip(read(fobj, String)) == ""
+while read(fobj, String) == ""
     println("Waiting for imaging to start")
     sleep(5)
 end
-img_nr_path = strip(read(fobj, String))
+img_nr_path = read(fobj, String)
 close(fobj)
+println(img_nr_path)
 path = joinpath(root_path, img_nr_path)
 load_path = joinpath(path,"taken_imgs")
 substack_path = joinpath(path,"substacks")
@@ -75,7 +76,14 @@ struct Paths
     save_path::String
 end
 
+
 paths = Paths(root_path,path, load_path, substack_path, save_path)
+println(root_path)
+println(path)
+println(load_path)
+println(substack_path)
+println(save_path)
+
 
 function FocusFusion(parameters::Datastructures.ProcessingParameters, paths::Paths)
     """Do not thread anything in here, risk of IO lock, only MKR is threaded"""
@@ -98,8 +106,9 @@ function FocusFusion(parameters::Datastructures.ProcessingParameters, paths::Pat
             # Do MKR without fail check -> Just have to trust
             image = LiveProcessingMKR(fnames, parameters, 1e-12, filter=filter,apply_corrections=first)
             outpath = joinpath(save_path, nf_name)
+            #TODO: Add Meta file with contrast values once timing works
             # Format for uint16 and save TODO Is png to slow?
-            Images.save(File{format"PNG"}(outpath), trunc.(UInt16, image .* (2^16-1)))
+            Images.save(outpath, trunc.(UInt16, image .* (2^16-1)))
             # Delete source images
             for i in fnames
                 rm(i)

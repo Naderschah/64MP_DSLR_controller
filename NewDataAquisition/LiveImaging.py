@@ -116,7 +116,7 @@ def is_drive_mounted(identifier=b'10.42.0.1'):
     identitfier needs to be a byte string!
     """
     # Check identifier
-    avail = [i for i in subprocess.check_output('df -m', shell=True).split(b'\n') if identifier in i][0]
+    avail = [i for i in subprocess.check_output('df -m', shell=True).split(b'\n') if identifier in i]
     return (len(avail) == 1)
 
 
@@ -163,8 +163,8 @@ while dirname+'_'+str(count) in dirs:
 dirname = dirname+'_'+str(count)
 dir = os.path.join(img_path,dirname)
 # Write which directory is current
-with open(os.path.join(dirname, 'curr_img.txt'), 'w') as f:
-    f.write(dir)
+with open(os.path.join(img_path, 'curr_img.txt'), 'w') as f:
+    f.write(dirname)
 
 os.mkdir(dir)
 os.chdir(dir)
@@ -235,7 +235,6 @@ def check_drive_space(identifier=b'10.42.0.1'):
 
 print("Assumed total time is {}".format(tot_time))
 start = time.time()
-f.write("x,y,z,accel,time since start, contrast max, contrast min, contrast mean\n")
 for i in coord_arr[2]:
     for j in coord_arr[1]:
         # Check ssd
@@ -247,7 +246,7 @@ for i in coord_arr[2]:
             grid.move_to_coord([k,j,i]) 
             print([k,j,i])
             imgs_for_substack = []
-            for e in exposure: # TODO: two images per loop -> Might not be feasable 
+            for e in exposure: 
                 cam.set_exp(e)
                 # We now have to wait for the exposure to be applied to the next frame
                 _start = time.time()
