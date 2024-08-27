@@ -236,8 +236,8 @@ class Camera_Handler:
 
     def disable_algos(self,disable_tuning):
         """Disable everything that may interfere with the RAW images
-        #TODO : Make all independent of index
-        #TODO : Test a bit which help and which dont, black level could be usefull, color balance could be usefull --> Calibrate?
+        #TODO DOes this speed anything up? Metadata did not indicate the below was ever actually applied
+                Metadata being the one i checked to check for epxosure in frame
         """
         # Load tuning file
         self.tuning = Picamera2.load_tuning_file("/usr/share/libcamera/ipa/rpi/vc4/imx477.json")

@@ -49,7 +49,19 @@ Processing:
 - Searches substacks folder for images to process
 - Processes them deletes source and saves them to first_process
 
-TODO: This may become io locked due to simulatneous reading and writing from raspi and PC 
+
+
+So timing on the loop
+
+We iterate 3 exposures, 
+changing exposure with the stop start method takes about 0.1 seconds amounting to 47 minutes for the entire imaging chain
+The entire inner loop (1 buffer 6 images in total takes):
+- 1.1 - 1.5 seconds
+And with 4 buffers : 2 might be usefull but its practically the same as 1 
+- 1.2 - 1.6
+
+Move takes (for x moves)
+- 0.52 seconds
 
 """
 from Controler_Classes import init_grid, Camera_Handler, conv_to_mm
@@ -247,24 +259,12 @@ for i in coord_arr[2]:
             print([k,j,i])
             imgs_for_substack = []
             for e in exposure:
+                # Restart camera - avoids blured buffers coming through and sets exposure right away
+                # otherwise ahve to wait 0.8s for frames to capture new exposure
                 cam.stop() 
                 cam.set_exp(e)
                 cam.set_iso(iso)
                 cam.start()
-                # We now have to wait for the exposure to be applied to the next frame
-                _start = time.time()
-                framecnt = 0
-                while True:
-                    # The below returns the most recent frame metadata or 
-                    # Waits for the next frame if previous has been returned
-                    meta = cam.check_metadata()
-                    print(meta)
-                    if int(meta["ExposureTime"]) == int(e):
-                        break # loop when settings set -> Expecting a 0.15s overhead one frame plus mistiming
-                    framecnt += 1
-                    print("Waited {} frames".format(framecnt)) #TODO : Temp debug
-                    # Frame rate in used configuration: 10 fps : No need to wait the above is blocking
-                print("Waited {} s for exp to be applied".format(time.time()-_start))
                 # Take two images per exposure
                 for ctr in (0, 1):
                     img = cam.capture_array()# Return image for contrast profiling
@@ -274,6 +274,7 @@ for i in coord_arr[2]:
                     fname = '{}'.format('_'.join([str(ip) for ip in grid.pos]))+'_{}'.format(ctr)+'_exp{}.hdf5'.format(e)
                     cam.threaded_save(os.path.join(img_save_path,fname), copy.deepcopy(img))
                     imgs_for_substack.append(fname)
+                
             # Invert exposure so that we dont have to wait for the next frame
             exposure = exposure[::-1]
             # Write stack file
