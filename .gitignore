@@ -7,3 +7,5 @@ Flats/
 *.png
 *__pycache__*
 *ipynbcheckpoint*
+.history
+.vscode

@@ -160,11 +160,18 @@ function LiveProcessingMKR(fnames, pp::Main.Datastructures.ProcessingParameters,
     w, h = pp.width + 2 * padding, pp.height + 2 * padding
     imgs = Array{Float32}(undef, N, w, h, 3)
     Threads.@threads for x in eachindex(fnames)
-        _file = HDF5.h5open(fnames[x], "r")
-        img = HDF5.read(_file["image"])
-        img = reinterpret(UInt16,img[1:end-16,:])
-        img = MKR_functions.SimpleDebayer(img) ./ (2^12-1) # Norm to flat
-        @inbounds imgs[x,:,:,:] = pad3d_array(img, padding, padding, true)
+        try
+            _file = HDF5.h5open(fnames[x], "r")
+            img = HDF5.read(_file["image"])
+            img = reinterpret(UInt16,img[1:end-16,:])
+            img = MKR_functions.SimpleDebayer(img) ./ (2^12-1) # Norm to flat
+            @inbounds imgs[x,:,:,:] = pad3d_array(img, padding, padding, true)
+        catch e # Sometimes HDF5 error Object header/Wrong version number
+            println("Failed on image $(fnames[x]) with exception:")
+            println(e)
+            imgs[x,:,:,:] .= 0
+        end
+
     end
     
     nlev = floor(log(min(w, h)) / log(2))

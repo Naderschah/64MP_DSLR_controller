@@ -24,6 +24,19 @@ FinalDataProcessing
 
 After imaging is completed the normal MainFocus.jl may be run to generate the focus stacks, if the system (but particularly IO as there are a lot of read write operations occuring, ie write 6 images and a text file load all of them write a new file delete the old files) isn't overloaded one could even run this in parallel with the live_processing flag enabled.  
 
+
+### Current major issue
+
+I implemented that every position be imaged six times, twice per exposure with three exposures to deal with images occasionally being darker. The mkr fusion algorithm considers local color standard deviation, contrast and well exposedness in the form of deviation from 0.5. Neighboring images to the black images are considered well exposed (0.5 +- 0.2) so I would assume that this is not an overflow. The weight matrix considers all three weights equivalently in the sense that they are all normalized to 1 however not 0 to 1. So this leads me to believe that the 6 images generating the 1 darker image all are darker (somewhere around 0.2), my current ideas for this are:
+- Maybe I should scale 0 to 1 and increase the weight matrix epsilon
+- Maybe its LED flickering and some images just happen to be timed in such a way that the majority of images are taken during off time 
+- Darkening appears to be somewhat symmetric beign darkest in image center and edges being less affected (might jsut be the ones im looking at rn), but I can see it being localized
+
+
+Seocnd, the CCM is massively off, remeasure this very soon
+Allthough I feel CCM is an underdetermined problem, in the sense that the 3x3 matrix is incapable of accurately correcting for all colors regardless of how well it is made. 
+What could be feasable is making a custom CCM for each image by selecting for very similar colors and imaging them before and after the run. 
+
 ## Image Aquisition
 
 
